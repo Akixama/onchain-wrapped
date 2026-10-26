@@ -3,10 +3,10 @@ import { LandingForm } from "@/components/LandingForm";
 import { CHAIN_COLOR, CHAIN_NAME } from "@/components/format";
 
 const DEMOS = [
-  { id: "cented", label: "Cented", sub: "Solana sniper" },
+  { id: "sol-sniper", label: "Solana sniper", sub: "383 memecoin trades" },
   { id: "machi", label: "machibigbrother.eth", sub: "EVM → Hyperliquid" },
-  { id: "gucci", label: "Gucci", sub: "Solana memecoins" },
-  { id: "cented-cluster", label: "Cented × 3 wallets", sub: "Merged identity" },
+  { id: "sol-memes", label: "Memecoin trader", sub: "Solana, 410 trades" },
+  { id: "sol-cluster", label: "One trader, 3 wallets", sub: "Merged identity" },
 ];
 const CHAINS = ["solana", "ethereum", "base", "arbitrum", "bsc", "polygon", "optimism"];
 
@@ -32,7 +32,7 @@ export default function Home() {
           </div>
           <LandingForm />
           <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Or peek at a famous wallet</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Or peek at a real wallet</p>
             <div className="grid grid-cols-2 gap-2">
               {DEMOS.map((d) => (
                 <Link key={d.id} href={`/w/${d.id}`} className="rounded-2xl border border-white/10 bg-white/[0.05] p-3 transition hover:border-white/30 hover:bg-white/10">

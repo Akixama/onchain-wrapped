@@ -1,6 +1,6 @@
 import type { ChainId, UnifiedEvent } from "../core/types";
 import { tokenKey } from "../core/types";
-import { MAJOR_LLAMA_ID, type Major, isMoney } from "../core/assets";
+import { MAJOR_LLAMA_ID, NATIVE, type Major, isMoney, majorOf } from "../core/assets";
 import { fetchJson } from "../infra/http";
 
 export interface PricePoint { ts: number; price: number }
@@ -77,6 +77,30 @@ async function llamaChart(ids: string[], startTs: number): Promise<Record<string
   return out;
 }
 
+/** Hourly series in windows of 480 points (DefiLlama allows 500 per request). */
+async function llamaHourly(id: string, from: number, to: number): Promise<PricePoint[]> {
+  const out: PricePoint[] = [];
+  for (let s = from; s < to; s += 480 * 3600) {
+    try {
+      const r = await fetchJson<{ coins: Record<string, { prices: { timestamp: number; price: number }[] }> }>(
+        "defillama",
+        `https://coins.llama.fi/chart/${id}?start=${s}&span=${Math.min(480, Math.ceil((to - s) / 3600) + 1)}&period=1h`,
+        { endpoint: "chart-hourly" },
+      );
+      for (const p of r.coins?.[id]?.prices ?? []) out.push({ ts: p.timestamp, price: p.price });
+    } catch {
+      /* fall back to daily for this window */
+    }
+  }
+  return out;
+}
+
+/** Daily points outside the hourly window + all hourly points, sorted. */
+function mergeSeries(daily: PricePoint[], hourly: PricePoint[]): PricePoint[] {
+  const lo = hourly[0].ts, hi = hourly[hourly.length - 1].ts;
+  return [...daily.filter((p) => p.ts < lo || p.ts > hi), ...hourly].sort((a, b) => a.ts - b.ts);
+}
+
 async function llamaCurrent(ids: string[]): Promise<Record<string, number>> {
   const out: Record<string, number> = {};
   for (let i = 0; i < ids.length; i += 60) {
@@ -133,7 +157,20 @@ export async function buildPriceBook(
 ): Promise<PriceBook> {
   const start = Math.min(sinceTs || Infinity, ...events.map((e) => e.timestamp)) - 86400;
   const majors = Object.entries(MAJOR_LLAMA_ID) as [Exclude<Major, "USD">, string][];
-  const majorCharts = await llamaChart(majors.map(([, id]) => id), start);
+  // Majors (the money side of every trade) get HOURLY prices over the period the user actually traded,
+  // falling back to the daily series. Hourly keeps USD conversions within a fraction of a percent.
+  const daily = await llamaChart(majors.map(([, id]) => id), start);
+  const usedMajors = new Set(events.flatMap((e) => [NATIVE[e.chain].major, ...[...e.in, ...e.out].map((l) => majorOf(l.token))]).filter(Boolean));
+  const tsList = events.map((e) => e.timestamp);
+  const majorCharts: Record<string, PricePoint[]> = { ...daily };
+  if (tsList.length) {
+    const lo = Math.min(...tsList) - 3600, hi = Math.min(Math.max(...tsList) + 3600, Math.floor(Date.now() / 1000));
+    for (const [m, id] of majors) {
+      if (!usedMajors.has(m)) continue;
+      const hourly = await llamaHourly(id, lo, hi);
+      if (hourly.length) majorCharts[id] = mergeSeries(daily[id] ?? [], hourly);
+    }
+  }
   const majorCur = await llamaCurrent(majors.map(([, id]) => id));
 
   // Rank tokens by how much the user moved, so we spend history lookups on the ones that matter.

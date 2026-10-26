@@ -1,7 +1,8 @@
 import type { ChainAdapter, ChainId, EventType, FetchOptions, FetchResult, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { NATIVE } from "../core/assets";
 import { fetchJson } from "../infra/http";
-import { fetchRawEvents, signaturesSince } from "./solana-rpc";
+import { fetchRawEvents, signaturesSince, verifySolanaTransfers } from "./solana-rpc";
+import { isMoney } from "../core/assets";
 
 // Zerion: one endpoint returns decoded history for ALL EVM chains, with USD value at tx time
 // and a spam ("trash") flag. That's why there are no per-chain EVM parsers in this codebase.
@@ -106,6 +107,10 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
       } catch {
         notes.push(`Couldn't double-check recent Solana activity for ${wallet.slice(0, 4)}….`);
       }
+      opts.onProgress?.({ chain: "solana", fetched: seen });
+      const v = await verifySolanaTransfers(events, isMoney);
+      if (v.fixed) notes.push(`Corrected ${v.fixed} Solana trades the data provider had labeled as plain transfers.`);
+      if (v.skipped) notes.push(`${v.skipped} Solana transfers weren't double-checked (very active wallet).`);
     }
     return { events, truncated, requests, notes };
   },

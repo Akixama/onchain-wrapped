@@ -8,21 +8,24 @@ import { putJob, lookupKey, rememberKey } from "../src/lib/store";
 import { storyCards } from "../src/lib/engine/stats";
 import { cannedRoast } from "../src/lib/roast";
 import { usingRedis } from "../src/lib/infra/kv";
+import { isMoney } from "../src/lib/core/assets";
+import { verifySolanaTransfers } from "../src/lib/chains/solana-rpc";
 
 console.log(`Seeding demo results into ${usingRedis() ? "Upstash Redis" : "local files (.data/)"}`);
 
+// Demo ids are neutral on purpose: public leaderboards disagree on who owns which wallet.
 const DEMOS: { id: string; file: string; wallets: string[]; names?: Record<string, string>; label: string }[] = [
-  { id: "cented", file: "cented", label: "Cented", wallets: ["CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o"] },
+  { id: "sol-sniper", file: "cented", label: "Solana sniper", wallets: ["CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o"] },
   {
-    id: "cented-cluster", file: "cented-merged", label: "Cented (3 wallets)",
+    id: "sol-cluster", file: "cented-merged", label: "Solana sniper (3 wallets)",
     wallets: ["CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o", "n62QUDHwXWCnZyArC9KsP3PqeBzf7WwAMqRLtwUgR7z", "6RE3SxJ7a1GrDEA3t1otHs1kiQyeGp6VdxYdo8y9s6NZ"],
   },
-  { id: "gucci", file: "gucci", label: "Gucci", wallets: ["YvEsBWpHK5PJ6Q8m4YrocwKeWys1NG67pbgi73UPnuX"] },
+  { id: "sol-memes", file: "gucci", label: "Solana memecoin trader", wallets: ["YvEsBWpHK5PJ6Q8m4YrocwKeWys1NG67pbgi73UPnuX"] },
   {
     id: "machi", file: "machi", label: "machibigbrother.eth", wallets: ["0x020ca66c30bec2c4fe3861a94e4db4a498a35872"],
     names: { "0x020ca66c30bec2c4fe3861a94e4db4a498a35872": "machibigbrother.eth" },
   },
-  { id: "tetranode", file: "tetranode", label: "Tetranode", wallets: ["0x9c5083dd4838e120dbeac44c052179692aa5dac5"] },
+  { id: "defi-whale", file: "tetranode", label: "DeFi whale", wallets: ["0x9c5083dd4838e120dbeac44c052179692aa5dac5"] },
 ];
 
 for (const d of DEMOS) {
@@ -30,8 +33,16 @@ for (const d of DEMOS) {
   if (!existsSync(path)) { console.log(`skip ${d.id}: no ${path}`); continue; }
   const events: UnifiedEvent[] = JSON.parse(readFileSync(path, "utf8"));
   const old = JSON.parse(readFileSync(`out/${d.file}.json`, "utf8"));
-  // Saved events already went through identity once; let the current rules decide again.
-  for (const e of events) e.ownTransfer = false;
+  // Saved events already went through identity + pricing once; let the current rules decide again.
+  for (const e of events) {
+    e.ownTransfer = false;
+    for (const l of [...e.in, ...e.out]) if (isMoney(l.token)) l.usd = null; // re-price with hourly majors
+  }
+  // Same blockchain double-check new lookups get: fix sells the provider labeled as transfers.
+  const v = await verifySolanaTransfers(events, isMoney);
+  if (v.checked) console.log(`  ${d.id}: checked ${v.checked} Solana transfers on-chain, corrected ${v.fixed}`);
+  const notes = [...(old.meta.notes ?? []).filter((n: string) => !/Corrected .* Solana trades/.test(n))];
+  if (v.fixed) notes.push(`Corrected ${v.fixed} Solana trades the data provider had labeled as plain transfers.`);
   const sinceTs = Math.floor(Date.now() / 1000) - 365 * 86400;
   const stats = await analyze({
     events,
@@ -42,7 +53,7 @@ for (const d of DEMOS) {
     coverageStart: old.meta.truncated ? Math.min(...events.map((e) => e.timestamp)) : sinceTs,
     truncated: !!old.meta.truncated,
     cap: old.meta.txCap ?? 1000,
-    notes: old.meta.notes ?? [],
+    notes,
   });
   stats.meta.names = d.names ?? {};
   // Demos use the free built-in roast (seeding never spends API money).

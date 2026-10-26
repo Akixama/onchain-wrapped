@@ -6,7 +6,7 @@ import type { CardId, WrappedStats } from "@/lib/engine/stats";
 import type { PublicJob as PublicJobT } from "@/lib/store";
 import { CARD_THEME, CARD_TITLE, periodLabel, shareText } from "../format";
 import { CARDS, type CardCtx } from "./cards";
-import { stagger } from "./primitives";
+import { FitContent, stagger } from "./primitives";
 import { Loading } from "./Loading";
 
 const CARD_MS = 7000;
@@ -78,9 +78,13 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
   const url = `${siteUrl}/w/${id}/${card}`;
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center bg-black sm:p-4">
+    <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-black sm:p-3">
+      {/* Desktop: the card's colours glow behind the frame instead of a flat black page. */}
+      <div className="pointer-events-none absolute inset-0 hidden sm:block" aria-hidden style={{ background: `radial-gradient(60% 70% at 30% 30%, ${theme.a}40, transparent 70%), radial-gradient(50% 60% at 75% 75%, ${theme.b}33, transparent 70%), ${theme.bg}`, transition: "background 600ms ease" }} />
+      <button aria-label="Previous card" onClick={() => go(-1)} disabled={i === 0}
+        className="relative z-10 mr-5 hidden h-12 w-12 place-items-center rounded-full bg-white/10 text-xl text-white backdrop-blur transition hover:bg-white/20 disabled:opacity-0 sm:grid">‹</button>
       <div
-        className="relative h-[100dvh] w-full overflow-hidden text-white sm:h-[min(860px,calc(100dvh-32px))] sm:w-auto sm:aspect-[9/16] sm:rounded-[28px] sm:shadow-2xl"
+        className="relative h-[100dvh] w-full overflow-hidden text-white sm:h-[calc(100dvh-24px)] sm:max-h-[1040px] sm:w-auto sm:aspect-[9/16] sm:rounded-[28px] sm:shadow-[0_30px_120px_rgba(0,0,0,0.6)]"
         style={{ background: theme.bg, color: theme.ink, transition: "background 600ms ease" }}
       >
         <Glow a={theme.a} b={theme.b} k={card} />
@@ -133,11 +137,13 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: dir * -60, scale: 0.98 }}
               transition={{ type: "spring", stiffness: 260, damping: 30 }}
-              className="absolute inset-0 flex flex-col px-7 pb-24 pt-20"
+              className={`absolute inset-0 flex flex-col px-6 pt-[72px] sm:px-7 ${card === "summary" ? "pb-[196px]" : "pb-16"}`}
               aria-label={CARD_TITLE[card]}
             >
-              <motion.div variants={stagger} initial="hidden" animate="show" className="flex flex-1 flex-col">
-                <Card s={s} ctx={ctx} />
+              <motion.div variants={stagger} initial="hidden" animate="show" className="flex min-h-0 flex-1 flex-col">
+                <FitContent>
+                  <Card s={s} ctx={ctx} />
+                </FitContent>
               </motion.div>
             </motion.section>
           </AnimatePresence>
@@ -163,6 +169,8 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
           {sheet && <ShareSheet onClose={() => setSheet(false)} url={url} text={shareText(s, card)} image={`/api/og/${id}/${card}`} />}
         </AnimatePresence>
       </div>
+      <button aria-label="Next card" onClick={() => go(1)} disabled={i === cards.length - 1}
+        className="relative z-10 ml-5 hidden h-12 w-12 place-items-center rounded-full bg-white/10 text-xl text-white backdrop-blur transition hover:bg-white/20 disabled:opacity-0 sm:grid">›</button>
     </div>
   );
 }

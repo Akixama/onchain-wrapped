@@ -1,8 +1,9 @@
 "use client";
 import { motion } from "motion/react";
 import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
-import { CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel } from "../format";
-import { Arc, Big, Chip, CountUp, Kicker, Line, Stat, rise } from "./primitives";
+import { CHAIN_COLOR, CHAIN_NAME, capOrPrice, hourLabel, num, pct, periodLabel, usd, whoLabel } from "../format";
+import { Big, BigNumber, Chip, CountUp, Kicker, Line, Stat, rise } from "./primitives";
+import { TradeChart } from "./TradeChart";
 
 export interface CardCtx {
   tzOffsetH: number; // viewer's UTC offset in hours
@@ -14,42 +15,72 @@ type CardProps = { s: WrappedStats; ctx: CardCtx };
 
 const money = (n: number, sign = false) => usd(n, { sign });
 const gainColor = (n: number) => (n >= 0 ? "#4ADE80" : "#F87171");
+const Body = ({ children, className = "space-y-5" }: { children: React.ReactNode; className?: string }) => (
+  <div className={`my-auto pt-4 ${className}`}>{children}</div>
+);
 
 function TokenTitle({ t }: { t: TradeCard }) {
   return (
-    <Line className="flex items-center gap-3">
+    <Line className="flex min-w-0 items-center gap-3">
       {t.icon ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={t.icon} alt="" className="h-11 w-11 rounded-full bg-white/10 object-cover" />
+        <img src={t.icon} alt="" className="h-10 w-10 shrink-0 rounded-full bg-white/10 object-cover" />
       ) : (
-        <span className="grid h-11 w-11 place-items-center rounded-full bg-white/15 font-display text-lg font-bold">{t.symbol.slice(0, 1)}</span>
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/15 font-display text-lg font-bold">{t.symbol.slice(0, 1)}</span>
       )}
-      <div>
-        <div className="font-display text-3xl font-bold">${t.symbol}</div>
+      <div className="min-w-0">
+        <div className="truncate font-display text-[28px] font-bold leading-tight">${t.symbol}</div>
         <div className="text-sm opacity-60">on {CHAIN_NAME[t.chain]}</div>
       </div>
     </Line>
   );
 }
 
-function tradeArc(t: TradeCard) {
-  const pts = [{ label: "In", sub: price(t.avgEntry), value: t.avgEntry }];
-  if (t.peakPrice > Math.max(t.avgEntry, t.avgExit ?? 0) * 1.05) pts.push({ label: "Peak", sub: price(t.peakPrice), value: t.peakPrice });
-  if (t.avgExit) pts.push({ label: "Out", sub: price(t.avgExit), value: t.avgExit });
-  return pts.length >= 2 ? pts : null;
+/** Entry / Peak / Exit (or Now) as market cap when we know the supply. */
+function Levels({ t }: { t: TradeCard }) {
+  const sup = t.chart?.supply;
+  const tag = sup ? " MC" : "";
+  const cells: [string, string][] = [[`Entry${tag}`, capOrPrice(t.avgEntry, sup)]];
+  if (t.peakPrice > 0) cells.push([`Peak${tag}`, capOrPrice(Math.max(t.peakPrice, t.avgEntry), sup)]);
+  cells.push(t.avgExit ? [`Exit${tag}`, capOrPrice(t.avgExit, sup)] : ["Now", t.holdingValueUsd > 0 ? "holding" : "—"]);
+  return (
+    <motion.div variants={rise} className="grid grid-cols-3 gap-2">
+      {cells.map(([k, v]) => (
+        <div key={k} className="rounded-xl border border-white/10 bg-white/[0.06] px-2.5 py-2">
+          <div className="whitespace-nowrap text-[10px] font-semibold uppercase tracking-wider opacity-60">{k}</div>
+          <div className="truncate font-display text-[17px] font-bold tabular-nums">{v}</div>
+        </div>
+      ))}
+    </motion.div>
+  );
 }
+
+const TradeStory = ({ t }: { t: TradeCard }) => (
+  <Body className="space-y-4">
+    <TokenTitle t={t} />
+    <BigNumber className="text-[64px]" color={gainColor(t.pnlUsd)}>
+      <CountUp value={t.pnlUsd} format={(n) => money(n, true)} />
+    </BigNumber>
+    <Line><TradeChart card={t} /></Line>
+    <Levels t={t} />
+    <Line className="text-[15px] opacity-80">
+      Put in {money(t.costUsd)}, took out {money(t.proceedsUsd)}{t.holdingValueUsd >= 1 ? `, still holding ${money(t.holdingValueUsd)}` : ""}.
+      {t.partialHistory ? " Part of this position was bought before the period shown." : ""}
+    </Line>
+  </Body>
+);
 
 const Archetype = ({ s }: CardProps) => (
   <>
     <Kicker>{periodLabel(s)} · {whoLabel(s)}</Kicker>
-    <div className="mt-auto mb-auto space-y-6">
+    <Body className="space-y-6">
       <Line className="text-xl opacity-80">Your onchain personality is</Line>
-      <Big className="text-[44px] sm:text-5xl">{s.archetype.title}</Big>
+      <Big className="text-[46px]">{s.archetype.title}</Big>
       <Line className="text-lg opacity-80">{s.archetype.tagline}</Line>
       <Line className="flex flex-wrap gap-2">
         {s.overview.chainsUsed.map((c) => <Chip key={c} color={CHAIN_COLOR[c]}>{CHAIN_NAME[c]}</Chip>)}
       </Line>
-    </div>
+    </Body>
   </>
 );
 
@@ -60,9 +91,9 @@ const Overview = ({ s }: CardProps) => {
   return (
     <>
       <Kicker>The numbers</Kicker>
-      <div className="my-auto space-y-5">
+      <Body>
         <Line className="text-lg opacity-80">You made</Line>
-        <Big className="text-7xl"><CountUp value={s.overview.totalTrades} format={(n) => num(Math.round(n))} /></Big>
+        <BigNumber className="text-[76px]"><CountUp value={s.overview.totalTrades} format={(n) => num(Math.round(n))} /></BigNumber>
         <Line className="text-lg opacity-80">trades, moving <b className="font-display text-2xl">{money(s.overview.volumeUsd)}</b> across {s.overview.chainsUsed.length} {s.overview.chainsUsed.length === 1 ? "chain" : "chains"}.</Line>
         <motion.div variants={rise} className="space-y-2 pt-2">
           {bars.map(([c, n]) => (
@@ -77,75 +108,69 @@ const Overview = ({ s }: CardProps) => {
           ))}
         </motion.div>
         {top && <Line className="text-sm opacity-70">Home chain: <b>{CHAIN_NAME[top]}</b> · {s.overview.activeDays} active days</Line>}
-      </div>
+      </Body>
     </>
   );
 };
 
-const Pnl = ({ s }: CardProps) => (
-  <>
-    <Kicker>The bottom line</Kicker>
-    <div className="my-auto space-y-5">
-      <Line className="text-lg opacity-80">Trading result (estimate)</Line>
-      <Big className="text-7xl" ><span style={{ color: gainColor(s.pnl.totalUsd) }}><CountUp value={s.pnl.totalUsd} format={(n) => money(n, true)} /></span></Big>
-      <div className="grid grid-cols-2 gap-3 pt-2">
-        <Stat label="Win rate">{pct(s.pnl.winRate)}</Stat>
-        <Stat label="Wins / losses">{s.pnl.wins} / {s.pnl.losses}</Stat>
-        <Stat label="Taken profit">{money(s.pnl.realizedUsd, true)}</Stat>
-        <Stat label="Still riding">{money(s.pnl.unrealizedUsd, true)}</Stat>
-      </div>
-    </div>
-  </>
-);
-
-const TradeStory = ({ t, good }: { t: TradeCard; good: boolean }) => {
-  const arc = tradeArc(t);
+const Pnl = ({ s }: CardProps) => {
+  const open = Math.abs(s.pnl.unrealizedUsd) >= 1;
   return (
-    <div className="my-auto space-y-6">
-      <TokenTitle t={t} />
-      <Big className="text-7xl"><span style={{ color: gainColor(t.pnlUsd) }}><CountUp value={t.pnlUsd} format={(n) => money(n, true)} /></span></Big>
-      {arc && <Arc points={arc} color={good ? "#4ADE80" : "#F87171"} />}
-      <Line className="text-base opacity-80">
-        Put in {money(t.costUsd)}, took out {money(t.proceedsUsd)}{t.holdingValueUsd >= 1 ? `, still holding ${money(t.holdingValueUsd)}` : ""}.
-      </Line>
-    </div>
+    <>
+      <Kicker>The bottom line</Kicker>
+      <Body>
+        <Line className="text-lg opacity-80">Trading result (estimate)</Line>
+        <BigNumber className="text-[76px]" color={gainColor(s.pnl.totalUsd)}>
+          <CountUp value={s.pnl.totalUsd} format={(n) => money(n, true)} />
+        </BigNumber>
+        <div className="grid grid-cols-2 gap-3 pt-2">
+          <Stat label="Win rate">{pct(s.pnl.winRate)}</Stat>
+          <Stat label="Wins / losses">{s.pnl.wins} / {s.pnl.losses}</Stat>
+          <Stat label="From coins sold">{money(s.pnl.realizedUsd, true)}</Stat>
+          <Stat label="Coins still held">{open ? money(s.pnl.unrealizedUsd, true) : "None"}</Stat>
+        </div>
+      </Body>
+    </>
   );
 };
 
-const Best = ({ s }: CardProps) => (<><Kicker>Best trade</Kicker><TradeStory t={s.bestTrade!} good /></>);
-const Worst = ({ s }: CardProps) => (<><Kicker>Worst trade</Kicker><TradeStory t={s.worstTrade!} good={false} /></>);
+const Best = ({ s }: CardProps) => (<><Kicker>Best trade</Kicker><TradeStory t={s.bestTrade!} /></>);
+const Worst = ({ s }: CardProps) => (<><Kicker>Worst trade</Kicker><TradeStory t={s.worstTrade!} /></>);
 
 const RoundTrip = ({ s }: CardProps) => {
   const r = s.roundTrip!;
   return (
     <>
       <Kicker>The round trip</Kicker>
-      <div className="my-auto space-y-6">
+      <Body className="space-y-4">
         <TokenTitle t={r} />
-        <Line className="text-2xl">At the top you were up</Line>
-        <Big className="text-7xl text-[#4ADE80]"><CountUp value={r.peakGainUsd} format={(n) => money(n)} /></Big>
-        <Line className="text-2xl">You walked out with</Line>
-        <Big className="text-6xl" ><span style={{ color: gainColor(r.endedWithUsd) }}>{money(r.endedWithUsd, true)}</span></Big>
-        <Line className="text-base opacity-70">Round trips: the most expensive kind of travel.</Line>
-      </div>
+        <Line className="text-xl">At the top you were up</Line>
+        <BigNumber className="text-[60px]" color="#4ADE80"><CountUp value={r.peakGainUsd} format={(n) => money(n)} /></BigNumber>
+        <Line><TradeChart card={r} marks={[{ t: r.peakTs, label: "TOP", color: "#4ADE80" }]} /></Line>
+        <Line className="text-xl">and walked out with <b style={{ color: gainColor(r.endedWithUsd) }} className="whitespace-nowrap font-display">{money(r.endedWithUsd, true)}</b>.</Line>
+      </Body>
     </>
   );
 };
 
 const PaperHands = ({ s }: CardProps) => {
   const p = s.paperHands!;
+  const sup = p.chart?.supply;
   const x = p.laterPeak / p.soldAt;
   return (
     <>
       <Kicker>Paper hands</Kicker>
-      <div className="my-auto space-y-6">
+      <Body className="space-y-4">
         <TokenTitle t={p} />
-        <Line className="text-xl">You sold at {price(p.soldAt)}. It then ran <b>{x >= 10 ? Math.round(x) : x.toFixed(1)}x</b>.</Line>
-        <Arc points={[{ label: "You sold", sub: price(p.soldAt), value: p.soldAt }, { label: "It ran to", sub: price(p.laterPeak), value: p.laterPeak }]} color="#F472B6" />
-        <Line className="text-xl">You left</Line>
-        <Big className="text-7xl text-[#F9A8D4]"><CountUp value={p.missedUsd} format={(n) => money(n)} /></Big>
-        <Line className="text-xl">on the table.</Line>
-      </div>
+        <Line className="text-lg">
+          You sold at <b className="whitespace-nowrap">{capOrPrice(p.soldAt, sup)}{sup ? " MC" : ""}</b>. It then ran to{" "}
+          <b className="whitespace-nowrap">{capOrPrice(p.laterPeak, sup)}{sup ? " MC" : ""}</b> ({x >= 10 ? Math.round(x) : x.toFixed(1)}x).
+        </Line>
+        <Line><TradeChart card={p} marks={[{ t: p.soldTs, label: "YOU SOLD", color: "#F9A8D4" }]} /></Line>
+        <Line className="text-lg">You left</Line>
+        <BigNumber className="text-[60px]" color="#F9A8D4"><CountUp value={p.missedUsd} format={(n) => money(n)} /></BigNumber>
+        <Line className="text-lg">on the table.</Line>
+      </Body>
     </>
   );
 };
@@ -155,12 +180,12 @@ const DiamondHands = ({ s }: CardProps) => {
   return (
     <>
       <Kicker>Diamond hands</Kicker>
-      <div className="my-auto space-y-6">
+      <Body className="space-y-4">
         <TokenTitle t={d} />
-        <Big className="text-8xl"><CountUp value={d.daysHeld} format={(n) => `${Math.round(n)}`} /><span className="ml-2 text-3xl opacity-70">days</span></Big>
-        <Line className="text-xl">{d.stillHolding ? "and you're still holding." : "before you finally sold."}</Line>
-        <Line className="text-2xl">Worth it: <b style={{ color: gainColor(d.pnlUsd) }}>{money(d.pnlUsd, true)}</b></Line>
-      </div>
+        <BigNumber className="text-[76px]"><CountUp value={d.daysHeld} format={(n) => `${Math.round(n)} days`} /></BigNumber>
+        <Line><TradeChart card={d} /></Line>
+        <Line className="text-xl">{d.stillHolding ? "and still holding." : "before you finally sold."} Worth it: <b className="whitespace-nowrap" style={{ color: gainColor(d.pnlUsd) }}>{money(d.pnlUsd, true)}</b></Line>
+      </Body>
     </>
   );
 };
@@ -171,15 +196,15 @@ const Counterfactual = ({ s }: CardProps) => {
   return (
     <>
       <Kicker>What if</Kicker>
-      <div className="my-auto space-y-6">
+      <Body className="space-y-6">
         <Line className="text-2xl">If you&apos;d skipped every trade and just held <b>{c.major.replace("+", " & ")}</b>…</Line>
-        <Big className="text-7xl"><span style={{ color: held ? "#FBBF24" : "#4ADE80" }}><CountUp value={Math.abs(c.justHeldDiffUsd)} format={(n) => money(n)} /></span></Big>
+        <BigNumber className="text-[70px]" color={held ? "#FBBF24" : "#4ADE80"}><CountUp value={Math.abs(c.justHeldDiffUsd)} format={(n) => money(n)} /></BigNumber>
         <Line className="text-2xl">{held ? "more in your pocket. Ouch." : "less. Your trading actually won."}</Line>
         <div className="grid grid-cols-2 gap-3">
           <Stat label="Your trading">{money(c.tradingPnlUsd, true)}</Stat>
           <Stat label={`Just holding ${c.major === "SOL+ETH" ? "majors" : c.major}`}>{money(c.holdPnlUsd, true)}</Stat>
         </div>
-      </div>
+      </Body>
     </>
   );
 };
@@ -193,21 +218,21 @@ const Gas = ({ s, ctx }: CardProps) => {
       <div className="flex items-center justify-between">
         <Kicker>Gas burned</Kicker>
         {ctx.ngnRate && (
-          <motion.div variants={rise} className="flex rounded-full bg-white/10 p-1 text-xs font-semibold" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()}>
+          <motion.div variants={rise} className="flex rounded-full bg-white/10 p-1 text-xs font-semibold" onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}>
             {(["USD", "NGN"] as const).map((c) => (
               <button key={c} onClick={() => ctx.setCurrency(c)} className={`rounded-full px-3 py-1 ${cur === c ? "bg-white text-black" : "opacity-70"}`}>{c}</button>
             ))}
           </motion.div>
         )}
       </div>
-      <div className="my-auto space-y-6">
+      <Body className="space-y-6">
         <Line className="text-xl opacity-80">You paid the network</Line>
-        <Big className="text-7xl text-[#FDBA74]"><CountUp key={cur} value={s.gas.totalUsd} format={fmt} /></Big>
-        <Line className="text-xl opacity-80">over {num(s.gas.txCount)} transactions. Priciest single one: <b>{fmt(s.gas.priciestTxUsd)}</b>.</Line>
+        <BigNumber className="text-[76px]" color="#FDBA74"><CountUp key={cur} value={s.gas.totalUsd} format={fmt} /></BigNumber>
+        <Line className="text-xl opacity-80">over {num(s.gas.txCount)} transactions. Priciest single one: <b className="whitespace-nowrap">{fmt(s.gas.priciestTxUsd)}</b>.</Line>
         <motion.div variants={rise} className="flex flex-wrap gap-2">
           {by.map(([c, v]) => <Chip key={c} color={CHAIN_COLOR[c]}>{CHAIN_NAME[c]} {fmt(v ?? 0)}</Chip>)}
         </motion.div>
-      </div>
+      </Body>
     </>
   );
 };
@@ -215,27 +240,27 @@ const Gas = ({ s, ctx }: CardProps) => {
 const Rugs = ({ s }: CardProps) => (
   <>
     <Kicker>Rugs</Kicker>
-    <div className="my-auto space-y-6">
+    <Body className="space-y-6">
       <Line className="text-xl opacity-80">Coins you bought that are now dead</Line>
       <div className="grid grid-cols-2 gap-3">
         <Stat label="Caught in">{s.rugs.count}</Stat>
         <Stat label="Dodged">{s.rugs.dodged}</Stat>
       </div>
-      {s.rugs.count > 0 && <Line className="text-xl">They cost you <b className="text-[#FB7185]">{money(s.rugs.lostUsd)}</b>.</Line>}
+      {s.rugs.count > 0 && <Line className="text-xl">They cost you <b className="whitespace-nowrap text-[#FB7185]">{money(s.rugs.lostUsd)}</b>.</Line>}
       {s.rugs.dodged > 0 && <Line className="text-xl">But you got out of {s.rugs.dodged} before they died. Survivor.</Line>}
       <Line className="flex flex-wrap gap-2">{[...s.rugs.tokens.slice(0, 4), ...s.rugs.dodgedTokens.slice(0, 4)].map((t, i) => <Chip key={t + i}>${t}</Chip>)}</Line>
-    </div>
+    </Body>
   </>
 );
 
 const Airdrops = ({ s }: CardProps) => (
   <>
     <Kicker>Airdrops</Kicker>
-    <div className="my-auto space-y-6">
-      <Big className="text-8xl"><CountUp value={s.airdrops.count} format={(n) => `${Math.round(n)}`} /></Big>
+    <Body className="space-y-6">
+      <BigNumber className="text-[90px]"><CountUp value={s.airdrops.count} format={(n) => `${Math.round(n)}`} /></BigNumber>
       <Line className="text-2xl">airdrops claimed, worth about <b>{money(s.airdrops.valueUsd)}</b>.</Line>
       <Line className="flex flex-wrap gap-2">{s.airdrops.tokens.map((t) => <Chip key={t}>${t}</Chip>)}</Line>
-    </div>
+    </Body>
   </>
 );
 
@@ -250,9 +275,9 @@ const Sleep = ({ s, ctx }: CardProps) => {
   return (
     <>
       <Kicker>Sleep schedule</Kicker>
-      <div className="my-auto space-y-6">
+      <Body>
         <Line className="text-xl opacity-80">Your trading hour</Line>
-        <Big className="text-8xl">{hourLabel(peak)}</Big>
+        <BigNumber className="text-[90px]">{hourLabel(peak)}</BigNumber>
         <Line className="text-xl">{local[peak]} trades at that hour{night > 0 ? <>, and <b>{night}</b> between midnight and 6am.</> : "."}</Line>
         <motion.div variants={rise} className="flex h-24 items-end gap-[3px]">
           {local.map((v, h) => (
@@ -260,9 +285,9 @@ const Sleep = ({ s, ctx }: CardProps) => {
               initial={{ height: 0 }} animate={{ height: `${Math.max(3, (v / max) * 100)}%` }} transition={{ delay: 0.4 + h * 0.025 }} />
           ))}
         </motion.div>
-        <div className="-mt-4 flex justify-between text-[11px] opacity-60"><span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span></div>
+        <div className="-mt-3 flex justify-between text-[11px] opacity-60"><span>12am</span><span>6am</span><span>12pm</span><span>6pm</span><span>11pm</span></div>
         {s.sleep.topMinuteCount >= 3 && <Line className="text-base opacity-80">Weirdly specific: you traded at exactly <b>{topLocal}</b> {s.sleep.topMinuteCount} times.</Line>}
-      </div>
+      </Body>
     </>
   );
 };
@@ -270,7 +295,7 @@ const Sleep = ({ s, ctx }: CardProps) => {
 const Bridges = ({ s }: CardProps) => (
   <>
     <Kicker>Bridge journey</Kicker>
-    <div className="my-auto space-y-6">
+    <Body className="space-y-6">
       <Line className="text-xl opacity-80">Where your money travelled</Line>
       <motion.div variants={rise} className="flex flex-wrap items-center gap-2">
         {s.bridges.journey.map((c, i) => (
@@ -289,55 +314,107 @@ const Bridges = ({ s }: CardProps) => (
         ))}
       </motion.ul>
       <Line className="text-base opacity-80">{money(s.bridges.totalUsd)} moved across chains.</Line>
-    </div>
+    </Body>
   </>
 );
 
 const Percentile = ({ s }: CardProps) => (
   <>
     <Kicker>Ranking</Kicker>
-    <div className="my-auto space-y-6">
-      <Big className="text-8xl">Top {Math.max(1, Math.round(100 - (s.percentile.activity ?? 0)))}%</Big>
+    <Body className="space-y-6">
+      <BigNumber className="text-[90px]">Top {Math.max(1, Math.round(100 - (s.percentile.activity ?? 0)))}%</BigNumber>
       <Line className="text-2xl">most active of everyone who checked.</Line>
-    </div>
+    </Body>
   </>
 );
 
-const Roast = ({ s }: CardProps) => (
-  <>
-    <Kicker>The roast</Kicker>
-    <div className="my-auto space-y-6">
-      <Big className="text-6xl">🔥</Big>
-      <Line className="font-display text-[26px] font-bold leading-snug">{s.roast!.text}</Line>
-      <Line className="text-sm opacity-60">{s.roast!.source === "ai" ? "Written by AI from your stats. No feelings were checked." : "Lovingly generated from your stats."}</Line>
-    </div>
-  </>
-);
-
-const Summary = ({ s }: CardProps) => {
-  const items: [string, string][] = [
-    ["Trades", num(s.overview.totalTrades)],
-    ["Volume", money(s.overview.volumeUsd)],
-    ["PnL", money(s.pnl.totalUsd, true)],
-    ["Gas", money(s.gas.totalUsd)],
-  ];
-  if (s.bestTrade) items.push(["Best", `$${s.bestTrade.symbol} ${money(s.bestTrade.pnlUsd, true)}`]);
-  if (s.worstTrade) items.push(["Worst", `$${s.worstTrade.symbol} ${money(s.worstTrade.pnlUsd)}`]);
+/** Trading result per chain, biggest winner first. */
+const Chains = ({ s }: CardProps) => {
+  const rows = (Object.entries(s.pnl.byChain) as [string, { pnlUsd: number; trades: number; tokens: number }][]).filter(([, v]) => Math.abs(v.pnlUsd) >= 1 || v.trades > 0).sort((a, b) => b[1].pnlUsd - a[1].pnlUsd);
+  const maxAbs = Math.max(1, ...rows.map(([, v]) => Math.abs(v.pnlUsd)));
   return (
     <>
-      <Kicker>{periodLabel(s)} · {whoLabel(s)}</Kicker>
-      <div className="my-auto space-y-5">
-        <Big className="text-4xl">{s.archetype.title}</Big>
-        <div className="grid grid-cols-2 gap-3">
-          {items.map(([k, v]) => <Stat key={k} label={k}>{v}</Stat>)}
-        </div>
-      </div>
+      <Kicker>Profit by chain</Kicker>
+      <Body className="space-y-5">
+        <Line className="text-lg opacity-80">Across every chain, you made</Line>
+        <BigNumber className="text-[68px]" color={gainColor(s.pnl.totalUsd)}><CountUp value={s.pnl.totalUsd} format={(n) => money(n, true)} /></BigNumber>
+        <motion.ul variants={rise} className="space-y-2.5">
+          {rows.map(([c, v]) => (
+            <li key={c} className="rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2 font-semibold"><i className="h-2.5 w-2.5 rounded-full" style={{ background: CHAIN_COLOR[c] }} />{CHAIN_NAME[c]}</span>
+                <span className="whitespace-nowrap font-display text-lg font-bold tabular-nums" style={{ color: gainColor(v.pnlUsd) }}>{money(v.pnlUsd, true)}</span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                <motion.div className="h-full rounded-full" style={{ background: gainColor(v.pnlUsd) }}
+                  initial={{ width: 0 }} animate={{ width: `${(Math.abs(v.pnlUsd) / maxAbs) * 100}%` }} transition={{ delay: 0.5, duration: 0.8 }} />
+              </div>
+              <div className="mt-1.5 text-xs opacity-60">{v.trades} trades · {v.tokens} tokens</div>
+            </li>
+          ))}
+        </motion.ul>
+      </Body>
     </>
   );
 };
 
+const Roast = ({ s }: CardProps) => (
+  <>
+    <Kicker>The roast</Kicker>
+    <Body className="space-y-6">
+      <Big className="text-6xl">🔥</Big>
+      <Line className="font-display text-[26px] font-bold leading-snug">{s.roast!.text}</Line>
+      <Line className="text-sm opacity-60">{s.roast!.source === "ai" ? "Written by AI from your stats. No feelings were checked." : "Lovingly generated from your stats."}</Line>
+    </Body>
+  </>
+);
+
+const Summary = ({ s }: CardProps) => {
+  const tiles: [string, string, string?][] = [
+    ["Trades", num(s.overview.totalTrades)],
+    ["Volume", money(s.overview.volumeUsd)],
+    ["PnL", money(s.pnl.totalUsd, true), gainColor(s.pnl.totalUsd)],
+    ["Gas", money(s.gas.totalUsd)],
+  ];
+  const chains = (Object.entries(s.pnl.byChain) as [string, { pnlUsd: number }][]).filter(([, v]) => Math.abs(v.pnlUsd) >= 1).sort((a, b) => b[1].pnlUsd - a[1].pnlUsd);
+  return (
+    <>
+      <Kicker>{periodLabel(s)} · {whoLabel(s)}</Kicker>
+      <Body className="space-y-3">
+        <Big className="text-[34px]">{s.archetype.title}</Big>
+        <div className="grid grid-cols-2 gap-2">
+          {tiles.map(([k, v, c]) => (
+            <motion.div key={k} variants={rise} className="rounded-xl border border-white/10 bg-white/[0.07] px-3 py-2.5">
+              <div className="text-[11px] font-semibold uppercase tracking-wider opacity-60">{k}</div>
+              <div className="truncate font-display text-xl font-bold tabular-nums" style={{ color: c }}>{v}</div>
+            </motion.div>
+          ))}
+        </div>
+        <motion.div variants={rise} className="space-y-1.5 rounded-xl border border-white/10 bg-white/[0.07] px-3 py-2.5 text-sm">
+          {s.bestTrade && <Row k="Best" v={`$${s.bestTrade.symbol}`} n={s.bestTrade.pnlUsd} />}
+          {s.worstTrade && <Row k="Worst" v={`$${s.worstTrade.symbol}`} n={s.worstTrade.pnlUsd} />}
+          {chains.map(([c, v]) => <Row key={c} k={CHAIN_NAME[c]} n={v.pnlUsd} dot={CHAIN_COLOR[c]} />)}
+        </motion.div>
+      </Body>
+    </>
+  );
+};
+
+function Row({ k, v, n, dot }: { k: string; v?: string; n: number; dot?: string }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="flex min-w-0 items-center gap-2 opacity-80">
+        {dot && <i className="h-2 w-2 shrink-0 rounded-full" style={{ background: dot }} />}
+        <span className="shrink-0">{k}</span>
+        {v && <b className="truncate">{v}</b>}
+      </span>
+      <b className="shrink-0 whitespace-nowrap tabular-nums" style={{ color: gainColor(n) }}>{money(n, true)}</b>
+    </div>
+  );
+}
+
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
   archetype: Archetype, overview: Overview, pnl: Pnl, best: Best, worst: Worst, roundTrip: RoundTrip,
   paperHands: PaperHands, diamondHands: DiamondHands, counterfactual: Counterfactual, gas: Gas, rugs: Rugs,
-  airdrops: Airdrops, sleep: Sleep, bridges: Bridges, percentile: Percentile, roast: Roast, summary: Summary,
+  airdrops: Airdrops, sleep: Sleep, bridges: Bridges, percentile: Percentile, chains: Chains, roast: Roast, summary: Summary,
 };

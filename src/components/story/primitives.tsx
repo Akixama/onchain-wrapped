@@ -1,6 +1,6 @@
 "use client";
 import { motion, useReducedMotion } from "motion/react";
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 
 const onVisibility = (cb: () => void) => {
   document.addEventListener("visibilitychange", cb);
@@ -115,6 +115,71 @@ export function Arc({ points, color }: { points: { label: string; sub?: string; 
         </div>
       ))}
     </div>
+    </motion.div>
+  );
+}
+
+/**
+ * Keeps a card inside its frame on any screen: measures the content and scales it down (never up)
+ * until it fits the space above the footer. Children keep their normal flex layout.
+ */
+export function FitContent({ children }: { children: ReactNode }) {
+  const outer = useRef<HTMLDivElement>(null);
+  const inner = useRef<HTMLDivElement>(null);
+  const [fit, setFit] = useState({ k: 1, h: 0 });
+  useLayoutEffect(() => {
+    const o = outer.current, i = inner.current;
+    if (!o || !i) return;
+    const measure = () => {
+      const avail = o.clientHeight;
+      let need = 0;
+      for (const c of Array.from(i.children) as HTMLElement[]) need += c.offsetHeight;
+      need += 28; // breathing room between kicker and body
+      const k = need > avail ? Math.max(0.5, avail / need) : 1;
+      setFit((f) => (Math.abs(f.k - k) < 0.005 && f.h === avail ? f : { k, h: avail }));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(o);
+    for (const c of Array.from(i.children)) ro.observe(c);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <div ref={outer} className="relative min-h-0 flex-1">
+      <div
+        ref={inner}
+        className="absolute left-0 top-0 flex flex-col"
+        style={{ transform: `scale(${fit.k})`, transformOrigin: "top left", width: `${100 / fit.k}%`, height: fit.h ? fit.h / fit.k : "100%" }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/** One-line headline number that shrinks to fit the card width instead of wrapping. */
+export function BigNumber({ children, className = "", color }: { children: ReactNode; className?: string; color?: string }) {
+  const box = useRef<HTMLDivElement>(null);
+  const text = useRef<HTMLSpanElement>(null);
+  const [k, setK] = useState(1);
+  useLayoutEffect(() => {
+    const b = box.current, t = text.current;
+    if (!b || !t) return;
+    const measure = () => {
+      const kk = t.scrollWidth > b.clientWidth ? b.clientWidth / t.scrollWidth : 1;
+      setK((x) => (Math.abs(x - kk) < 0.01 ? x : kk));
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(b);
+    ro.observe(t);
+    return () => ro.disconnect();
+  }, []);
+  return (
+    <motion.div variants={pop} ref={box} className={`w-full overflow-visible font-display font-bold leading-[0.95] tracking-tight ${className}`}>
+      <span ref={text} className="inline-block whitespace-nowrap" style={{ transform: `scale(${k})`, transformOrigin: "left center", color }}>
+        {children}
+      </span>
     </motion.div>
   );
 }

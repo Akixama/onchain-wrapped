@@ -132,3 +132,38 @@ export async function currentTokenBalances(wallet: string): Promise<Map<string, 
   }
   return out;
 }
+
+/**
+ * Zerion sometimes labels a Solana SELL as a plain "transfer out" (the SOL comes back by a route it
+ * doesn't count), and the reverse for buys. Re-read those transactions from the chain and replace
+ * the legs with the real balance changes. Swaps were exact in our audits, so only transfers are checked.
+ */
+export async function verifySolanaTransfers(
+  events: UnifiedEvent[],
+  isMoney: (t: TokenRef) => boolean,
+  max = Number(process.env.SOLANA_VERIFY_MAX ?? 400),
+): Promise<{ checked: number; fixed: number; skipped: number }> {
+  const suspects = events.filter(
+    (e) => e.chain === "solana" && ["transfer_in", "transfer_out", "other"].includes(e.type) && [...e.in, ...e.out].some((l) => !isMoney(l.token)),
+  );
+  let checked = 0, fixed = 0;
+  for (const e of suspects.slice(0, max)) {
+    let raw: RawTx | null = null;
+    try {
+      raw = await rpc<RawTx | null>("getTransaction", [e.txHash, { encoding: "jsonParsed", maxSupportedTransactionVersion: 1 }]);
+    } catch {
+      continue;
+    }
+    checked++;
+    const real = raw && normalizeRaw(e.wallet, raw);
+    if (!real || real.type !== "swap") continue;
+    // Keep token names from the provider; take amounts and direction from the chain.
+    const named = new Map([...e.in, ...e.out].map((l) => [l.token.address, l.token]));
+    const fix = (legs: Leg[]) => legs.map((l) => ({ ...l, token: named.get(l.token.address) ?? l.token, usd: null }));
+    e.in = fix(real.in);
+    e.out = fix(real.out);
+    e.type = "swap";
+    fixed++;
+  }
+  return { checked, fixed, skipped: Math.max(0, suspects.length - max) };
+}

@@ -19,8 +19,9 @@ export function enrichEvents(events: UnifiedEvent[], pb: PriceBook): UnifiedEven
     for (const l of [...e.in, ...e.out]) {
       const m = majorOf(l.token);
       const px = m ? pb.majorAt(m, e.timestamp) : null;
-      // Keep the provider's value when we have no better price; never overwrite with 0.
-      if (m && px) l.usd = l.amount * px;
+      // The provider's own USD value (priced at the exact transaction time) wins; otherwise use our
+      // hourly price. Never overwrite with 0.
+      if (m && px && !(l.usd && l.usd > 0)) l.usd = l.amount * px;
     }
 
     if (e.type === "swap" || e.type === "mint") {

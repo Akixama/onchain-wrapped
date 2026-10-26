@@ -17,6 +17,7 @@ export function usd(n: number, opts: { sign?: boolean; currency?: "USD" | "NGN";
   const v = cur === "NGN" ? n * (opts.ngnRate ?? 0) : n;
   const sym = cur === "NGN" ? "₦" : "$";
   const a = Math.abs(v);
+  if (a < 0.005) return `${sym}0`;
   const body =
     a >= 1e9 ? `${trim(a / 1e9)}B` : a >= 1e6 ? `${trim(a / 1e6)}M` : a >= 1e4 ? `${trim(a / 1e3)}k` : a >= 100 ? Math.round(a).toLocaleString("en-US") : a >= 1 ? a.toFixed(0) : a.toFixed(2);
   const sign = v < 0 ? "−" : opts.sign && v > 0 ? "+" : "";
@@ -25,6 +26,12 @@ export function usd(n: number, opts: { sign?: boolean; currency?: "USD" | "NGN";
 const trim = (x: number) => (x >= 100 ? Math.round(x).toString() : x >= 10 ? x.toFixed(1).replace(/\.0$/, "") : x.toFixed(2).replace(/0$/, "").replace(/\.0$/, ""));
 
 export const num = (n: number) => (n >= 1e4 ? `${trim(n / 1e3)}k` : n.toLocaleString("en-US"));
+
+/** Market cap from a token price when we know the supply, otherwise the plain price. */
+export function capOrPrice(p: number, supply: number | null | undefined): string {
+  if (!p) return "$0";
+  return supply ? usd(p * supply) : price(p);
+}
 
 /** Token prices: 3 significant digits, never scientific notation ($0.0000346). */
 export function price(p: number): string {
@@ -75,6 +82,10 @@ export function shareText(s: WrappedStats, card: CardId): string {
     case "rugs": return `Caught in ${s.rugs.count} rugs, dodged ${s.rugs.dodged}. ${tail}`;
     case "airdrops": return `${s.airdrops.count} airdrops claimed, ${usd(s.airdrops.valueUsd)} free money. ${tail}`;
     case "sleep": return `Most active trading hour: ${hourLabel(s.sleep.peakHourUtc)} UTC. Sleep is optional. ${tail}`;
+    case "chains": {
+      const parts = Object.entries(s.pnl.byChain).sort((a, b) => b[1]!.pnlUsd - a[1]!.pnlUsd).map(([c, v]) => `${CHAIN_NAME[c]} ${usd(v!.pnlUsd, { sign: true })}`);
+      return `Profit by chain: ${parts.join(", ")}. ${tail}`;
+    }
     case "roast": return s.roast ? `"${s.roast.text}" ${tail}` : tail;
     case "percentile": return `Top ${Math.max(1, Math.round(100 - (s.percentile.activity ?? 0)))}% most active of everyone who checked. ${tail}`;
     case "bridges": return `My bridge journey: ${s.bridges.journey.map((c) => CHAIN_NAME[c]).join(" → ")}. ${tail}`;
@@ -86,7 +97,7 @@ export const CARD_TITLE: Record<CardId, string> = {
   archetype: "Your era", overview: "The numbers", pnl: "The bottom line", best: "Best trade", worst: "Worst trade",
   roundTrip: "The round trip", paperHands: "Paper hands", diamondHands: "Diamond hands", counterfactual: "What if",
   gas: "Gas burned", rugs: "Rugs", airdrops: "Airdrops", sleep: "Sleep schedule", bridges: "Bridge journey",
-  percentile: "Ranking", roast: "The roast", summary: "Your Wrapped",
+  percentile: "Ranking", chains: "Profit by chain", roast: "The roast", summary: "Your Wrapped",
 };
 
 /** Per-card background: deep base + two glows. Shared by UI and OG images. */
@@ -107,5 +118,6 @@ export const CARD_THEME: Record<CardId, { bg: string; a: string; b: string; ink:
   bridges: { bg: "#03161C", a: "#14F195", b: "#3D7BFF", ink: "#EAFFF8" },
   percentile: { bg: "#151515", a: "#FACC15", b: "#F97316", ink: "#FFFBEA" },
   roast: { bg: "#1F0707", a: "#F97316", b: "#DC2626", ink: "#FFF4EC" },
+  chains: { bg: "#06141F", a: "#14F195", b: "#3D7BFF", ink: "#EEFBFF" },
   summary: { bg: "#0D0A1F", a: "#7C3AED", b: "#F472B6", ink: "#F6F2FF" },
 };

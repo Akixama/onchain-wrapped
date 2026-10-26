@@ -65,6 +65,13 @@ function content(s: WrappedStats, card: CardId): Content {
       return { kicker: "Airdrops", big: `${s.airdrops.count} claimed`, sub: `about ${m(s.airdrops.valueUsd)} of free money` };
     case "sleep":
       return { kicker: "Sleep schedule", lead: "Most active trading hour", big: `${hourLabel(s.sleep.peakHourUtc)} UTC`, sub: `${s.sleep.peakHourCount} trades at that hour` };
+    case "chains": {
+      const rows = Object.entries(s.pnl.byChain).sort((a, b) => b[1]!.pnlUsd - a[1]!.pnlUsd);
+      return {
+        kicker: "Profit by chain", big: m(s.pnl.totalUsd, true), bigColor: signColor(s.pnl.totalUsd),
+        chips: rows.map(([c, v]) => ({ label: `${CHAIN_NAME[c]} ${m(v!.pnlUsd, true)}`, color: CHAIN_COLOR[c] })),
+      };
+    }
     case "roast":
       return { kicker: "The roast", big: s.roast?.text ?? "", sub: undefined };
     case "percentile":

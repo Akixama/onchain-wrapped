@@ -25,6 +25,16 @@ export interface TradeCard {
   firstTs: number;
   lastTs: number;
   partialHistory: boolean;
+  /** The user's own buys/sells of this token (for chart markers). */
+  fills?: { t: number; side: "buy" | "sell"; price: number; usd: number }[];
+  /** Real candles (USD price) when available; supply turns prices into market cap. */
+  chart?: TradeChart;
+}
+
+export interface TradeChart {
+  candles: [number, number, number, number, number][]; // time, open, high, low, close
+  interval: string; // "5m" | "1h" | "1d"
+  supply: number | null;
 }
 
 export interface WrappedStats {
@@ -54,7 +64,11 @@ export interface WrappedStats {
     tokensTraded: number;
     activeDays: number;
   };
-  pnl: { realizedUsd: number; unrealizedUsd: number; totalUsd: number; winRate: number; wins: number; losses: number };
+  pnl: {
+    realizedUsd: number; unrealizedUsd: number; totalUsd: number; winRate: number; wins: number; losses: number;
+    /** Trading result per chain (memecoin/token positions, same rules as the total). */
+    byChain: Partial<Record<ChainId, { pnlUsd: number; trades: number; tokens: number }>>;
+  };
   bestTrade: TradeCard | null;
   worstTrade: TradeCard | null;
   roundTrip: (TradeCard & { peakGainUsd: number; peakTs: number; endedWithUsd: number }) | null;
@@ -75,7 +89,7 @@ export interface WrappedStats {
 
 export type CardId =
   | "archetype" | "overview" | "pnl" | "best" | "worst" | "roundTrip" | "paperHands" | "diamondHands"
-  | "counterfactual" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "roast" | "summary";
+  | "counterfactual" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "roast" | "summary";
 
 export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
   const t = s.overview.totalTrades;
@@ -95,6 +109,7 @@ export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
     ["sleep", t >= 10],
     ["bridges", s.bridges.hops.length > 0],
     ["percentile", s.percentile.activity !== null],
+    ["chains", Object.keys(s.pnl.byChain).length > 0],
     ["roast", !!s.roast?.text],
     ["summary", true],
   ];
@@ -287,7 +302,7 @@ export function computeStats(input: {
     },
     archetype: archetype(overview, winRate, closedish, input.truncated ? events[0]?.timestamp ?? input.fromTs : input.fromTs, now),
     overview,
-    pnl: { realizedUsd: r2(realized), unrealizedUsd: r2(unrealized), totalUsd: r2(realized + unrealized), winRate: r2(winRate), wins, losses },
+    pnl: { realizedUsd: r2(realized), unrealizedUsd: r2(unrealized), totalUsd: r2(realized + unrealized), winRate: r2(winRate), wins, losses, byChain: pnlByChain(traded, tradesByChain) },
     bestTrade: best ? card(best) : null,
     worstTrade: worst ? card(worst) : null,
     roundTrip: rt ? { ...card(rt), peakGainUsd: r2(rt.peakGain), peakTs: rt.peakGainTs, endedWithUsd: r2(rt.pnl) } : null,
@@ -398,4 +413,15 @@ function journeyPath(rs: { from: Venue; to: Venue; count: number; usd: number }[
   for (let prev; (prev = sorted.find((r) => r.to === path[0] && !path.includes(r.from))); ) path.unshift(prev.from);
   for (const r of sorted) for (const v of [r.from, r.to]) if (!path.includes(v)) path.push(v);
   return path.slice(0, 8);
+}
+
+function pnlByChain(traded: Position[], tradesByChain: Partial<Record<ChainId, number>>) {
+  const out: Partial<Record<ChainId, { pnlUsd: number; trades: number; tokens: number }>> = {};
+  for (const p of traded) {
+    const c = (out[p.chain] ??= { pnlUsd: 0, trades: tradesByChain[p.chain] ?? 0, tokens: 0 });
+    c.pnlUsd += p.pnl;
+    c.tokens++;
+  }
+  for (const c of Object.values(out)) c!.pnlUsd = r2(c!.pnlUsd);
+  return out;
 }
