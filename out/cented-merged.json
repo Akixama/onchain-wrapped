@@ -1,0 +1,220 @@
+{
+  "meta": {
+    "wallets": [
+      "CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o",
+      "n62QUDHwXWCnZyArC9KsP3PqeBzf7WwAMqRLtwUgR7z",
+      "6RE3SxJ7a1GrDEA3t1otHs1kiQyeGp6VdxYdo8y9s6NZ"
+    ],
+    "timeframe": "12m",
+    "fromTs": 1791921128,
+    "toTs": 1793044699,
+    "generatedAt": "2026-10-26T19:58:19.268Z",
+    "eventCount": 1000,
+    "truncated": true,
+    "txCap": 1000,
+    "spamFiltered": 89,
+    "note": "All USD figures are estimates from public price data. Coins with no price are valued at $0.",
+    "notes": [
+      "Filled 1 recent Solana transactions the data provider was missing.",
+      "Some very recent Solana activity for CyaE… couldn't be loaded.",
+      "44 tokens left your wallets by routes we can't trace (bots, other wallets). We count them as moved, not sold."
+    ],
+    "names": {}
+  },
+  "archetype": {
+    "title": "Solana sniper",
+    "tagline": "In and out before the candle closes.",
+    "style": "sniper"
+  },
+  "overview": {
+    "totalTrades": 142,
+    "volumeUsd": 9298.54,
+    "chainsUsed": [
+      "solana"
+    ],
+    "topChain": "solana",
+    "tradesByChain": {
+      "solana": 142
+    },
+    "tokensTraded": 45,
+    "activeDays": 14
+  },
+  "pnl": {
+    "realizedUsd": 377.56,
+    "unrealizedUsd": 0,
+    "totalUsd": 377.56,
+    "winRate": 0.56,
+    "wins": 5,
+    "losses": 4
+  },
+  "bestTrade": {
+    "symbol": "Kongo",
+    "name": "Kongo",
+    "chain": "solana",
+    "address": "2Q3jYQWWzkfZotYMyxzAFwfpFT5RhhBvGS3mk8P7PryF",
+    "pnlUsd": 326.07,
+    "costUsd": 232.45,
+    "proceedsUsd": 420.22,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.000009698290661271203,
+    "peakPrice": 0.00005539747881606894,
+    "avgExit": 0.00004328461622917363,
+    "firstTs": 1792945501,
+    "lastTs": 1793044699,
+    "partialHistory": false
+  },
+  "worstTrade": {
+    "symbol": "Familia",
+    "name": "Pump Familia",
+    "chain": "solana",
+    "address": "2kX3yeZSpqisFNwUiDEymg5SJwRpTQSh8CYpYv9rpump",
+    "pnlUsd": -144.75,
+    "costUsd": 301.81,
+    "proceedsUsd": 157.06,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.00000589325574477537,
+    "peakPrice": 0.00000589325574477537,
+    "avgExit": 0.000003066797014180546,
+    "firstTs": 1793041202,
+    "lastTs": 1793042370,
+    "partialHistory": false
+  },
+  "roundTrip": {
+    "symbol": "Ouinu",
+    "name": "Ouinu",
+    "chain": "solana",
+    "address": "6YyNWncaiF33VgF8jVkTozrpfzsdkgJM5ShVckBmpump",
+    "pnlUsd": -25.06,
+    "costUsd": 137.51,
+    "proceedsUsd": 112.46,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.000006707091292011236,
+    "peakPrice": 0.00000999563606767986,
+    "avgExit": 0.00000548500777200807,
+    "firstTs": 1792254845,
+    "lastTs": 1792254857,
+    "partialHistory": false,
+    "peakGainUsd": 67.42,
+    "peakTs": 1792254846,
+    "endedWithUsd": -25.06
+  },
+  "paperHands": {
+    "symbol": "Kongo",
+    "name": "Kongo",
+    "chain": "solana",
+    "address": "2Q3jYQWWzkfZotYMyxzAFwfpFT5RhhBvGS3mk8P7PryF",
+    "pnlUsd": 326.07,
+    "costUsd": 232.45,
+    "proceedsUsd": 420.22,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.000009698290661271203,
+    "peakPrice": 0.00005539747881606894,
+    "avgExit": 0.00004328461622917363,
+    "firstTs": 1792945501,
+    "lastTs": 1793044699,
+    "partialHistory": false,
+    "soldAt": 0.000034579180423234745,
+    "soldTs": 1792945671,
+    "laterPeak": 0.00005539747881606894,
+    "missedUsd": 57.75
+  },
+  "diamondHands": null,
+  "counterfactual": {
+    "major": "SOL",
+    "tradingPnlUsd": 377.56,
+    "holdPnlUsd": -29.52,
+    "justHeldDiffUsd": -407.08,
+    "verdict": "trading_won"
+  },
+  "gas": {
+    "totalUsd": 3.28,
+    "byChain": {
+      "solana": 2.89
+    },
+    "txCount": 271,
+    "priciestTxUsd": 0.11
+  },
+  "rugs": {
+    "count": 4,
+    "lostUsd": -187.15,
+    "tokens": [
+      "Familia",
+      "Ouinu",
+      "Pißwasser",
+      "smol"
+    ],
+    "dodged": 17,
+    "dodgedTokens": [
+      "Kongo",
+      "BILLIONS",
+      "WRHND",
+      "PSYOP",
+      "DS",
+      "PEPT",
+      "pumpCJ",
+      "uni",
+      "XBT",
+      "GARRY"
+    ]
+  },
+  "airdrops": {
+    "count": 0,
+    "valueUsd": 0,
+    "tokens": []
+  },
+  "sleep": {
+    "hourHistogramUtc": [
+      33,
+      0,
+      3,
+      2,
+      18,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      5,
+      1,
+      3,
+      20,
+      7,
+      3,
+      6,
+      11,
+      18,
+      6,
+      4
+    ],
+    "peakHourUtc": 0,
+    "peakHourCount": 33,
+    "topMinuteUtc": "00:33",
+    "topMinuteCount": 21
+  },
+  "bridges": {
+    "hops": [],
+    "journey": [],
+    "routes": [],
+    "totalUsd": 0
+  },
+  "percentile": {
+    "activity": null
+  },
+  "cards": [
+    "archetype",
+    "overview",
+    "pnl",
+    "best",
+    "worst",
+    "roundTrip",
+    "paperHands",
+    "counterfactual",
+    "gas",
+    "rugs",
+    "sleep",
+    "summary"
+  ]
+}

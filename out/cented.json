@@ -1,0 +1,223 @@
+{
+  "meta": {
+    "wallets": [
+      "CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o"
+    ],
+    "timeframe": "12m",
+    "fromTs": 1761505666,
+    "toTs": 1793041693,
+    "generatedAt": "2026-10-26T19:08:13.477Z",
+    "eventCount": 997,
+    "truncated": true,
+    "txCap": 1000,
+    "spamFiltered": 334,
+    "note": "All USD figures are estimates from public price data. Coins with no price are valued at $0."
+  },
+  "archetype": {
+    "title": "Solana sniper",
+    "tagline": "In and out before the candle closes.",
+    "style": "sniper"
+  },
+  "overview": {
+    "totalTrades": 383,
+    "volumeUsd": 55985.63,
+    "chainsUsed": [
+      "solana"
+    ],
+    "topChain": "solana",
+    "tradesByChain": {
+      "solana": 383
+    },
+    "tokensTraded": 81,
+    "activeDays": 5
+  },
+  "pnl": {
+    "realizedUsd": -216.78,
+    "unrealizedUsd": -762.14,
+    "totalUsd": -978.91,
+    "winRate": 0.36,
+    "wins": 10,
+    "losses": 18
+  },
+  "bestTrade": {
+    "symbol": "TRENCHES",
+    "name": "Trenches Tokens",
+    "icon": "https://cdn.zerion.io/4caa6eae-dd3a-4bd2-9aaa-afeb750c046c.png",
+    "chain": "solana",
+    "address": "3NMQuwg7WGqzqjqwUnR3Ciwo3AoVE39yYQnTqK49pump",
+    "pnlUsd": 1445.46,
+    "costUsd": 1327.22,
+    "proceedsUsd": 2772.68,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.00008663491237081857,
+    "peakPrice": 0.000234093736541378,
+    "avgExit": 0.00018098822431722022,
+    "firstTs": 1781815311,
+    "lastTs": 1781817243,
+    "partialHistory": false
+  },
+  "worstTrade": {
+    "symbol": "ASTEROID",
+    "name": "Asteroid The Space Shiba Inu",
+    "chain": "solana",
+    "address": "F2GLrmimZgFAqakEVkcfdWGnnBgn9Sfj3xN7VmDwBAGS",
+    "pnlUsd": -1199.67,
+    "costUsd": 2508.46,
+    "proceedsUsd": 1308.79,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.0006198561448643811,
+    "peakPrice": 0.0010796061531713969,
+    "avgExit": 0.0003234099648418775,
+    "firstTs": 1781818007,
+    "lastTs": 1781818404,
+    "partialHistory": false
+  },
+  "roundTrip": {
+    "symbol": "ASTEROID",
+    "name": "Asteroid The Space Shiba Inu",
+    "chain": "solana",
+    "address": "F2GLrmimZgFAqakEVkcfdWGnnBgn9Sfj3xN7VmDwBAGS",
+    "pnlUsd": -1199.67,
+    "costUsd": 2508.46,
+    "proceedsUsd": 1308.79,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.0006198561448643811,
+    "peakPrice": 0.0010796061531713969,
+    "avgExit": 0.0003234099648418775,
+    "firstTs": 1781818007,
+    "lastTs": 1781818404,
+    "partialHistory": false,
+    "peakGainUsd": 164.16,
+    "peakTs": 1781818011,
+    "endedWithUsd": -1199.67
+  },
+  "paperHands": {
+    "symbol": "VOYAGER",
+    "name": "the sprite voyager",
+    "icon": "https://cdn.zerion.io/5e14a276-1268-4fe9-910f-5ccc7651415b.png",
+    "chain": "solana",
+    "address": "qvm1XFQAUMYg3UzhoNt9AxAhrbvph93jnYDguMNg9Yc",
+    "pnlUsd": 19.14,
+    "costUsd": 320.09,
+    "proceedsUsd": 2329.18,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.0000033373588833274062,
+    "peakPrice": 0.00012331839489058632,
+    "avgExit": 0.00004725339012634575,
+    "firstTs": 1781823912,
+    "lastTs": 1781824915,
+    "partialHistory": true,
+    "soldAt": 0.00003064042472622677,
+    "soldTs": 1781824125,
+    "laterPeak": 0.00012331839489058632,
+    "missedUsd": 1143.27
+  },
+  "diamondHands": {
+    "symbol": "ASTEROID",
+    "name": "Asteroid The Space Shiba Inu",
+    "chain": "solana",
+    "address": "EgSAgEiKUcLgPSoGWRoQmpmCVhy9hpPD9dNqrijKBAGS",
+    "pnlUsd": 108.35,
+    "costUsd": 241.13,
+    "proceedsUsd": 349.48,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.00009294093026202696,
+    "peakPrice": 0.000245157058381876,
+    "avgExit": 0.00013470217021414177,
+    "firstTs": 1781817985,
+    "lastTs": 1781818001,
+    "partialHistory": false,
+    "daysHeld": 130,
+    "stillHolding": true
+  },
+  "counterfactual": {
+    "major": "SOL",
+    "tradingPnlUsd": -978.91,
+    "holdPnlUsd": 6056.67,
+    "justHeldDiffUsd": 7035.58,
+    "verdict": "should_have_held"
+  },
+  "gas": {
+    "totalUsd": 9.02,
+    "byChain": {
+      "solana": 8.16
+    },
+    "txCount": 577,
+    "priciestTxUsd": 0.04
+  },
+  "rugs": {
+    "count": 18,
+    "lostUsd": -3906.44,
+    "tokens": [
+      "ASTEROID",
+      "BARRON",
+      "COMOS",
+      "DORAEMON",
+      "ZEC",
+      "Foid",
+      "DAWN",
+      "Asteroid",
+      "TOPO",
+      "VOYAGER"
+    ],
+    "dodged": 56,
+    "dodgedTokens": [
+      "TRENCHES",
+      "1B",
+      "coin",
+      "NeGa",
+      "ASTEROID",
+      "GREG",
+      "ENIGMA",
+      "VOYAGER",
+      "BARRON",
+      "ALON"
+    ]
+  },
+  "airdrops": {
+    "count": 0,
+    "valueUsd": 0,
+    "tokens": []
+  },
+  "sleep": {
+    "hourHistogramUtc": [
+      65,
+      5,
+      0,
+      0,
+      3,
+      7,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      5,
+      0,
+      0,
+      0,
+      0,
+      37,
+      109,
+      86,
+      65
+    ],
+    "peakHourUtc": 21,
+    "peakHourCount": 109,
+    "topMinuteUtc": "21:13",
+    "topMinuteCount": 11
+  },
+  "bridges": {
+    "hops": [],
+    "journey": [],
+    "routes": [],
+    "totalUsd": 0
+  },
+  "percentile": {
+    "activity": null
+  }
+}

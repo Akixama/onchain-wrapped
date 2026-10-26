@@ -1,0 +1,142 @@
+{
+  "meta": {
+    "wallets": [
+      "0x9c5083dd4838e120dbeac44c052179692aa5dac5"
+    ],
+    "timeframe": "12m",
+    "fromTs": 1761505635,
+    "toTs": 1793041665,
+    "generatedAt": "2026-10-26T19:07:45.043Z",
+    "eventCount": 751,
+    "truncated": false,
+    "txCap": 1000,
+    "spamFiltered": 88,
+    "note": "All USD figures are estimates from public price data. Coins with no price are valued at $0."
+  },
+  "archetype": {
+    "title": "Ethereum swing trader",
+    "tagline": "Waits for the setup. Sometimes.",
+    "style": "swing trader"
+  },
+  "overview": {
+    "totalTrades": 123,
+    "volumeUsd": 1481165.01,
+    "chainsUsed": [
+      "ethereum",
+      "arbitrum",
+      "bsc",
+      "base"
+    ],
+    "topChain": "ethereum",
+    "tradesByChain": {
+      "ethereum": 121,
+      "arbitrum": 1,
+      "base": 1
+    },
+    "tokensTraded": 13,
+    "activeDays": 40
+  },
+  "pnl": {
+    "realizedUsd": 2836.65,
+    "unrealizedUsd": -0.58,
+    "totalUsd": 2836.07,
+    "winRate": 0,
+    "wins": 0,
+    "losses": 0
+  },
+  "bestTrade": null,
+  "worstTrade": null,
+  "roundTrip": null,
+  "paperHands": {
+    "symbol": "CRV",
+    "name": "Curve DAO Token",
+    "icon": "https://cdn.zerion.io/0xd533a949740bb3306d119cc777fa900ba034cd52.png",
+    "chain": "ethereum",
+    "address": "0xd533a949740bb3306d119cc777fa900ba034cd52",
+    "pnlUsd": 2836.65,
+    "costUsd": 0,
+    "proceedsUsd": 74897.93,
+    "holdingValueUsd": 5041.62,
+    "avgEntry": 0,
+    "peakPrice": 0.447704047810894,
+    "avgExit": 0.25914994539388014,
+    "firstTs": 1766530247,
+    "lastTs": 1793004743,
+    "partialHistory": true,
+    "soldAt": 0.22386474825800112,
+    "soldTs": 1786189127,
+    "laterPeak": 0.39121574472012566,
+    "missedUsd": 7134.8
+  },
+  "diamondHands": null,
+  "counterfactual": {
+    "major": "ETH",
+    "tradingPnlUsd": -0.58,
+    "holdPnlUsd": -0.14,
+    "justHeldDiffUsd": 0.44,
+    "verdict": "should_have_held"
+  },
+  "gas": {
+    "totalUsd": 342.85,
+    "byChain": {
+      "ethereum": 338.71,
+      "arbitrum": 3.96,
+      "base": 0
+    },
+    "txCount": 590,
+    "priciestTxUsd": 8.54
+  },
+  "rugs": {
+    "count": 0,
+    "lostUsd": 0,
+    "tokens": [],
+    "dodged": 0,
+    "dodgedTokens": []
+  },
+  "airdrops": {
+    "count": 0,
+    "valueUsd": 0,
+    "tokens": []
+  },
+  "sleep": {
+    "hourHistogramUtc": [
+      4,
+      14,
+      7,
+      15,
+      3,
+      17,
+      4,
+      5,
+      2,
+      0,
+      0,
+      5,
+      0,
+      8,
+      6,
+      5,
+      0,
+      7,
+      1,
+      4,
+      1,
+      0,
+      5,
+      10
+    ],
+    "peakHourUtc": 5,
+    "peakHourCount": 17,
+    "topMinuteUtc": "01:12",
+    "topMinuteCount": 3
+  },
+  "bridges": {
+    "hops": [],
+    "journey": [],
+    "routes": [],
+    "totalUsd": 0
+  },
+  "percentile": {
+    "activity": null
+  }
+}

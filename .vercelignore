@@ -1,0 +1,9 @@
+.data
+.cache
+out
+usage.log
+.env*
+!.env.example
+scripts
+node_modules
+.next

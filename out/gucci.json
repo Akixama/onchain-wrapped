@@ -1,0 +1,210 @@
+{
+  "meta": {
+    "wallets": [
+      "YvEsBWpHK5PJ6Q8m4YrocwKeWys1NG67pbgi73UPnuX"
+    ],
+    "timeframe": "12m",
+    "fromTs": 1761505522,
+    "toTs": 1793041568,
+    "generatedAt": "2026-10-26T19:06:08.306Z",
+    "eventCount": 1000,
+    "truncated": true,
+    "txCap": 1000,
+    "spamFiltered": 231,
+    "note": "All USD figures are estimates from public price data. Coins with no price are valued at $0."
+  },
+  "archetype": {
+    "title": "Solana sniper",
+    "tagline": "In and out before the candle closes.",
+    "style": "sniper"
+  },
+  "overview": {
+    "totalTrades": 410,
+    "volumeUsd": 67859.22,
+    "chainsUsed": [
+      "solana"
+    ],
+    "topChain": "solana",
+    "tradesByChain": {
+      "solana": 410
+    },
+    "tokensTraded": 139,
+    "activeDays": 11
+  },
+  "pnl": {
+    "realizedUsd": 2515.65,
+    "unrealizedUsd": 180.5,
+    "totalUsd": 2696.15,
+    "winRate": 0.51,
+    "wins": 47,
+    "losses": 45
+  },
+  "bestTrade": {
+    "symbol": "SCS",
+    "name": "Squad Champion Series",
+    "icon": "https://cdn.zerion.io/4637d4e1-a8bd-4bb6-8e7d-97a38877d3ae.png",
+    "chain": "solana",
+    "address": "4U6QvbLXyTpJTiU9HbgaN9yGa6CQ7gXFnWL1HFaWpump",
+    "pnlUsd": 1267.49,
+    "costUsd": 208,
+    "proceedsUsd": 1475.49,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.00003399492315301383,
+    "peakPrice": 0.0002753098977440074,
+    "avgExit": 0.00024115276911921627,
+    "firstTs": 1792970094,
+    "lastTs": 1792972649,
+    "partialHistory": false
+  },
+  "worstTrade": {
+    "symbol": "BBC",
+    "name": "Black Bull Cock",
+    "icon": "https://cdn.zerion.io/da0a0319-1b0b-463e-aaea-111ba6d7e6fa.png",
+    "chain": "solana",
+    "address": "8RF5i3GuHpaPGHkJ7tH2L7wANj2ASprq2VEXQse3pump",
+    "pnlUsd": -965.04,
+    "costUsd": 6644.34,
+    "proceedsUsd": 5679.3,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.00000956287960054501,
+    "peakPrice": 0.00000956287960054501,
+    "avgExit": 0.00000817394713767068,
+    "firstTs": 1791880992,
+    "lastTs": 1791881192,
+    "partialHistory": false
+  },
+  "roundTrip": {
+    "symbol": "PEPT",
+    "name": "Rex Pepetide",
+    "chain": "solana",
+    "address": "FRhUrfXH8HcJv1thfHfE4jsyzgsD6EXzTFNSMkP3pump",
+    "pnlUsd": -127.43,
+    "costUsd": 545.33,
+    "proceedsUsd": 365.87,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.000014265812933890622,
+    "peakPrice": 0.00004719464360643141,
+    "avgExit": 0.000013679253011066481,
+    "firstTs": 1792017333,
+    "lastTs": 1792017793,
+    "partialHistory": false,
+    "peakGainUsd": 768.98,
+    "peakTs": 1792017705,
+    "endedWithUsd": -127.43
+  },
+  "paperHands": {
+    "symbol": "ARROW",
+    "name": "Arrow",
+    "chain": "solana",
+    "address": "5QLhJag4UGsLod7H2Ci9HmgtMprgvG574Bv93v1NhDvq",
+    "pnlUsd": 756.44,
+    "costUsd": 290.18,
+    "proceedsUsd": 833.34,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.0000052232351687604635,
+    "peakPrice": 0.00007423842958906695,
+    "avgExit": 0.00005659635660429067,
+    "firstTs": 1793024534,
+    "lastTs": 1793024747,
+    "partialHistory": false,
+    "soldAt": 0.00006749888618321978,
+    "soldTs": 1793024747,
+    "laterPeak": 0.000132,
+    "missedUsd": 356.6
+  },
+  "diamondHands": {
+    "symbol": "GROKOWEEN",
+    "name": "Grokoween",
+    "chain": "solana",
+    "address": "AZQDSo5dQuPgNDcbQxSDero4D8J62gUhE7Ndb34epump",
+    "pnlUsd": 126.37,
+    "costUsd": 27.44,
+    "proceedsUsd": 153.81,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.0000011168075525658736,
+    "peakPrice": 0.000006259832382598322,
+    "avgExit": 0.000006259832382598322,
+    "firstTs": 1791843258,
+    "lastTs": 1791843273,
+    "partialHistory": false,
+    "daysHeld": 14,
+    "stillHolding": true
+  },
+  "counterfactual": {
+    "major": "SOL",
+    "tradingPnlUsd": 2696.15,
+    "holdPnlUsd": -1306.74,
+    "justHeldDiffUsd": -4002.89,
+    "verdict": "trading_won"
+  },
+  "gas": {
+    "totalUsd": 235.8,
+    "byChain": {
+      "solana": 235.74
+    },
+    "txCount": 552,
+    "priciestTxUsd": 228.28
+  },
+  "rugs": {
+    "count": 92,
+    "lostUsd": -1830.93,
+    "tokens": [
+      "GROKOWEEN",
+      "Gerard",
+      "si.gov",
+      "Nietzschinu",
+      "MEPHE",
+      "YTCAT",
+      "Ginny",
+      "JELLYFISH",
+      "Altai",
+      "MIKAN"
+    ]
+  },
+  "airdrops": {
+    "count": 0,
+    "valueUsd": 0,
+    "tokens": []
+  },
+  "sleep": {
+    "hourHistogramUtc": [
+      15,
+      36,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      7,
+      4,
+      4,
+      0,
+      16,
+      9,
+      30,
+      22,
+      54,
+      30,
+      40,
+      29,
+      14,
+      32,
+      28,
+      40
+    ],
+    "peakHourUtc": 16,
+    "peakHourCount": 54,
+    "topMinuteUtc": "01:06",
+    "topMinuteCount": 21
+  },
+  "bridges": {
+    "hops": [],
+    "journey": [],
+    "routes": [],
+    "totalUsd": 0
+  },
+  "percentile": {
+    "activity": null
+  }
+}

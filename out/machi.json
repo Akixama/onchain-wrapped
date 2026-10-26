@@ -1,0 +1,548 @@
+{
+  "meta": {
+    "wallets": [
+      "0x020ca66c30bec2c4fe3861a94e4db4a498a35872"
+    ],
+    "timeframe": "12m",
+    "fromTs": 1761505376,
+    "toTs": 1793041424,
+    "generatedAt": "2026-10-26T19:03:44.340Z",
+    "eventCount": 1000,
+    "truncated": true,
+    "txCap": 1000,
+    "spamFiltered": 188,
+    "note": "All USD figures are estimates from public price data. Coins with no price are valued at $0."
+  },
+  "archetype": {
+    "title": "Ethereum swing trader",
+    "tagline": "Waits for the setup. Sometimes.",
+    "style": "swing trader"
+  },
+  "overview": {
+    "totalTrades": 81,
+    "volumeUsd": 1294050.22,
+    "chainsUsed": [
+      "arbitrum",
+      "ethereum",
+      "base",
+      "bsc",
+      "optimism"
+    ],
+    "topChain": "ethereum",
+    "tradesByChain": {
+      "ethereum": 69,
+      "base": 6,
+      "bsc": 4,
+      "arbitrum": 2
+    },
+    "tokensTraded": 15,
+    "activeDays": 51
+  },
+  "pnl": {
+    "realizedUsd": -3335.43,
+    "unrealizedUsd": 0,
+    "totalUsd": -3335.43,
+    "winRate": 0,
+    "wins": 0,
+    "losses": 1
+  },
+  "bestTrade": null,
+  "worstTrade": {
+    "symbol": "APESTR",
+    "name": "ApeStrategy",
+    "icon": "https://cdn.zerion.io/26045c19-0454-4cff-b157-e725c6043534.png",
+    "chain": "ethereum",
+    "address": "0x9ebf91b8d6ff68aa05545301a3d0984eaee54a03",
+    "pnlUsd": -3335.43,
+    "costUsd": 12546.67,
+    "proceedsUsd": 71599.33,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.0027748418856469457,
+    "peakPrice": 0.007765068522639608,
+    "avgExit": 0.0013286740761141473,
+    "firstTs": 1770401363,
+    "lastTs": 1779538919,
+    "partialHistory": true
+  },
+  "roundTrip": {
+    "symbol": "APESTR",
+    "name": "ApeStrategy",
+    "icon": "https://cdn.zerion.io/26045c19-0454-4cff-b157-e725c6043534.png",
+    "chain": "ethereum",
+    "address": "0x9ebf91b8d6ff68aa05545301a3d0984eaee54a03",
+    "pnlUsd": -3335.43,
+    "costUsd": 12546.67,
+    "proceedsUsd": 71599.33,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.0027748418856469457,
+    "peakPrice": 0.007765068522639608,
+    "avgExit": 0.0013286740761141473,
+    "firstTs": 1770401363,
+    "lastTs": 1779538919,
+    "partialHistory": true,
+    "peakGainUsd": 4139.94,
+    "peakTs": 1777143527,
+    "endedWithUsd": -3335.43
+  },
+  "paperHands": {
+    "symbol": "APESTR",
+    "name": "ApeStrategy",
+    "icon": "https://cdn.zerion.io/26045c19-0454-4cff-b157-e725c6043534.png",
+    "chain": "ethereum",
+    "address": "0x9ebf91b8d6ff68aa05545301a3d0984eaee54a03",
+    "pnlUsd": -3335.43,
+    "costUsd": 12546.67,
+    "proceedsUsd": 71599.33,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.0027748418856469457,
+    "peakPrice": 0.007765068522639608,
+    "avgExit": 0.0013286740761141473,
+    "firstTs": 1770401363,
+    "lastTs": 1779538919,
+    "partialHistory": true,
+    "soldAt": 0.0009837207056505037,
+    "soldTs": 1770927755,
+    "laterPeak": 0.007765068522639608,
+    "missedUsd": 1654.18
+  },
+  "diamondHands": null,
+  "counterfactual": {
+    "major": "ETH",
+    "tradingPnlUsd": -3335.43,
+    "holdPnlUsd": 161.76,
+    "justHeldDiffUsd": 3497.19,
+    "verdict": "should_have_held"
+  },
+  "gas": {
+    "totalUsd": 126.59,
+    "byChain": {
+      "arbitrum": 1.33,
+      "ethereum": 125.59,
+      "base": 0.01,
+      "bsc": 0.04,
+      "optimism": 0
+    },
+    "txCount": 599,
+    "priciestTxUsd": 11.21
+  },
+  "rugs": {
+    "count": 1,
+    "lostUsd": -3335.43,
+    "tokens": [
+      "APESTR"
+    ]
+  },
+  "airdrops": {
+    "count": 0,
+    "valueUsd": 0,
+    "tokens": []
+  },
+  "sleep": {
+    "hourHistogramUtc": [
+      6,
+      3,
+      4,
+      2,
+      2,
+      2,
+      2,
+      7,
+      4,
+      3,
+      1,
+      1,
+      4,
+      1,
+      4,
+      2,
+      10,
+      4,
+      6,
+      2,
+      4,
+      2,
+      1,
+      4
+    ],
+    "peakHourUtc": 16,
+    "peakHourCount": 10,
+    "topMinuteUtc": "23:52",
+    "topMinuteCount": 2
+  },
+  "bridges": {
+    "hops": [
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780284299,
+        "usd": 35046.638437,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780344083,
+        "usd": 18154.581179611563,
+        "asset": "ETH"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780417235,
+        "usd": 45772.154782,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780418351,
+        "usd": 32029.254413,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780505195,
+        "usd": 31472.615718,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780521083,
+        "usd": 15554.567643,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780524239,
+        "usd": 14205.554697,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780535147,
+        "usd": 13571.90498,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780576235,
+        "usd": 14642.930576,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780641251,
+        "usd": 14529.924862,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780679315,
+        "usd": 30858.859426,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780686011,
+        "usd": 24191.817527,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780706471,
+        "usd": 17352.98361,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780863371,
+        "usd": 16806.670216,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1780994363,
+        "usd": 14208.576142,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1781022899,
+        "usd": 39989.831395,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1781084423,
+        "usd": 15198.28939,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1781376095,
+        "usd": 14345.268752,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1781743679,
+        "usd": 20314.411772,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1781802647,
+        "usd": 16649.094852,
+        "asset": "USDC"
+      },
+      {
+        "from": "arbitrum",
+        "to": "ethereum",
+        "ts": 1781803859,
+        "usd": 16639.14,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1781804339,
+        "usd": 18329.415504,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782224915,
+        "usd": 34715.840975,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782272267,
+        "usd": 16934.140599,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782317807,
+        "usd": 13739.838685,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782324143,
+        "usd": 12662.54741,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782381071,
+        "usd": 14772.835112,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782399515,
+        "usd": 12787.618844,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782478043,
+        "usd": 13449.253609,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782554219,
+        "usd": 29691.549903,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782924527,
+        "usd": 14421.61527,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782927491,
+        "usd": 15054.528296,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1782978107,
+        "usd": 14330.129965,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1783193567,
+        "usd": 17658.797286,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1783594475,
+        "usd": 15042.979021,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1783956539,
+        "usd": 19307.910637,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1784018723,
+        "usd": 68861.704808,
+        "asset": "USDC"
+      },
+      {
+        "from": "arbitrum",
+        "to": "ethereum",
+        "ts": 1784155772,
+        "usd": 6100,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1784830415,
+        "usd": 28750,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1784854031,
+        "usd": 15841.506206,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1784902367,
+        "usd": 5840.792226,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1785610787,
+        "usd": 10799.926205,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1785635039,
+        "usd": 15451.661926,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1785639215,
+        "usd": 18502.789615,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1785787499,
+        "usd": 17528.094229,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1785857651,
+        "usd": 16551.956181,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1786199819,
+        "usd": 18365.585832,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1786607675,
+        "usd": 15568.181018,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1792314899,
+        "usd": 50000,
+        "asset": "USDC"
+      },
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "ts": 1792330799,
+        "usd": 50000,
+        "asset": "USDC"
+      }
+    ],
+    "journey": [
+      "ethereum",
+      "arbitrum"
+    ],
+    "routes": [
+      {
+        "from": "ethereum",
+        "to": "arbitrum",
+        "count": 58,
+        "usd": 2739506.66
+      },
+      {
+        "from": "arbitrum",
+        "to": "ethereum",
+        "count": 2,
+        "usd": 22739.14
+      }
+    ],
+    "totalUsd": 2762245.8
+  },
+  "percentile": {
+    "activity": null
+  }
+}

@@ -1,0 +1,164 @@
+import type { ChainId, UnifiedEvent } from "../core/types";
+import { tokenKey } from "../core/types";
+import { MAJOR_LLAMA_ID, type Major, isMoney } from "../core/assets";
+import { fetchJson } from "../infra/http";
+
+export interface PricePoint { ts: number; price: number }
+
+/** Everything the engines need to know about prices. Built once per run; fakeable in tests. */
+export interface PriceBook {
+  majorAt(m: Major, ts: number): number | null;
+  majorNow(m: Major): number | null;
+  /** Daily-ish historical series for a token (may be empty for obscure memecoins). */
+  series(key: string): PricePoint[];
+  /** Current price; 0 = dead coin, undefined = unknown (treated as 0 by PnL). */
+  current(key: string): number | undefined;
+  /** Best pool liquidity in USD, when known (rug detection). */
+  liquidity(key: string): number | undefined;
+}
+
+const LLAMA_CHAIN: Record<ChainId, string> = {
+  solana: "solana",
+  ethereum: "ethereum",
+  base: "base",
+  arbitrum: "arbitrum",
+  bsc: "bsc",
+  polygon: "polygon",
+  optimism: "optimism",
+};
+const DEXSCREENER_CHAIN: Record<ChainId, string> = {
+  solana: "solana",
+  ethereum: "ethereum",
+  base: "base",
+  arbitrum: "arbitrum",
+  bsc: "bsc",
+  polygon: "polygon",
+  optimism: "optimism",
+};
+
+const llamaId = (key: string) => {
+  const [chain, addr] = key.split(":") as [ChainId, string];
+  return `${LLAMA_CHAIN[chain]}:${addr}`;
+};
+
+function interp(series: PricePoint[], ts: number): number | null {
+  if (!series.length) return null;
+  if (ts <= series[0].ts) return series[0].price;
+  if (ts >= series[series.length - 1].ts) return series[series.length - 1].price;
+  let lo = 0, hi = series.length - 1;
+  while (hi - lo > 1) {
+    const mid = (lo + hi) >> 1;
+    if (series[mid].ts <= ts) lo = mid; else hi = mid;
+  }
+  const a = series[lo], b = series[hi];
+  return a.price + ((b.price - a.price) * (ts - a.ts)) / (b.ts - a.ts || 1);
+}
+
+async function llamaChart(ids: string[], startTs: number): Promise<Record<string, PricePoint[]>> {
+  const out: Record<string, PricePoint[]> = {};
+  const days = Math.max(2, Math.ceil((Date.now() / 1000 - startTs) / 86400) + 1);
+  // DefiLlama caps a request at 500 points total (coins x span), so: one coin per call, coarser period for long ranges.
+  const periodDays = Math.ceil(days / 480);
+  const period = `${periodDays}d`;
+  const span = Math.ceil(days / periodDays);
+  for (const id of ids) {
+    const batch = [id];
+    try {
+      const r = await fetchJson<{ coins: Record<string, { prices: { timestamp: number; price: number }[] }> }>(
+        "defillama",
+        `https://coins.llama.fi/chart/${batch.join(",")}?start=${startTs}&span=${span}&period=${period}`,
+        { endpoint: "chart" },
+      );
+      for (const [id, v] of Object.entries(r.coins ?? {})) out[id] = v.prices.map((p) => ({ ts: p.timestamp, price: p.price }));
+    } catch {
+      /* missing coverage is normal for memecoins */
+    }
+  }
+  return out;
+}
+
+async function llamaCurrent(ids: string[]): Promise<Record<string, number>> {
+  const out: Record<string, number> = {};
+  for (let i = 0; i < ids.length; i += 60) {
+    try {
+      const r = await fetchJson<{ coins: Record<string, { price: number }> }>(
+        "defillama",
+        `https://coins.llama.fi/prices/current/${ids.slice(i, i + 60).join(",")}`,
+        { endpoint: "prices/current" },
+      );
+      for (const [id, v] of Object.entries(r.coins ?? {})) out[id] = v.price;
+    } catch {}
+  }
+  return out;
+}
+
+async function dexscreener(keys: string[]): Promise<Record<string, { price: number; liq: number }>> {
+  const out: Record<string, { price: number; liq: number }> = {};
+  const byChain = new Map<ChainId, string[]>();
+  for (const k of keys) {
+    const [c, a] = k.split(":") as [ChainId, string];
+    byChain.set(c, [...(byChain.get(c) ?? []), a]);
+  }
+  for (const [chain, addrs] of byChain) {
+    for (let i = 0; i < addrs.length; i += 30) {
+      try {
+        const pairs = await fetchJson<
+          { baseToken: { address: string }; priceUsd?: string; liquidity?: { usd?: number } }[]
+        >("dexscreener", `https://api.dexscreener.com/tokens/v1/${DEXSCREENER_CHAIN[chain]}/${addrs.slice(i, i + 30).join(",")}`, {
+          endpoint: "tokens",
+        });
+        for (const p of pairs ?? []) {
+          const addr = chain === "solana" ? p.baseToken.address : p.baseToken.address.toLowerCase();
+          const k = `${chain}:${addr}`;
+          const liq = p.liquidity?.usd ?? 0;
+          if (!out[k] || liq > out[k].liq) out[k] = { price: Number(p.priceUsd ?? 0), liq };
+        }
+      } catch {}
+    }
+  }
+  return out;
+}
+
+/**
+ * Build the price book for a run.
+ * - Majors (SOL/ETH/BNB/POL): DefiLlama daily chart -> reliable historical pricing.
+ * - Tokens: DefiLlama chart for the top `maxSeriesTokens` by volume (peak / paper-hands need history),
+ *   current price from provider -> DefiLlama -> DexScreener. No price anywhere = dead coin = 0.
+ */
+export async function buildPriceBook(
+  events: UnifiedEvent[],
+  sinceTs: number,
+  providerCurrent: Record<string, number>,
+  maxSeriesTokens = 25,
+): Promise<PriceBook> {
+  const start = Math.min(sinceTs || Infinity, ...events.map((e) => e.timestamp)) - 86400;
+  const majors = Object.entries(MAJOR_LLAMA_ID) as [Exclude<Major, "USD">, string][];
+  const majorCharts = await llamaChart(majors.map(([, id]) => id), start);
+  const majorCur = await llamaCurrent(majors.map(([, id]) => id));
+
+  // Rank tokens by how much the user moved, so we spend history lookups on the ones that matter.
+  const vol = new Map<string, number>();
+  for (const e of events)
+    for (const l of [...e.in, ...e.out]) {
+      if (isMoney(l.token)) continue;
+      const k = tokenKey(l.token);
+      vol.set(k, (vol.get(k) ?? 0) + (l.usd ?? 0) + 1e-9);
+    }
+  const tokens = [...vol.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+
+  const seriesRaw = await llamaChart(tokens.slice(0, maxSeriesTokens).map(llamaId), start);
+  const curLlama = await llamaCurrent(tokens.map(llamaId));
+  const needDex = tokens.filter((k) => providerCurrent[k] === undefined && curLlama[llamaId(k)] === undefined);
+  // Liquidity is useful for rug detection on everything, but only query DexScreener for what we need + top tokens.
+  const dex = await dexscreener([...new Set([...needDex, ...tokens.slice(0, maxSeriesTokens)])]);
+
+  return {
+    majorAt: (m, ts) => (m === "USD" ? 1 : interp(majorCharts[MAJOR_LLAMA_ID[m]] ?? [], ts)),
+    majorNow: (m) => (m === "USD" ? 1 : majorCur[MAJOR_LLAMA_ID[m]] ?? interp(majorCharts[MAJOR_LLAMA_ID[m]] ?? [], Date.now() / 1000)),
+    series: (k) => seriesRaw[llamaId(k)] ?? [],
+    current: (k) => providerCurrent[k] ?? curLlama[llamaId(k)] ?? dex[k]?.price,
+    liquidity: (k) => dex[k]?.liq,
+  };
+}
+
+export const priceAt = interp;
