@@ -51,3 +51,4 @@ usage.log
 
 # local Claude/agent tooling
 .claude/
+!.env.example
