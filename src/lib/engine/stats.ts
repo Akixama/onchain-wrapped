@@ -1,8 +1,9 @@
 import type { ChainId, UnifiedEvent, Venue } from "../core/types";
-import { CHAIN_LABEL, counterfactualMajor } from "../core/assets";
+import { CHAIN_LABEL, counterfactualMajor, isMoney } from "../core/assets";
 import type { BridgeHop } from "../core/identity";
 import type { PriceBook } from "../prices/pricebook";
 import { type Position, pricePoints } from "./pnl";
+import { narrativeStats, profitTimeline, speedStats, type NarrativeStats, type ProfitTimeline, type SpeedStats } from "./extras";
 
 // Everything the cards need, as plain JSON. The UI never recomputes anything.
 
@@ -100,12 +101,16 @@ export interface WrappedStats {
   bridges: { hops: BridgeHop[]; journey: Venue[]; routes: { from: Venue; to: Venue; count: number; usd: number }[]; totalUsd: number };
   percentile: { activity: number | null }; // % of other lookups with fewer trades (null until the pool is big enough)
   roast?: { text: string; source: "ai" | "canned" };
+  /** Newer stats (absent on results saved before they existed). */
+  profitTimeline?: ProfitTimeline;
+  speed?: SpeedStats;
+  narratives?: NarrativeStats;
   /** Story order, only cards with something worth saying. The UI renders exactly these. */
   cards: CardId[];
 }
 
 export type CardId =
-  | "archetype" | "overview" | "pnl" | "best" | "worst" | "roundTrip" | "paperHands" | "diamondHands"
+  | "archetype" | "overview" | "pnl" | "profitTime" | "best" | "worst" | "roundTrip" | "paperHands" | "diamondHands" | "speed" | "narrative"
   | "counterfactual" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "roast" | "summary";
 
 export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
@@ -114,11 +119,14 @@ export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
     ["archetype", true],
     ["overview", t > 0],
     ["pnl", s.pnl.wins + s.pnl.losses > 0],
+    ["profitTime", (s.profitTimeline?.points.length ?? 0) >= 3],
     ["best", !!s.bestTrade],
     ["worst", !!s.worstTrade],
     ["roundTrip", !!s.roundTrip],
     ["paperHands", !!s.paperHands],
     ["diamondHands", !!s.diamondHands],
+    ["speed", (s.speed?.closedCount ?? 0) >= 3 && !!s.speed?.fastestFlip],
+    ["narrative", !!s.narratives?.top.length && s.narratives.top[0].id !== "other" && s.narratives.coverage >= 0.15],
     ["counterfactual", Math.abs(s.counterfactual.justHeldDiffUsd) >= 50],
     ["gas", s.gas.totalUsd >= 1],
     ["rugs", s.rugs.count + s.rugs.dodged > 0],
@@ -360,6 +368,9 @@ export function computeStats(input: {
     },
     bridges: { hops: hops.slice(-50), journey, routes: routes(hops), totalUsd: r2(hops.reduce((s, h) => s + h.usd, 0)) },
     percentile: { activity: null },
+    profitTimeline: profitTimeline(traded, input.fromTs),
+    speed: speedStats(traded.filter((p) => !isMoney(p.token)), trades),
+    narratives: narrativeStats(traded.filter((p) => !isMoney(p.token))),
     cards: [],
   };
 }

@@ -6,6 +6,7 @@ import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
 import { CHAIN_COLOR, CHAIN_NAME, capOrPrice, hourLabel, num, pct, periodLabel, usd, whoLabel } from "../format";
 import { Big, BigNumber, Chip, CountUp, Kicker, Line, Stat, rise } from "./primitives";
 import { TradeChart } from "./TradeChart";
+import { NARRATIVE_EMOJI, NARRATIVE_LABEL } from "@/lib/engine/extras";
 
 export interface CardCtx {
   tzOffsetH: number; // viewer's UTC offset in hours
@@ -453,8 +454,126 @@ function Row({ k, v, n, dot }: { k: string; v?: string; n: number; dot?: string 
   );
 }
 
+const dayLabel = (ts: number) => new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+
+/** Running profit through the period: realized as you sold, plus what's still held at the end. */
+const ProfitTime = ({ s }: CardProps) => {
+  const t = s.profitTimeline!;
+  const pts = t.points;
+  const end = pts[pts.length - 1];
+  const final = end[1] + t.openUsd;
+  const W = 600, H = 240, L = 8, Rr = 8, T = 16, B = 26;
+  const t0 = pts[0][0], t1 = Math.max(end[0], t0 + 86400);
+  const vals = [...pts.map((p) => p[1]), final, 0];
+  let lo = Math.min(...vals), hi = Math.max(...vals);
+  if (hi - lo < 1) { hi += 1; lo -= 1; }
+  const pad = (hi - lo) * 0.1;
+  lo -= pad; hi += pad;
+  const x = (ts: number) => L + ((ts - t0) / (t1 - t0)) * (W - L - Rr);
+  const y = (v: number) => T + ((hi - v) / (hi - lo)) * (H - T - B);
+  const line = pts.map((p, i) => (i ? `L${x(p[0])},${y(pts[i - 1][1])} L${x(p[0])},${y(p[1])}` : `M${x(p[0])},${y(p[1])}`)).join(" ");
+  const area = `${line} L${x(end[0])},${y(0)} L${x(t0)},${y(0)} Z`;
+  const months = Array.from(new Set(pts.map((p) => new Date(p[0] * 1000).toISOString().slice(0, 7)))).slice(0, 14);
+  const step = Math.max(1, Math.ceil(months.length / 6));
+  const markDay = (d: { ts: number; usd: number } | null, color: string) => {
+    if (!d) return null;
+    const p = pts.find((q) => q[0] === d.ts);
+    return p ? <circle cx={x(p[0])} cy={y(p[1])} r={6} fill={color} stroke="#0b0b0f" strokeWidth="2" /> : null;
+  };
+  return (
+    <>
+      <Kicker>Profit over time</Kicker>
+      <Body>
+        <Line className="text-lg opacity-80">Your running result</Line>
+        <BigNumber className="text-[68px] @3xl:text-[95px]" color={gainColor(final)}><CountUp value={final} format={(n) => money(n, true)} /></BigNumber>
+        <R>
+          <motion.div variants={rise} className="rounded-2xl border border-white/10 bg-black/30 p-2">
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full" role="img" aria-label="Running profit over time">
+              <line x1={L} x2={W - Rr} y1={y(0)} y2={y(0)} stroke="rgba(255,255,255,0.25)" strokeDasharray="4 5" />
+              <motion.path d={area} fill={final >= 0 ? "rgba(74,222,128,0.12)" : "rgba(248,113,113,0.12)"} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }} />
+              <motion.path d={line} fill="none" stroke={gainColor(final)} strokeWidth="2.5" strokeLinejoin="round"
+                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.4, delay: 0.3, ease: "easeInOut" }} />
+              {markDay(t.bestDay, "#4ADE80")}
+              {markDay(t.worstDay, "#F87171")}
+              {months.filter((_, i) => i % step === 0).map((m) => {
+                const ts = Date.parse(`${m}-01T00:00:00Z`) / 1000;
+                return ts >= t0 && ts <= t1 ? <text key={m} x={x(ts)} y={H - 6} fill="rgba(255,255,255,0.55)" fontSize="13" textAnchor="middle">{new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })}</text> : null;
+              })}
+            </svg>
+          </motion.div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <Stat label={t.bestDay ? `Best day · ${dayLabel(t.bestDay.ts)}` : "Best day"}>{t.bestDay ? <span style={{ color: "#4ADE80" }}>{money(t.bestDay.usd, true)}</span> : "—"}</Stat>
+            <Stat label={t.worstDay ? `Worst day · ${dayLabel(t.worstDay.ts)}` : "Worst day"}>{t.worstDay ? <span style={{ color: "#F87171" }}>{money(t.worstDay.usd, true)}</span> : "—"}</Stat>
+          </div>
+        </R>
+        {Math.abs(t.openUsd) >= 1 && <Line className="text-sm opacity-70">Includes {money(t.openUsd, true)} in coins you still hold, at today&apos;s prices.</Line>}
+      </Body>
+    </>
+  );
+};
+
+/** "38 seconds", "4 minutes", "2.5 hours", "3 days". */
+function duration(sec: number) {
+  if (sec < 90) return `${Math.round(sec)} ${Math.round(sec) === 1 ? "second" : "seconds"}`;
+  if (sec < 90 * 60) return `${Math.round(sec / 60)} minutes`;
+  if (sec < 36 * 3600) return `${Math.round((sec / 3600) * 10) / 10} hours`;
+  return `${Math.round(sec / 86400)} days`;
+}
+
+const Speed = ({ s }: CardProps) => {
+  const sp = s.speed!;
+  const f = sp.fastestFlip!;
+  return (
+    <>
+      <Kicker>Speed</Kicker>
+      <Body>
+        <Line className="text-lg opacity-80">Your fastest flip: in and out of <b>${f.symbol}</b> in</Line>
+        <BigNumber className="text-[64px] @3xl:text-[92px]">{duration(f.seconds)}</BigNumber>
+        <Line className="text-lg">…and it {f.pnlUsd >= 0 ? "made" : "cost"} you <b style={{ color: gainColor(f.pnlUsd) }}>{money(Math.abs(f.pnlUsd))}</b>.</Line>
+        <R><div className="grid grid-cols-2 gap-3 pt-2">
+          <Stat label="Typical hold">{sp.medianHoldSec !== null ? duration(sp.medianHoldSec) : "—"}</Stat>
+          <Stat label="Sold within a minute">{sp.underMinutePct}%</Stat>
+          <Stat label="Trades per active day">{sp.tradesPerActiveDay}</Stat>
+          <Stat label={sp.busiestDay ? `Busiest day · ${dayLabel(sp.busiestDay.ts)}` : "Busiest day"}>{sp.busiestDay ? `${num(sp.busiestDay.trades)} trades` : "—"}</Stat>
+        </div></R>
+      </Body>
+    </>
+  );
+};
+
+const Narrative = ({ s }: CardProps) => {
+  const n = s.narratives!;
+  const fav = n.top[0];
+  const max = Math.max(1, ...n.top.map((x) => x.trades));
+  return (
+    <>
+      <Kicker>Favourite narrative</Kicker>
+      <Body>
+        <Line className="text-lg opacity-80">You couldn&apos;t stay away from</Line>
+        <BigNumber className="text-[60px] @3xl:text-[86px]">{NARRATIVE_EMOJI[fav.id]} {NARRATIVE_LABEL[fav.id]}</BigNumber>
+        <Line className="text-lg">{num(fav.trades)} trades across {fav.tokens} {fav.tokens === 1 ? "coin" : "coins"}, for <b style={{ color: gainColor(fav.pnlUsd) }}>{money(fav.pnlUsd, true)}</b>.</Line>
+        <R><motion.ul variants={rise} className="space-y-2.5">
+          {n.top.map((x) => (
+            <li key={x.id} className="rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-semibold">{NARRATIVE_EMOJI[x.id]} {NARRATIVE_LABEL[x.id]}</span>
+                <span className="whitespace-nowrap font-display text-lg font-bold tabular-nums" style={{ color: gainColor(x.pnlUsd) }}>{money(x.pnlUsd, true)}</span>
+              </div>
+              <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-white/10">
+                <motion.div className="h-full rounded-full bg-white/60" initial={{ width: 0 }} animate={{ width: `${(x.trades / max) * 100}%` }} transition={{ delay: 0.5, duration: 0.8 }} />
+              </div>
+              <div className="mt-1.5 text-xs opacity-60">{num(x.trades)} trades · {x.tokens} coins</div>
+            </li>
+          ))}
+        </motion.ul></R>
+        <Line className="text-xs opacity-50">Grouped by coin names, so it&apos;s a best guess.</Line>
+      </Body>
+    </>
+  );
+};
+
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
-  archetype: Archetype, overview: Overview, pnl: Pnl, best: Best, worst: Worst, roundTrip: RoundTrip,
-  paperHands: PaperHands, diamondHands: DiamondHands, counterfactual: Counterfactual, gas: Gas, rugs: Rugs,
+  archetype: Archetype, overview: Overview, pnl: Pnl, profitTime: ProfitTime, best: Best, worst: Worst, roundTrip: RoundTrip,
+  paperHands: PaperHands, diamondHands: DiamondHands, speed: Speed, narrative: Narrative, counterfactual: Counterfactual, gas: Gas, rugs: Rugs,
   airdrops: Airdrops, sleep: Sleep, bridges: Bridges, percentile: Percentile, chains: Chains, roast: Roast, summary: Summary,
 };

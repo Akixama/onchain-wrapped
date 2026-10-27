@@ -1,5 +1,6 @@
 // Shared by the story UI and the OG images (no React, no DOM).
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
+import { NARRATIVE_LABEL } from "@/lib/engine/extras";
 
 export type Venue = WrappedStats["bridges"]["journey"][number];
 
@@ -89,13 +90,27 @@ export function shareText(s: WrappedStats, card: CardId): string {
     }
     case "roast": return s.roast ? `"${s.roast.text}" ${tail}` : tail;
     case "percentile": return `Top ${Math.max(1, Math.round(100 - (s.percentile.activity ?? 0)))}% most active of everyone who checked. ${tail}`;
+    case "profitTime": {
+      const t = s.profitTimeline;
+      const final = t ? (t.points.at(-1)?.[1] ?? 0) + t.openUsd : s.pnl.totalUsd;
+      return `My year in profit: ${usd(final, { sign: true })}${t?.bestDay ? `, best day ${usd(t.bestDay.usd, { sign: true })}` : ""}. ${tail}`;
+    }
+    case "speed": {
+      const f = s.speed?.fastestFlip;
+      return f ? `Fastest flip: in and out of ${f.symbol} in ${f.seconds < 90 ? `${f.seconds}s` : `${Math.round(f.seconds / 60)} min`}. ${tail}` : tail;
+    }
+    case "narrative": {
+      const n = s.narratives?.top[0];
+      return n ? `My favourite narrative: ${NARRATIVE_LABEL[n.id]} (${n.trades} trades, ${usd(n.pnlUsd, { sign: true })}). ${tail}` : tail;
+    }
     case "bridges": return `My bridge journey: ${s.bridges.journey.map((c) => CHAIN_NAME[c]).join(" → ")}. ${tail}`;
     default: return `${s.archetype.title}. ${usd(s.pnl.totalUsd, { sign: true })}. ${tail}`;
   }
 }
 
 export const CARD_TITLE: Record<CardId, string> = {
-  archetype: "Your era", overview: "The numbers", pnl: "The bottom line", best: "Best trade", worst: "Worst trade",
+  archetype: "Your era", overview: "The numbers", pnl: "The bottom line", profitTime: "Profit over time", best: "Best trade", worst: "Worst trade",
+  speed: "Speed", narrative: "Favourite narrative",
   roundTrip: "The round trip", paperHands: "Paper hands", diamondHands: "Diamond hands", counterfactual: "What if",
   gas: "Gas burned", rugs: "Rugs", airdrops: "Airdrops", sleep: "Sleep schedule", bridges: "Bridge journey",
   percentile: "Ranking", chains: "Profit by chain", roast: "The roast", summary: "Your Wrapped",
@@ -106,6 +121,9 @@ export const CARD_THEME: Record<CardId, { bg: string; a: string; b: string; ink:
   archetype: { bg: "#120B2E", a: "#7C3AED", b: "#14F195", ink: "#F4F1FF" },
   overview: { bg: "#06182B", a: "#0EA5E9", b: "#6366F1", ink: "#EAF6FF" },
   pnl: { bg: "#0B1A12", a: "#22C55E", b: "#0EA5E9", ink: "#EEFFF4" },
+  profitTime: { bg: "#08151C", a: "#22C55E", b: "#38BDF8", ink: "#EFFBFF" },
+  speed: { bg: "#1A1405", a: "#FACC15", b: "#F97316", ink: "#FFFBEA" },
+  narrative: { bg: "#170B24", a: "#C084FC", b: "#34D399", ink: "#F8F0FF" },
   best: { bg: "#0A1F14", a: "#10B981", b: "#FDE047", ink: "#F0FFF6" },
   worst: { bg: "#250A0E", a: "#EF4444", b: "#F97316", ink: "#FFF1F1" },
   roundTrip: { bg: "#1F1206", a: "#F59E0B", b: "#EF4444", ink: "#FFF7EB" },

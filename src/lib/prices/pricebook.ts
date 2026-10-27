@@ -204,3 +204,29 @@ export async function buildPriceBook(
 }
 
 export const priceAt = interp;
+
+/** Most liquid pool per token, from DexScreener (30 tokens per request). Keys are `chain:address`. */
+export async function dexPools(keys: string[]): Promise<Record<string, string>> {
+  const out: Record<string, string> = {};
+  const liqOf: Record<string, number> = {};
+  const byChain = new Map<ChainId, string[]>();
+  for (const k of keys) {
+    const [c, a] = k.split(":") as [ChainId, string];
+    byChain.set(c, [...(byChain.get(c) ?? []), a]);
+  }
+  for (const [chain, addrs] of byChain) {
+    for (let i = 0; i < addrs.length; i += 30) {
+      try {
+        const pairs = await fetchJson<{ baseToken: { address: string }; pairAddress: string; liquidity?: { usd?: number } }[]>(
+          "dexscreener", `https://api.dexscreener.com/tokens/v1/${DEXSCREENER_CHAIN[chain]}/${addrs.slice(i, i + 30).join(",")}`, { endpoint: "tokens" },
+        );
+        for (const p of pairs ?? []) {
+          const k = `${chain}:${chain === "solana" ? p.baseToken.address : p.baseToken.address.toLowerCase()}`;
+          const liq = p.liquidity?.usd ?? 0;
+          if (!out[k] || liq > liqOf[k]) { out[k] = p.pairAddress; liqOf[k] = liq; }
+        }
+      } catch {}
+    }
+  }
+  return out;
+}

@@ -10,7 +10,7 @@ import type { PriceBook, PricePoint } from "../prices/pricebook";
 /** known=false: arrived by transfer, we don't know what they paid -> break-even when sold. */
 interface Lot { amount: number; cost: number; ts: number; known: boolean }
 
-export interface Fill { ts: number; amount: number; usd: number; price: number; sig?: string }
+export interface Fill { ts: number; amount: number; usd: number; price: number; sig?: string; /** sells: profit locked in by this sale */ realized?: number }
 
 export interface Position {
   key: string;
@@ -87,10 +87,13 @@ export function runPnl(events: UnifiedEvent[], pb: PriceBook, opts: PnlOptions =
       const c = (lot.cost * take) / lot.amount;
       if (lot.known) { knownAmt += take; cost += c; p.holdingKnown = Math.max(0, p.holdingKnown - take); }
       lot.cost -= c; lot.amount -= take; left -= take;
-      if (lot.amount <= 1e-12) q.shift();
+      // Rounding dust relative to the lot's size (big token amounts leave ~1e-11 behind) counts as empty.
+      if (lot.amount <= Math.max(1e-12, take * 1e-9)) q.shift();
     }
     p.holding = Math.max(0, p.holding - (amount - left));
     p.openCost = Math.max(0, p.openCost - cost);
+    // Every lot sold: nothing is held, whatever floating-point dust the subtraction left.
+    if (!q.length) { p.holding = 0; p.holdingKnown = 0; p.openCost = 0; }
     return { cost, knownAmt };
   };
   const snap = (p: Position, ts: number) => {
@@ -110,9 +113,10 @@ export function runPnl(events: UnifiedEvent[], pb: PriceBook, opts: PnlOptions =
         // Part we never saw them pay for (bought earlier / transferred in): assume break-even, don't invent PnL.
         const knownShare = l.amount > 0 ? knownAmt / l.amount : 1;
         if (knownShare < 0.999) p.partial = true;
-        p.realized += usd * knownShare - cost;
+        const gain = usd * knownShare - cost;
+        p.realized += gain;
         p.proceeds += usd;
-        p.sells.push({ ts: e.timestamp, amount: l.amount, usd, price: l.amount ? usd / l.amount : 0, sig: e.txHash });
+        p.sells.push({ ts: e.timestamp, amount: l.amount, usd, price: l.amount ? usd / l.amount : 0, sig: e.txHash, realized: gain });
       } else {
         p.sentAwayKnown += knownAmt; // bought here, then moved to a wallet we can't see
       }
@@ -174,7 +178,9 @@ export function pricePoints(p: Position, series: PricePoint[], now: number): Pri
   return pts.sort((a, b) => a.ts - b.ts);
 }
 
-function computePeak(p: Position, series: PricePoint[], now: number) {
+/** Highest gain while held (and highest price while holding), from every price point we know. */
+export function computePeak(p: Position, series: PricePoint[], now: number) {
+  p.peakGain = 0; p.peakGainTs = p.firstTs; p.peakPrice = 0;
   const pts = pricePoints(p, series, now).filter((x) => x.ts >= p.firstTs);
   let i = 0;
   let state = { holding: 0, holdingKnown: 0, openCost: 0, realized: 0 };

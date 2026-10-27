@@ -35,7 +35,8 @@ export function chartWindow(from: number, to: number, now = Math.floor(Date.now(
   return { start: Math.floor(from - pad), end: Math.floor(Math.min(now, to + pad)) };
 }
 
-export async function fetchCandles(get: JsonFetcher, chain: ChainId, pool: string, token: string, start: number, end: number) {
+/** Candles for [start, end]; thinned to MAX_CANDLES for drawing unless `raw` (peaks need every candle). */
+export async function fetchCandles(get: JsonFetcher, chain: ChainId, pool: string, token: string, start: number, end: number, raw = false) {
   const f = candleFrame(end - start);
   const r = await get<{ data?: { attributes?: { ohlcv_list?: number[][] } } }>(
     `${GT}/networks/${GT_NETWORK[chain]}/pools/${pool}/ohlcv/${f.tf}?aggregate=${f.agg}&limit=1000&currency=usd&token=${token}&before_timestamp=${end}`,
@@ -44,7 +45,7 @@ export async function fetchCandles(get: JsonFetcher, chain: ChainId, pool: strin
     .filter((c) => c[0] >= start && c[0] <= end)
     .map((c) => [c[0], c[1], c[2], c[3], c[4]] as Candle)
     .sort((a, b) => a[0] - b[0]);
-  return { candles: downsample(list), interval: f.label };
+  return { candles: raw ? list : downsample(list), interval: f.label };
 }
 
 function downsample(c: Candle[]): Candle[] {

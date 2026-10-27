@@ -1,6 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
 import type { PublicJob as PublicJobT } from "@/lib/store";
@@ -40,6 +41,7 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
   const [dir, setDir] = useState(1);
   const [held, setHeld] = useState(false);
   const [sheet, setSheet] = useState(false);
+  const [compare, setCompare] = useState(false);
   const [currency, setCurrency] = useState<"USD" | "NGN">("USD");
   const tz = useSyncExternalStore(noopSubscribe, () => -new Date().getTimezoneOffset() / 60, () => 0);
   const down = useRef<{ x: number; t: number } | null>(null);
@@ -156,6 +158,7 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
             <div className="space-y-3 @3xl:px-9">
               <div className="space-y-3 @3xl:flex @3xl:gap-3 @3xl:space-y-0">
                 <button onClick={() => setSheet(true)} className="w-full rounded-2xl bg-white py-3.5 font-display text-base font-bold text-black active:scale-[0.98]">Share my Wrapped</button>
+                <button onClick={() => setCompare(true)} className="w-full rounded-2xl border border-white/40 bg-white/10 py-3 text-sm font-semibold @3xl:py-3.5">Compare with a friend</button>
                 <Link href="/" className="block w-full rounded-2xl border border-white/25 py-3 text-center text-sm font-semibold @3xl:py-3.5">Check another wallet</Link>
               </div>
               <Notes s={s} />
@@ -170,6 +173,7 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
 
         <AnimatePresence>
           {sheet && <ShareSheet onClose={() => setSheet(false)} url={url} text={shareText(s, card)} image={`/api/og/${id}/${card}`} />}
+          {compare && <CompareSheet onClose={() => setCompare(false)} myId={id} timeframe={s.meta.timeframe} />}
         </AnimatePresence>
       </div>
       <button aria-label="Next card" onClick={() => go(1)} disabled={i === cards.length - 1}
@@ -228,6 +232,49 @@ function ShareSheet({ onClose, url, text, image }: { onClose: () => void; url: s
           <button className="rounded-2xl bg-white/10 py-3 disabled:opacity-40" disabled={!canShare} onClick={() => navigator.share?.({ text, url }).catch(() => {})}>More</button>
         </div>
       </motion.div>
+    </motion.div>
+  );
+}
+
+/** Ask for a friend's wallet, start their lookup (same period), then open the head-to-head page. */
+function CompareSheet({ onClose, myId, timeframe }: { onClose: () => void; myId: string; timeframe: string }) {
+  const router = useRouter();
+  const [input, setInput] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const go = async () => {
+    if (!input.trim() || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      const r = await fetch("/api/wrapped", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ input: input.trim(), timeframe }) });
+      const j = await r.json();
+      if (!r.ok || !j.id) throw new Error(j.error ?? "Couldn't start that lookup.");
+      router.push(`/vs/${myId}/${j.id}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Couldn't start that lookup.");
+      setBusy(false);
+    }
+  };
+  return (
+    <motion.div className="absolute inset-0 z-30 flex items-end bg-black/60 backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+      <motion.form
+        role="dialog" aria-label="Compare with a friend"
+        className="w-full space-y-3 rounded-t-3xl bg-neutral-950 p-5 pb-7 text-white"
+        initial={{ y: 300 }} animate={{ y: 0 }} exit={{ y: 300 }} transition={{ type: "spring", stiffness: 300, damping: 32 }}
+        onClick={(e) => e.stopPropagation()} onPointerDown={(e) => e.stopPropagation()} onPointerUp={(e) => e.stopPropagation()}
+        onSubmit={(e) => { e.preventDefault(); void go(); }}
+      >
+        <div className="mx-auto h-1 w-10 rounded-full bg-white/30" />
+        <div className="font-display text-xl font-bold">Compare with a friend</div>
+        <p className="text-sm opacity-70">Paste their wallet, ENS or .sol name. Same period as yours.</p>
+        <input autoFocus value={input} onChange={(e) => setInput(e.target.value)} placeholder="0x… · name.eth · name.sol · Solana address"
+          className="w-full rounded-2xl border border-white/15 bg-white/[0.06] px-4 py-3.5 text-base outline-none focus:border-white/40" spellCheck={false} autoCapitalize="off" autoCorrect="off" />
+        {error && <p className="text-sm text-red-300">{error}</p>}
+        <button type="submit" disabled={busy || !input.trim()} className="w-full rounded-2xl bg-white py-3.5 font-display font-bold text-black disabled:opacity-50">
+          {busy ? "Starting…" : "Go head to head"}
+        </button>
+      </motion.form>
     </motion.div>
   );
 }

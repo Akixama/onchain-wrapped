@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
 import { getJob } from "@/lib/store";
+import { NARRATIVE_LABEL } from "@/lib/engine/extras";
 import { CARD_THEME, CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel } from "@/components/format";
 
 // Fonts are the same for every request: read once.
@@ -78,6 +79,27 @@ function content(s: WrappedStats, card: CardId): Content {
       return { kicker: "Ranking", big: `Top ${Math.max(1, Math.round(100 - (s.percentile.activity ?? 0)))}%`, sub: "most active of everyone who checked" };
     case "bridges":
       return { kicker: "Bridge journey", big: s.bridges.journey.map((c) => CHAIN_NAME[c]).join(" → "), sub: `${m(s.bridges.totalUsd)} moved across chains` };
+    case "profitTime": {
+      const t = s.profitTimeline!;
+      const final = (t.points.at(-1)?.[1] ?? 0) + t.openUsd;
+      const day = (d: { ts: number; usd: number }) => new Date(d.ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+      return {
+        kicker: "Profit over time", big: m(final, true), bigColor: signColor(final),
+        sub: [t.bestDay && `Best day ${day(t.bestDay)}: ${m(t.bestDay.usd, true)}`, t.worstDay && `worst ${day(t.worstDay)}: ${m(t.worstDay.usd, true)}`].filter(Boolean).join(" · "),
+      };
+    }
+    case "speed": {
+      const f = s.speed!.fastestFlip!;
+      const secs = f.seconds < 90 ? `${f.seconds} seconds` : f.seconds < 5400 ? `${Math.round(f.seconds / 60)} minutes` : `${Math.round(f.seconds / 360) / 10} hours`;
+      return { kicker: "Fastest flip", lead: `In and out of $${f.symbol} in`, big: secs, sub: `${f.pnlUsd >= 0 ? "Made" : "Cost"} ${m(Math.abs(f.pnlUsd))} · ${s.speed!.underMinutePct}% of my trades sold within a minute` };
+    }
+    case "narrative": {
+      const top = s.narratives!.top;
+      return {
+        kicker: "Favourite narrative", big: `${NARRATIVE_LABEL[top[0].id]}`, sub: `${num(top[0].trades)} trades · ${m(top[0].pnlUsd, true)}`,
+        chips: top.slice(1, 5).map((x) => ({ label: `${NARRATIVE_LABEL[x.id]} ${m(x.pnlUsd, true)}` })),
+      };
+    }
     default:
       return {
         kicker: "My onchain Wrapped", big: s.archetype.title,

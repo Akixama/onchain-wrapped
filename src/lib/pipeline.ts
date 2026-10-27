@@ -9,6 +9,7 @@ import { buildPriceBook } from "./prices/pricebook";
 import { runPnl } from "./engine/pnl";
 import { computeStats, storyCards, type WrappedStats } from "./engine/stats";
 import { addTradeCharts } from "./charts";
+import { refinePeaks } from "./peaks";
 import { usageSnapshot } from "./infra/usage";
 import { cacheGet, cacheSet } from "./infra/cache";
 import { currentTokenBalances } from "./chains/solana-rpc";
@@ -154,14 +155,17 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   a.onStage?.("crunching", "Crunching your PnL");
   const actualBalances = await solanaHoldings(resolved.filter((w) => w.family === "solana").map((w) => w.address));
   const positions = runPnl(events, pb, { actualBalances });
+  // Real price peaks for positions held long enough to round-trip (DefiLlama often has no memecoin history).
+  a.onStage?.("crunching", "Checking price peaks");
+  const pbx = await refinePeaks(positions, pb, now).catch(() => pb);
   const fromTs = truncated ? coverageStart : sinceTs || (events[0]?.timestamp ?? now);
-  const stats = computeStats({ wallets, timeframe: a.timeframe, fromTs, events, positions, bridges, pb, truncated, txCap: cap, spamFiltered });
+  const stats = computeStats({ wallets, timeframe: a.timeframe, fromTs, events, positions, bridges, pb: pbx, truncated, txCap: cap, spamFiltered });
 
   const untraced = [...positions.values()].filter((p) => p.untracedExit).length;
   if (untraced) notes.push(`${untraced} tokens left your wallets by routes we can't trace (bots, other wallets). We count them as moved, not sold.`);
   stats.meta.notes = notes;
   a.onStage?.("crunching", "Drawing your charts");
-  await addTradeCharts(stats, positions, pb, (n) => notes.push(n)).catch(() => {});
+  await addTradeCharts(stats, positions, pbx, (n) => notes.push(n)).catch(() => {});
   stats.meta.notes = notes;
   stats.cards = storyCards(stats);
   stats.meta.names = Object.fromEntries(resolved.filter((w) => w.name).map((w) => [w.address, w.name!]));
