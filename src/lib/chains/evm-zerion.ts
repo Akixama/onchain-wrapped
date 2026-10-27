@@ -3,6 +3,7 @@ import { NATIVE } from "../core/assets";
 import { fetchJson, QuotaError } from "../infra/http";
 import { fetchRawEvent, signaturesSince, verifySolanaTransfers } from "./solana-rpc";
 import { drain, timeUp } from "../infra/drain";
+import { liveZerionKey, markZerionKeySpent, zerionAuth, zerionKeys } from "./zerion-keys";
 import { isMoney } from "../core/assets";
 
 // Zerion: one endpoint returns decoded history for ALL EVM chains, with USD value at tx time
@@ -59,11 +60,10 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
   id: family === "evm" ? "zerion" : "zerion-solana",
   family,
   chains: family === "evm" ? Object.values(ZERION_CHAIN) : ["solana"],
-  isConfigured: () => !!process.env.ZERION_API_KEY,
+  isConfigured: () => zerionKeys().length > 0,
 
   async fetchEvents(address: string, opts: FetchOptions): Promise<FetchResult> {
     const wallet = family === "evm" ? address.toLowerCase() : address;
-    const auth = "Basic " + Buffer.from(`${process.env.ZERION_API_KEY}:`).toString("base64");
     const qs = new URLSearchParams({
       currency: "usd",
       "page[size]": "100",
@@ -76,14 +76,24 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
     const st: ZerionState = (opts.resume as ZerionState | undefined) ?? {
       url: `https://api.zerion.io/v1/wallets/${wallet}/transactions/?${qs}`, events: [], requests: 0, seen: 0, truncated: false, notes: [],
     };
+    let key: string | null = null;
+    const spent = new Set<string>(); // used up during this run (even if saving that to the store fails)
     while (st.url && !timeUp(opts.deadline)) {
       let page: { data: ZTx[]; links?: { next?: string } };
       try {
+        key ??= await liveZerionKey(spent);
         page = await fetchJson("zerion", st.url, {
-          headers: { authorization: auth, accept: "application/json" },
+          headers: { authorization: zerionAuth(key), accept: "application/json" },
           endpoint: "wallets/transactions",
         });
       } catch (e) {
+        // This key is out for today: remember it and retry the same page with the next one.
+        if (e instanceof QuotaError && key) {
+          spent.add(key);
+          await markZerionKeySpent(key, e.resetHours);
+          key = null;
+          continue;
+        }
         // Daily data limit ran out partway through a huge history: keep what we read (newest first)
         // and say so, instead of failing the whole lookup. With nothing read yet, it's a real error.
         if (!(e instanceof QuotaError) || !st.events.length) throw e;
