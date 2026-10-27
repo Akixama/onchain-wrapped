@@ -173,7 +173,9 @@ export async function runJob(id: string) {
     job.status = "error";
     job.error =
       e instanceof QuotaError
-        ? `We've hit today's free data limit. Try again in about ${e.resetHours} hours.`
+        ? e.provider === "zerion-flooded"
+          ? `This wallet is flooded with bot transactions, so it needs our backup data source, which is out of free requests for today. Try again in about ${e.resetHours} hours.`
+          : `We've hit today's free data limit. Try again in about ${e.resetHours} hours.`
         : e instanceof InputError
           ? e.message
           : "Something broke while reading this wallet. Try again in a minute.";

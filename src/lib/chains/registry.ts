@@ -2,6 +2,7 @@ import type { ChainAdapter, FetchOptions, FetchResult } from "../core/types";
 import { isEvmAddress, isSolanaAddress } from "../core/identity";
 import { heliusAdapter } from "./solana-helius";
 import { zerionAdapter, zerionSolanaAdapter } from "./evm-zerion";
+import { QuotaError } from "../infra/http";
 
 /** Where the Solana router was when a run hit its deadline. */
 interface AutoState { source: "helius" | "zerion"; inner?: unknown; heliusRequests: number }
@@ -30,7 +31,14 @@ const solanaAuto: ChainAdapter = {
       opts.onProgress?.({ chain: "solana", fetched: 0, message: "Busy address — switching to a filtered history" });
       Object.assign(st, { source: "zerion", inner: undefined, heliusRequests: h.requests });
     }
-    const z = await zerionSolanaAdapter.fetchEvents(address, { ...opts, resume: st.inner, junkFlooded: true });
+    let z: FetchResult;
+    try {
+      z = await zerionSolanaAdapter.fetchEvents(address, { ...opts, resume: st.inner, junkFlooded: true });
+    } catch (e) {
+      // Say why: the flooded-wallet source ran out, not the whole site.
+      if (e instanceof QuotaError) throw new QuotaError("zerion-flooded", e.resetHours);
+      throw e;
+    }
     if (z.partial) return { ...z, resume: { ...st, inner: z.resume } satisfies AutoState };
     return {
       ...z,

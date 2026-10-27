@@ -92,7 +92,10 @@ export async function findRecent(key: string): Promise<Job | null> {
   const id = await kv().get(`idx:${key}`);
   if (!id) return null;
   const job = await getJob(id);
-  return job && job.status !== "error" ? job : null;
+  if (!job || job.status === "error") return null;
+  // Made under the old per-wallet cap (newest 2,000 txs only): read the whole history again.
+  if (job.stats?.meta.truncated && job.stats.meta.txCap > 0 && !process.env.MAX_TXS_PER_ADDRESS) return null;
+  return job;
 }
 
 export async function rememberKey(key: string, id: string, ttlSec = Number(process.env.RESULT_TTL_HOURS ?? 24) * 3600) {
