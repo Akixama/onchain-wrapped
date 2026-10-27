@@ -49,7 +49,7 @@ export class QuotaError extends Error {
 export async function fetchJson<T>(
   provider: string,
   url: string,
-  init: RequestInit & { endpoint?: string } = {},
+  init: RequestInit & { endpoint?: string; timeoutMs?: number } = {},
   retries = 4,
 ): Promise<T> {
   for (let attempt = 0; ; attempt++) {
@@ -57,7 +57,7 @@ export async function fetchJson<T>(
     const t0 = Date.now();
     let res: Response;
     try {
-      res = await fetch(url, { ...init, signal: AbortSignal.timeout(30_000) });
+      res = await fetch(url, { ...init, signal: AbortSignal.timeout(init.timeoutMs ?? 30_000) });
     } catch (e) {
       if (attempt >= retries) throw e;
       await sleep(1000 * 2 ** attempt);

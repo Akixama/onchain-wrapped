@@ -8,6 +8,7 @@ import { runWrapped, type FetchSlots, type Timeframe } from "./pipeline";
 import { makeRoast } from "./roast";
 import { clearCheckpoint, findRecent, getJob, loadCheckpoint, lookupKey, newId, putJob, rememberKey, saveCheckpoint, type Job } from "./store";
 import { kv } from "./infra/kv";
+import { liveZerionKey } from "./chains/zerion-keys";
 import { siteUrl } from "./site";
 import { createHash } from "node:crypto";
 
@@ -22,7 +23,10 @@ export async function startJob(rawInput: string | string[], timeframe: Timeframe
   const wallets = resolved.map((w) => w.address);
   const key = lookupKey(wallets, timeframe);
   const recent = await findRecent(key);
-  if (recent) return { job: recent, reused: true };
+  // A result cut short by the daily data limit is re-run once a key has requests again: the new
+  // lookup carries on from where that one stopped.
+  const canContinue = recent?.stats?.meta.quotaCut && (await liveZerionKey().then(() => true, () => false));
+  if (recent && !canContinue) return { job: recent, reused: true };
 
   await takeLookup(ip);
   const job: Job = {

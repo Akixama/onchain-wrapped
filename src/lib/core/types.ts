@@ -85,6 +85,8 @@ export interface FetchResult {
   events: UnifiedEvent[];
   truncated: boolean; // stopped before reaching sinceTs (cap set, or junk-flooded address)
   requests: number;
+  /** Stopped early because the provider's daily limit ran out (a later lookup can continue). */
+  quotaCut?: boolean;
   /** Ran out of time: `events` is empty; pass `resume` back in the next run. */
   partial?: boolean;
   resume?: unknown;

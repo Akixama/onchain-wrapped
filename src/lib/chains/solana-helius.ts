@@ -24,6 +24,27 @@ interface HeliusTx {
     nativeBalanceChange: number;
     tokenBalanceChanges?: { userAccount: string; tokenAccount?: string; mint: string; rawTokenAmount: { tokenAmount: string; decimals: number } }[];
   }[];
+  instructions?: HeliusIx[];
+}
+interface HeliusIx { programId: string; data: string; accounts: string[]; innerInstructions?: HeliusIx[] }
+
+const TOKEN_PROGRAMS = new Set(["TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA", "TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb"]);
+const ATA_PROGRAM = "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+
+/**
+ * Token accounts this wallet opened or closed in the tx. Their balance can stay 0, so Helius lists no
+ * token change for them, but their SOL deposit/refund still moves: it's the wallet's own money.
+ */
+function openedOrClosedAccounts(tx: HeliusTx, wallet: string, out: Set<string>) {
+  const walk = (ix: HeliusIx) => {
+    const a = ix.accounts ?? [];
+    // SPL Token CloseAccount (instruction 9 = base58 "A"): [account, destination, owner]
+    if (TOKEN_PROGRAMS.has(ix.programId) && ix.data === "A" && a[2] === wallet) out.add(a[0]);
+    // Associated token account Create / CreateIdempotent: [payer, account, owner, mint, ...]
+    if (ix.programId === ATA_PROGRAM && (ix.data === "" || ix.data === "1" || ix.data === "2") && a[2] === wallet) out.add(a[1]);
+    for (const c of ix.innerInstructions ?? []) walk(c);
+  };
+  for (const ix of tx.instructions ?? []) walk(ix);
 }
 
 interface DasAsset {
@@ -138,6 +159,7 @@ function normalize(wallet: string, tx: HeliusTx): UnifiedEvent | null {
   const myTokenAccounts = new Set<string>();
   for (const acc of tx.accountData ?? [])
     for (const tb of acc.tokenBalanceChanges ?? []) if (tb.userAccount === wallet) myTokenAccounts.add(tb.tokenAccount ?? acc.account);
+  openedOrClosedAccounts(tx, wallet, myTokenAccounts);
 
   // Net change per mint for this wallet.
   const delta = new Map<string, { amount: number; decimals: number }>();
@@ -268,4 +290,54 @@ async function failedFees(
       type: "other", in: [], out: [], gasUsd: null, gasNative: t.meta.fee / 1e9,
     });
   });
+}
+
+/**
+ * Zerion sometimes labels a Solana SELL as a plain "transfer out" (and the reverse for buys). Re-read
+ * those transactions through Helius's batch parser — 100 per request instead of one RPC call each —
+ * and replace the legs with the wallet's real balance changes. Stops at the deadline; anything not
+ * reached stays unmarked so a later run picks it up.
+ */
+export async function verifyTransfersHelius(
+  events: UnifiedEvent[],
+  isMoney: (t: TokenRef) => boolean,
+  deadline?: number,
+  onProgress?: (done: number, total: number) => void,
+): Promise<{ checked: number; fixed: number; remaining: number }> {
+  const list = events.filter(
+    (e) => e.chain === "solana" && !e.verified && ["transfer_in", "transfer_out", "other"].includes(e.type) && [...e.in, ...e.out].some((l) => !isMoney(l.token)),
+  );
+  const batches: UnifiedEvent[][] = [];
+  const size = Number(process.env.HELIUS_BATCH_SIZE ?? 100);
+  for (let i = 0; i < list.length; i += size) batches.push(list.slice(i, i + size));
+  let checked = 0, fixed = 0, done = 0;
+  onProgress?.(0, list.length);
+  const left = await drain(batches, 4, deadline, async (batch) => {
+    const txs = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/transactions?api-key=${process.env.HELIUS_API_KEY}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ transactions: [...new Set(batch.map((e) => e.txHash))] }),
+      endpoint: "enhanced/transactions-batch",
+      timeoutMs: 90_000, // up to 100 parsed transactions: a few MB
+    });
+    const bySig = new Map(txs.map((t) => [t.signature, t]));
+    for (const e of batch) {
+      done++;
+      const tx = bySig.get(e.txHash);
+      e.verified = true; // checked (or not parseable): don't fetch it again
+      if (!tx) continue;
+      checked++;
+      const real = normalize(e.wallet, tx);
+      if (!real || real.type !== "swap") continue;
+      // Keep token names from the provider; take amounts and direction from the chain.
+      const named = new Map([...e.in, ...e.out].map((l) => [l.token.address, l.token]));
+      const fix = (legs: Leg[]) => legs.map((l) => ({ ...l, token: named.get(l.token.address) ?? l.token, usd: null }));
+      e.in = fix(real.in);
+      e.out = fix(real.out);
+      e.type = "swap";
+      fixed++;
+    }
+    onProgress?.(done, list.length);
+  });
+  return { checked, fixed, remaining: left.reduce((n, b) => n + b.length, 0) };
 }

@@ -4,6 +4,8 @@ import { fetchJson, QuotaError } from "../infra/http";
 import { fetchRawEvent, signaturesSince, verifySolanaTransfers } from "./solana-rpc";
 import { drain, timeUp } from "../infra/drain";
 import { liveZerionKey, markZerionKeySpent, zerionAuth, zerionKeys } from "./zerion-keys";
+import { verifyTransfersHelius } from "./solana-helius";
+import { clearBlob, loadBlob, saveBlob } from "../infra/blob";
 import { isMoney } from "../core/assets";
 
 // Zerion: one endpoint returns decoded history for ALL EVM chains, with USD value at tx time
@@ -72,17 +74,29 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
       "filter[trash]": "only_non_trash", // spam filtered server-side: saves requests too
     });
     if (opts.sinceTs > 0) qs.set("filter[min_mined_at]", String(opts.sinceTs * 1000));
+    const startUrl = `https://api.zerion.io/v1/wallets/${wallet}/transactions/?${qs}`;
+    // A lookup cut short by the daily data limit saves where it stopped, so the next lookup of this
+    // wallet carries on from there (after picking up anything new) instead of re-reading everything.
+    const savedKey = `zres:${family}:${wallet}:${opts.sinceTs === 0 ? "all" : "12m"}`;
     // Everything read so far lives in `st`, so a run that hits its deadline can hand it to the next run.
-    const st: ZerionState = (opts.resume as ZerionState | undefined) ?? {
-      url: `https://api.zerion.io/v1/wallets/${wallet}/transactions/?${qs}`, events: [], requests: 0, seen: 0, truncated: false, notes: [],
-    };
+    let st = opts.resume as ZerionState | undefined;
+    if (!st) {
+      const saved = await loadBlob<SavedRead>(savedKey).catch(() => null);
+      st = saved
+        ? { url: saved.url, topUrl: startUrl, resumed: true, events: saved.events, requests: 0, seen: saved.seen, truncated: false, notes: [] }
+        : { url: startUrl, events: [], requests: 0, seen: 0, truncated: false, notes: [] };
+    }
     let key: string | null = null;
     const spent = new Set<string>(); // used up during this run (even if saving that to the store fails)
-    while (st.url && !timeUp(opts.deadline)) {
+    // Resumed: first read what's new since last time (newest first) until we reach what we already have.
+    // (Also guards against overlap between pages read on different days.)
+    const known = st.resumed ? new Set(st.events.map((e) => e.txHash)) : null;
+    while ((st.topUrl || st.url) && !timeUp(opts.deadline)) {
+      const topping = !!st.topUrl;
       let page: { data: ZTx[]; links?: { next?: string } };
       try {
         key ??= await liveZerionKey(spent);
-        page = await fetchJson("zerion", st.url, {
+        page = await fetchJson("zerion", (st.topUrl ?? st.url)!, {
           headers: { authorization: zerionAuth(key), accept: "application/json" },
           endpoint: "wallets/transactions",
         });
@@ -97,24 +111,41 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
         // Daily data limit ran out partway through a huge history: keep what we read (newest first)
         // and say so, instead of failing the whole lookup. With nothing read yet, it's a real error.
         if (!(e instanceof QuotaError) || !st.events.length) throw e;
+        // Save the spot (and what we read, before any fixes) for the next lookup: kept for 3 days.
+        await saveBlob(savedKey, { url: st.url, events: st.events, seen: st.seen } satisfies SavedRead, 3 * 86400).catch(() => {});
         st.truncated = true;
+        st.quotaCut = true;
         st.url = null;
-        st.notes.push(`Today's free data limit ran out after ${st.seen.toLocaleString()} transactions, so this covers the newest ones only.`);
+        st.topUrl = undefined;
+        st.notes.push(`Today's free data limit ran out after ${st.seen.toLocaleString()} transactions, so this covers the newest ones only. Look it up again tomorrow to read further back.`);
         break;
       }
       st.requests++;
+      let caughtUp = false;
       for (const tx of page.data) {
+        if (known?.has(tx.attributes.hash)) {
+          if (topping) { caughtUp = true; break; }
+          continue;
+        }
+        known?.add(tx.attributes.hash);
         st.seen++;
         const e = normalize(wallet, tx);
         if (e) st.events.push(e);
       }
       opts.onProgress?.({ chain: family === "evm" ? "evm" : "solana", fetched: st.seen });
+      if (topping) {
+        st.topUrl = caughtUp ? undefined : page.links?.next;
+        continue;
+      }
       st.url = page.links?.next ?? null;
       // Optional cap (MAX_TXS_PER_ADDRESS); by default the whole history is read.
       if (st.seen >= opts.maxTxs && st.url) { st.truncated = true; st.url = null; }
     }
     const partial = (): FetchResult => ({ events: [], truncated: false, requests: st.requests, partial: true, resume: st });
-    if (st.url) return partial();
+    if (st.url || st.topUrl) return partial();
+    // Read to the end this time: the saved spot isn't needed any more.
+    if (st.resumed && !st.quotaCut && !st.cleared) { await clearBlob(savedKey).catch(() => {}); st.cleared = true; }
+    if (st.resumed && !st.quotaCut && !st.notes.some((n) => n.startsWith("Continued"))) st.notes.push("Continued from where an earlier lookup of this wallet stopped.");
     const { events, notes } = st;
     if (family === "solana") {
       // Zerion can lag on very spammy Solana wallets. Fill anything newer straight from Solana RPC.
@@ -140,21 +171,30 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
         if (bf.added) notes.push(`Filled ${bf.added} recent Solana transactions the data provider was missing.`);
       }
       opts.onProgress?.({ chain: "solana", fetched: st.seen });
-      const v = await verifySolanaTransfers(events, isMoney, opts.deadline, (done, total) =>
-        opts.onProgress?.({ chain: "solana", fetched: st.seen, message: `Double-checking trades on-chain (${done}/${total})` }),
+      // Helius batch parser (100 per request) when available; plain RPC one by one otherwise.
+      const verify = process.env.HELIUS_API_KEY ? verifyTransfersHelius : verifySolanaTransfers;
+      const v = await verify(events, isMoney, opts.deadline, (done, total) =>
+        opts.onProgress?.({ chain: "solana", fetched: st.seen, message: `Double-checking trades on-chain (${done.toLocaleString()}/${total.toLocaleString()})` }),
       );
       st.fixed = (st.fixed ?? 0) + v.fixed;
       if (v.remaining) return partial();
       if (st.fixed) notes.push(`Corrected ${st.fixed} Solana trades the data provider had labeled as plain transfers.`);
     }
-    const { truncated, requests } = st;
-    return { events, truncated, requests, notes };
+    const { truncated, requests, quotaCut } = st;
+    return { events, truncated, requests, notes, quotaCut };
   },
   };
 }
 
+/** Where a lookup cut short by the daily limit stopped (saved for the next lookup of the wallet). */
+interface SavedRead { url: string | null; events: UnifiedEvent[]; seen: number }
+
 interface ZerionState {
   url: string | null; // next page, null when the history is fully read
+  topUrl?: string; // resumed from a saved read: newer pages still to pick up first
+  resumed?: boolean;
+  quotaCut?: boolean; // stopped early: daily limit ran out on every key
+  cleared?: boolean;
   events: UnifiedEvent[];
   requests: number;
   seen: number;

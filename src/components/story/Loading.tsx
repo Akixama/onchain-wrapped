@@ -31,6 +31,10 @@ export function Loading({ progress }: { progress?: Progress }) {
   const stage = progress?.stage ?? "fetching";
   const steps: Progress["stage"][] = ["fetching", "pricing", "crunching"];
   const at = steps.indexOf(stage === "done" ? "crunching" : stage);
+  // The step's own detail line, unless it just repeats the step name.
+  const msg = progress?.message ?? "";
+  const detail = msg && !/^(Reading .* history|Finding your wallets|Looking up prices|Crunching your PnL|In the queue)( · part \d+)?$/.test(msg) ? msg : "";
+  const part = /part (\d+)/.exec(msg)?.[1];
 
   return (
     <div className="relative grid min-h-[100dvh] place-items-center overflow-hidden bg-[#0B0820] p-6 text-white">
@@ -52,14 +56,20 @@ export function Loading({ progress }: { progress?: Progress }) {
         </div>
         <ol className="space-y-2 text-left text-sm">
           {steps.map((s, n) => (
-            <li key={s} className={`flex items-center gap-3 rounded-xl px-4 py-3 ${n === at ? "bg-white/15" : "bg-white/5"} ${n > at ? "opacity-40" : ""}`}>
-              <span className="grid h-5 w-5 place-items-center rounded-full border border-white/50 text-[10px]">{n < at ? "✓" : n + 1}</span>
-              <span className="flex-1">{STAGE[s]}</span>
-              {n === 0 && progress?.fetched ? <span className="tabular-nums opacity-70">{progress.fetched.toLocaleString()} txs</span> : null}
+            <li key={s} className={`rounded-xl px-4 py-3 ${n === at ? "bg-white/15" : "bg-white/5"} ${n > at ? "opacity-40" : ""}`}>
+              <div className="flex items-center gap-3">
+                <span className="grid h-5 w-5 place-items-center rounded-full border border-white/50 text-[10px]">{n < at ? "✓" : n + 1}</span>
+                <span className="flex-1">{STAGE[s]}</span>
+                {n === 0 && progress?.fetched ? <span className="tabular-nums opacity-70">{progress.fetched.toLocaleString()} txs</span> : null}
+              </div>
+              {/* What's happening right now (e.g. "Double-checking trades on-chain (630/4,580) · part 7"). */}
+              {n === at && detail ? <div className="mt-1 pl-8 text-xs tabular-nums opacity-70">{detail}</div> : null}
             </li>
           ))}
         </ol>
-        <p className="text-xs opacity-60">Busy wallets take a minute. Keep this tab open.</p>
+        <p className="text-xs opacity-60">
+          {part ? `Big wallet — reading in parts (part ${part}). Keep this tab open; it picks up where it left off.` : "Busy wallets take a minute. Keep this tab open."}
+        </p>
       </div>
     </div>
   );

@@ -89,6 +89,7 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
   }
 
   let truncated = false;
+  let quotaCut = false;
   // When a cap cuts a wallet's history short, we only see it back to some date. With several
   // wallets we analyse just the window ALL of them cover, or a buy in wallet A followed by a sale in
   // busy wallet B (outside B's window) would look like a coin still held.
@@ -100,6 +101,7 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
     if (!s.done) continue;
     const res = s.result;
     truncated ||= res.truncated;
+    quotaCut ||= !!res.quotaCut;
     if (res.truncated && res.events.length) {
       coverageStart = Math.max(coverageStart, Math.min(...res.events.map((e) => e.timestamp)));
     }
@@ -119,6 +121,7 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
     events, resolved, timeframe: input.timeframe, sinceTs, coverageStart, truncated, cap: Number.isFinite(cap) ? cap : 0, providerPrices, notes,
     onStage: (stage, message) => say({ stage, message, fetched }),
   });
+  if (quotaCut) stats.meta.quotaCut = true;
   say({ stage: "done", message: "Done", fetched });
   return { stats, events, usage: usageSnapshot() };
 }

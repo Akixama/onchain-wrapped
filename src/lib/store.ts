@@ -1,9 +1,9 @@
 // Results + job store on top of the KV layer (Upstash Redis in production, local files in dev).
 import { createHash, randomBytes } from "node:crypto";
-import { gunzipSync, gzipSync } from "node:zlib";
 import type { WrappedStats } from "./engine/stats";
 import type { Progress, Timeframe } from "./pipeline";
 import { kv } from "./infra/kv";
+import { clearBlob, loadBlob, saveBlob } from "./infra/blob";
 
 export interface Job {
   id: string;
@@ -55,34 +55,10 @@ export async function putJob(job: Job) {
   await kv().set(`job:${job.id}`, JSON.stringify(job), ttl);
 }
 
-// ---------- Saved progress between parts of a big lookup ----------
-// gzip + base64, split into pieces small enough for one Redis request each. Kept for a day.
-const CHUNK = 500_000;
-const CKPT_TTL = DAY;
-
-export async function saveCheckpoint(id: string, data: unknown) {
-  const packed = gzipSync(Buffer.from(JSON.stringify(data))).toString("base64");
-  const parts = Math.max(1, Math.ceil(packed.length / CHUNK));
-  for (let i = 0; i < parts; i++) await kv().set(`ckpt:${id}:${i}`, packed.slice(i * CHUNK, (i + 1) * CHUNK), CKPT_TTL);
-  await kv().set(`ckpt:${id}:n`, String(parts), CKPT_TTL); // written last: a half-saved checkpoint is never read
-  return packed.length;
-}
-
-export async function loadCheckpoint<T>(id: string): Promise<T | null> {
-  const n = Number(await kv().get(`ckpt:${id}:n`));
-  if (!n) return null;
-  const parts: string[] = [];
-  for (let i = 0; i < n; i++) {
-    const p = await kv().get(`ckpt:${id}:${i}`);
-    if (p == null) return null;
-    parts.push(p);
-  }
-  return JSON.parse(gunzipSync(Buffer.from(parts.join(""), "base64")).toString()) as T;
-}
-
-export async function clearCheckpoint(id: string) {
-  await kv().set(`ckpt:${id}:n`, "0", 60); // the pieces expire on their own
-}
+// ---------- Saved progress between parts of a big lookup (kept for a day) ----------
+export const saveCheckpoint = (id: string, data: unknown) => saveBlob(`ckpt:${id}`, data, DAY);
+export const loadCheckpoint = <T>(id: string) => loadBlob<T>(`ckpt:${id}`);
+export const clearCheckpoint = (id: string) => clearBlob(`ckpt:${id}`);
 
 /** Same wallets + timeframe -> same result for RESULT_TTL_HOURS (never recompute twice). */
 export const lookupKey = (wallets: string[], timeframe: Timeframe) =>

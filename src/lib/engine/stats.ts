@@ -56,6 +56,8 @@ export interface WrappedStats {
     generatedAt: string;
     eventCount: number;
     truncated: boolean;
+    /** Cut short by a provider's daily limit: a later lookup can read further. */
+    quotaCut?: boolean;
     txCap: number;
     spamFiltered: number;
     note: string;
