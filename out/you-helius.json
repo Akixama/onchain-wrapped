@@ -1,0 +1,221 @@
+{
+  "meta": {
+    "wallets": [
+      "2NPvC47BoysYXVt4qikqqBQVGuh2yRSgX84pA2U7g1sW"
+    ],
+    "timeframe": "12m",
+    "fromTs": 1761547139,
+    "toTs": 1793083165,
+    "generatedAt": "2026-10-27T06:39:25.840Z",
+    "eventCount": 668,
+    "truncated": false,
+    "txCap": 2000,
+    "spamFiltered": 70,
+    "note": "All USD figures are estimates from public price data. Coins with no price are valued at $0.",
+    "notes": [],
+    "names": {}
+  },
+  "archetype": {
+    "title": "Solana swing trader",
+    "tagline": "Waits for the setup. Sometimes.",
+    "style": "swing trader"
+  },
+  "overview": {
+    "totalTrades": 215,
+    "volumeUsd": 1085.44,
+    "chainsUsed": [
+      "solana"
+    ],
+    "topChain": "solana",
+    "tradesByChain": {
+      "solana": 215
+    },
+    "tokensTraded": 99,
+    "activeDays": 20
+  },
+  "pnl": {
+    "realizedUsd": -27.19,
+    "unrealizedUsd": 0,
+    "totalUsd": -27.19,
+    "winRate": 0.38,
+    "wins": 18,
+    "losses": 30,
+    "byChain": {
+      "solana": {
+        "pnlUsd": -27.19,
+        "trades": 215,
+        "tokens": 99
+      }
+    }
+  },
+  "bestTrade": {
+    "symbol": "CROW",
+    "name": "The Wise Crow",
+    "icon": "https://ipfs.io/ipfs/bafkreibu6p7yiztmjdjuktrg66qfojn7wkz544amriip3lrsbgu72jikeq",
+    "chain": "solana",
+    "address": "D3UvNZmKMEaNxst1G64a2C8V6ni2qm1QE76Vfh6Fpump",
+    "pnlUsd": 7.4,
+    "costUsd": 8.66,
+    "proceedsUsd": 16.05,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.00000942655934283021,
+    "peakPrice": 0.000017715587089925275,
+    "avgExit": 0.00001748482792048941,
+    "firstTs": 1770746277,
+    "lastTs": 1770746451,
+    "partialHistory": false,
+    "fills": [
+      {
+        "t": 1770746277,
+        "side": "buy",
+        "price": 0.00000942655934283021,
+        "usd": 8.655352348025875
+      },
+      {
+        "t": 1770746428,
+        "side": "sell",
+        "price": 0.000017279121855508575,
+        "usd": 8.388079231201543
+      },
+      {
+        "t": 1770746451,
+        "side": "sell",
+        "price": 0.000017715587089925275,
+        "usd": 7.666277495629307
+      }
+    ],
+    "window": {
+      "start": 1770742677,
+      "end": 1770750051,
+      "tooOld": true
+    },
+    "supply": 999892565.515133
+  },
+  "worstTrade": {
+    "symbol": "Atom",
+    "name": "Atom Ant",
+    "icon": "https://ipfs.io/ipfs/QmNYk9SnYuwhoKkhTCFxjGkTdZdP1L2iBvQwsbU7LYrpkq",
+    "chain": "solana",
+    "address": "D8VbRucLQVTd1LmoqkuaY3wKGxGt8MSGe1PZUbaApump",
+    "pnlUsd": -6.97,
+    "costUsd": 13.85,
+    "proceedsUsd": 6.88,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.000005409585538185957,
+    "peakPrice": 0.000005409585538185957,
+    "avgExit": 0.000002688201117233163,
+    "firstTs": 1770843540,
+    "lastTs": 1770844157,
+    "partialHistory": false,
+    "fills": [
+      {
+        "t": 1770843540,
+        "side": "buy",
+        "price": 0.000005409585538185957,
+        "usd": 13.852185271064243
+      },
+      {
+        "t": 1770844157,
+        "side": "sell",
+        "price": 0.000002688201117233163,
+        "usd": 6.883606823284066
+      }
+    ],
+    "window": {
+      "start": 1770839940,
+      "end": 1770847757,
+      "tooOld": true
+    },
+    "supply": 999999804.102766
+  },
+  "roundTrip": null,
+  "paperHands": null,
+  "diamondHands": null,
+  "counterfactual": {
+    "major": "SOL",
+    "tradingPnlUsd": -27.19,
+    "holdPnlUsd": 95.58,
+    "justHeldDiffUsd": 122.77,
+    "verdict": "should_have_held"
+  },
+  "gas": {
+    "totalUsd": 11.64,
+    "byChain": {
+      "solana": 11.24
+    },
+    "txCount": 499,
+    "priciestTxUsd": 0.92
+  },
+  "rugs": {
+    "count": 3,
+    "lostUsd": -10.64,
+    "tokens": [
+      "Atom",
+      "Xpassport",
+      "Peace"
+    ],
+    "dodged": 1,
+    "dodgedTokens": [
+      "CURE"
+    ]
+  },
+  "airdrops": {
+    "count": 0,
+    "valueUsd": 0,
+    "tokens": []
+  },
+  "sleep": {
+    "hourHistogramUtc": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      3,
+      10,
+      8,
+      10,
+      12,
+      20,
+      13,
+      26,
+      32,
+      11,
+      6,
+      17,
+      8,
+      4,
+      4,
+      12,
+      13,
+      6,
+      0
+    ],
+    "peakHourUtc": 13,
+    "peakHourCount": 32,
+    "topMinuteUtc": "12:31",
+    "topMinuteCount": 6
+  },
+  "bridges": {
+    "hops": [],
+    "journey": [],
+    "routes": [],
+    "totalUsd": 0
+  },
+  "percentile": {
+    "activity": null
+  },
+  "cards": [
+    "archetype",
+    "overview",
+    "pnl",
+    "best",
+    "worst",
+    "counterfactual",
+    "gas",
+    "rugs",
+    "sleep",
+    "chains",
+    "summary"
+  ]
+}

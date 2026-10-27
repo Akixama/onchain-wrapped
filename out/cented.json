@@ -4,14 +4,20 @@
       "CyaE1VxvBrahnPWkqm5VsdCvyS2QmNht2UFrKJHga54o"
     ],
     "timeframe": "12m",
-    "fromTs": 1761505666,
-    "toTs": 1793041693,
-    "generatedAt": "2026-10-26T19:08:13.477Z",
+    "fromTs": 1781813805,
+    "toTs": 1793084092,
+    "generatedAt": "2026-10-27T06:54:52.478Z",
     "eventCount": 997,
     "truncated": true,
     "txCap": 1000,
     "spamFiltered": 334,
-    "note": "All USD figures are estimates from public price data. Coins with no price are valued at $0."
+    "note": "All USD figures are estimates from public price data. Coins with no price are valued at $0.",
+    "notes": [
+      "Corrected 78 Solana trades the data provider had labeled as plain transfers.",
+      "This address is flooded with bot transactions, so its history was read from a filtered source.",
+      "20 tokens left your wallets by routes we can't trace (bots, other wallets). We count them as moved, not sold."
+    ],
+    "names": {}
   },
   "archetype": {
     "title": "Solana sniper",
@@ -19,25 +25,32 @@
     "style": "sniper"
   },
   "overview": {
-    "totalTrades": 383,
-    "volumeUsd": 55985.63,
+    "totalTrades": 461,
+    "volumeUsd": 76078.37,
     "chainsUsed": [
       "solana"
     ],
     "topChain": "solana",
     "tradesByChain": {
-      "solana": 383
+      "solana": 461
     },
-    "tokensTraded": 81,
+    "tokensTraded": 82,
     "activeDays": 5
   },
   "pnl": {
-    "realizedUsd": -216.78,
-    "unrealizedUsd": -762.14,
-    "totalUsd": -978.91,
-    "winRate": 0.36,
-    "wins": 10,
-    "losses": 18
+    "realizedUsd": 329.87,
+    "unrealizedUsd": 0.01,
+    "totalUsd": 329.88,
+    "winRate": 0.43,
+    "wins": 30,
+    "losses": 40,
+    "byChain": {
+      "solana": {
+        "pnlUsd": 329.88,
+        "trades": 461,
+        "tokens": 82
+      }
+    }
   },
   "bestTrade": {
     "symbol": "TRENCHES",
@@ -45,96 +58,409 @@
     "icon": "https://cdn.zerion.io/4caa6eae-dd3a-4bd2-9aaa-afeb750c046c.png",
     "chain": "solana",
     "address": "3NMQuwg7WGqzqjqwUnR3Ciwo3AoVE39yYQnTqK49pump",
-    "pnlUsd": 1445.46,
-    "costUsd": 1327.22,
-    "proceedsUsd": 2772.68,
+    "pnlUsd": 1464.82,
+    "costUsd": 1350.13,
+    "proceedsUsd": 2814.95,
     "holdingValueUsd": 0,
-    "avgEntry": 0.00008663491237081857,
-    "peakPrice": 0.000234093736541378,
-    "avgExit": 0.00018098822431722022,
+    "avgEntry": 0.00008813038073810901,
+    "peakPrice": 0.00023783053534313353,
+    "avgExit": 0.0001837474285451476,
     "firstTs": 1781815311,
     "lastTs": 1781817243,
-    "partialHistory": false
+    "partialHistory": false,
+    "fills": [
+      {
+        "t": 1781815311,
+        "side": "buy",
+        "price": 0.00006484764231264965,
+        "usd": 349.23770528847206
+      },
+      {
+        "t": 1781815312,
+        "side": "buy",
+        "price": 0.00006283947619335367,
+        "usd": 349.23770528847206
+      },
+      {
+        "t": 1781815324,
+        "side": "buy",
+        "price": 0.00008620739983817494,
+        "usd": 17.793329640072002
+      },
+      {
+        "t": 1781815324,
+        "side": "buy",
+        "price": 0.00008621561527227478,
+        "usd": 17.793329640072002
+      },
+      {
+        "t": 1781815345,
+        "side": "buy",
+        "price": 0.00016305347051720725,
+        "usd": 17.789449709808
+      },
+      {
+        "t": 1781815345,
+        "side": "buy",
+        "price": 0.00015593808506200092,
+        "usd": 17.789449709808
+      },
+      {
+        "t": 1781815385,
+        "side": "buy",
+        "price": 0.00014816122057537205,
+        "usd": 17.788722133455
+      },
+      {
+        "t": 1781815396,
+        "side": "buy",
+        "price": 0.00014889217799590138,
+        "usd": 17.805521002698
+      },
+      {
+        "t": 1781815397,
+        "side": "buy",
+        "price": 0.0001493737229913078,
+        "usd": 17.805521002698
+      },
+      {
+        "t": 1781815591,
+        "side": "buy",
+        "price": 0.00012032514270623798,
+        "usd": 17.795635782551997
+      },
+      {
+        "t": 1781815591,
+        "side": "buy",
+        "price": 0.0001184460429282213,
+        "usd": 17.795635782551997
+      },
+      {
+        "t": 1781815677,
+        "side": "buy",
+        "price": 0.0001792478926840354,
+        "usd": 17.789313302607
+      },
+      {
+        "t": 1781815677,
+        "side": "buy",
+        "price": 0.00017965583770562657,
+        "usd": 17.789313302607
+      },
+      {
+        "t": 1781816109,
+        "side": "buy",
+        "price": 0.00014529035759330513,
+        "usd": 349.19873666177506
+      },
+      {
+        "t": 1781816255,
+        "side": "buy",
+        "price": 0.00021515526172469717,
+        "usd": 17.800187203295998
+      },
+      {
+        "t": 1781816255,
+        "side": "buy",
+        "price": 0.0002098370383544938,
+        "usd": 17.800187203295998
+      },
+      {
+        "t": 1781816725,
+        "side": "buy",
+        "price": 0.00021617109297555152,
+        "usd": 17.7870828512925
+      },
+      {
+        "t": 1781816725,
+        "side": "buy",
+        "price": 0.00021580721014791075,
+        "usd": 17.7870828512925
+      },
+      {
+        "t": 1781817206,
+        "side": "buy",
+        "price": 0.000237370539160085,
+        "usd": 17.7716533126185
+      },
+      {
+        "t": 1781817206,
+        "side": "buy",
+        "price": 0.00023783053534313353,
+        "usd": 17.7716533126185
+      },
+      {
+        "t": 1781817226,
+        "side": "sell",
+        "price": 0.00019365628865539145,
+        "usd": 741.6869854533463
+      },
+      {
+        "t": 1781817227,
+        "side": "sell",
+        "price": 0.00018515975122027867,
+        "usd": 531.8594815461289
+      },
+      {
+        "t": 1781817233,
+        "side": "sell",
+        "price": 0.00019265130717775636,
+        "usd": 415.033870804103
+      },
+      {
+        "t": 1781817233,
+        "side": "sell",
+        "price": 0.0001848667337325702,
+        "usd": 398.2633557380755
+      },
+      {
+        "t": 1781817243,
+        "side": "sell",
+        "price": 0.00016898641253149744,
+        "usd": 728.1039089086877
+      }
+    ],
+    "window": {
+      "start": 1781811711,
+      "end": 1781820843,
+      "tooOld": false
+    },
+    "supply": 999386869.932328
   },
   "worstTrade": {
     "symbol": "ASTEROID",
     "name": "Asteroid The Space Shiba Inu",
     "chain": "solana",
     "address": "F2GLrmimZgFAqakEVkcfdWGnnBgn9Sfj3xN7VmDwBAGS",
-    "pnlUsd": -1199.67,
-    "costUsd": 2508.46,
-    "proceedsUsd": 1308.79,
+    "pnlUsd": -1216.83,
+    "costUsd": 2544.63,
+    "proceedsUsd": 1327.8,
     "holdingValueUsd": 0,
-    "avgEntry": 0.0006198561448643811,
-    "peakPrice": 0.0010796061531713969,
-    "avgExit": 0.0003234099648418775,
-    "firstTs": 1781818007,
-    "lastTs": 1781818404,
-    "partialHistory": false
-  },
-  "roundTrip": {
-    "symbol": "ASTEROID",
-    "name": "Asteroid The Space Shiba Inu",
-    "chain": "solana",
-    "address": "F2GLrmimZgFAqakEVkcfdWGnnBgn9Sfj3xN7VmDwBAGS",
-    "pnlUsd": -1199.67,
-    "costUsd": 2508.46,
-    "proceedsUsd": 1308.79,
-    "holdingValueUsd": 0,
-    "avgEntry": 0.0006198561448643811,
-    "peakPrice": 0.0010796061531713969,
-    "avgExit": 0.0003234099648418775,
+    "avgEntry": 0.0006287931954161744,
+    "peakPrice": 0.0010946762757318579,
+    "avgExit": 0.0003281081423495651,
     "firstTs": 1781818007,
     "lastTs": 1781818404,
     "partialHistory": false,
-    "peakGainUsd": 164.16,
-    "peakTs": 1781818011,
-    "endedWithUsd": -1199.67
+    "fills": [
+      {
+        "t": 1781818007,
+        "side": "buy",
+        "price": 0.00074172672757401,
+        "usd": 348.1445030533471
+      },
+      {
+        "t": 1781818011,
+        "side": "buy",
+        "price": 0.0010482777356957333,
+        "usd": 17.737632023697003
+      },
+      {
+        "t": 1781818011,
+        "side": "buy",
+        "price": 0.0010946762757318579,
+        "usd": 17.737632023697007
+      },
+      {
+        "t": 1781818020,
+        "side": "buy",
+        "price": 0.0007888088232350395,
+        "usd": 348.1445030533471
+      },
+      {
+        "t": 1781818042,
+        "side": "buy",
+        "price": 0.0008499253946984118,
+        "usd": 348.245762222358
+      },
+      {
+        "t": 1781818102,
+        "side": "buy",
+        "price": 0.0003536874289444042,
+        "usd": 17.740650183169503
+      },
+      {
+        "t": 1781818102,
+        "side": "buy",
+        "price": 0.00035722403116401273,
+        "usd": 17.740650183169503
+      },
+      {
+        "t": 1781818116,
+        "side": "sell",
+        "price": 0.00027346167017628986,
+        "usd": 397.4513317434243
+      },
+      {
+        "t": 1781818376,
+        "side": "buy",
+        "price": 0.000685238798251523,
+        "usd": 348.4098834130915
+      },
+      {
+        "t": 1781818376,
+        "side": "buy",
+        "price": 0.0005203225973739169,
+        "usd": 348.4098834130915
+      },
+      {
+        "t": 1781818376,
+        "side": "buy",
+        "price": 0.0006079304657269101,
+        "usd": 348.4098834130915
+      },
+      {
+        "t": 1781818376,
+        "side": "buy",
+        "price": 0.0004512807994008104,
+        "usd": 348.4098834130915
+      },
+      {
+        "t": 1781818387,
+        "side": "buy",
+        "price": 0.0005075566788522659,
+        "usd": 17.748383270711997
+      },
+      {
+        "t": 1781818387,
+        "side": "buy",
+        "price": 0.0005033780014809806,
+        "usd": 17.748383270711997
+      },
+      {
+        "t": 1781818404,
+        "side": "sell",
+        "price": 0.0003587330050702161,
+        "usd": 930.3509595354965
+      }
+    ],
+    "window": {
+      "start": 1781814407,
+      "end": 1781822004,
+      "tooOld": false
+    },
+    "supply": 999997306.8153745
   },
-  "paperHands": {
-    "symbol": "VOYAGER",
-    "name": "the sprite voyager",
-    "icon": "https://cdn.zerion.io/5e14a276-1268-4fe9-910f-5ccc7651415b.png",
+  "roundTrip": {
+    "symbol": "BARRON",
+    "name": "Official Barron Trump",
+    "icon": "https://cdn.zerion.io/97dde9c2-69ba-43eb-a2ca-8f4634aabe4c.png",
     "chain": "solana",
-    "address": "qvm1XFQAUMYg3UzhoNt9AxAhrbvph93jnYDguMNg9Yc",
-    "pnlUsd": 19.14,
-    "costUsd": 320.09,
-    "proceedsUsd": 2329.18,
+    "address": "2aKTUD6u1MW3vbAQdHvNnw9wjjZoacQVMbYTG28cpump",
+    "pnlUsd": -589.03,
+    "costUsd": 1080.32,
+    "proceedsUsd": 491.29,
     "holdingValueUsd": 0,
-    "avgEntry": 0.0000033373588833274062,
-    "peakPrice": 0.00012331839489058632,
-    "avgExit": 0.00004725339012634575,
-    "firstTs": 1781823912,
-    "lastTs": 1781824915,
-    "partialHistory": true,
-    "soldAt": 0.00003064042472622677,
-    "soldTs": 1781824125,
-    "laterPeak": 0.00012331839489058632,
-    "missedUsd": 1143.27
+    "avgEntry": 0.0001384053262009787,
+    "peakPrice": 0.00016059371272295387,
+    "avgExit": 0.00006294163997689442,
+    "firstTs": 1781828509,
+    "lastTs": 1781828644,
+    "partialHistory": false,
+    "peakGainUsd": 171.55,
+    "peakTs": 1781828605,
+    "endedWithUsd": -589.03,
+    "fills": [
+      {
+        "t": 1781828509,
+        "side": "buy",
+        "price": 0.00011431087162020237,
+        "usd": 348.15508062535196
+      },
+      {
+        "t": 1781828554,
+        "side": "buy",
+        "price": 0.00015106763148951244,
+        "usd": 17.744689839492
+      },
+      {
+        "t": 1781828604,
+        "side": "buy",
+        "price": 0.00014806740526121943,
+        "usd": 348.33441760517394
+      },
+      {
+        "t": 1781828605,
+        "side": "buy",
+        "price": 0.00016059371272295387,
+        "usd": 348.33441760517394
+      },
+      {
+        "t": 1781828636,
+        "side": "buy",
+        "price": 0.00014700889764461973,
+        "usd": 17.751043697238
+      },
+      {
+        "t": 1781828644,
+        "side": "sell",
+        "price": 0.00006294163997689442,
+        "usd": 491.28955002805
+      }
+    ],
+    "window": {
+      "start": 1781824909,
+      "end": 1781832244,
+      "tooOld": false
+    },
+    "supply": 999226286.346038
   },
+  "paperHands": null,
   "diamondHands": {
     "symbol": "ASTEROID",
     "name": "Asteroid The Space Shiba Inu",
     "chain": "solana",
     "address": "EgSAgEiKUcLgPSoGWRoQmpmCVhy9hpPD9dNqrijKBAGS",
-    "pnlUsd": 108.35,
-    "costUsd": 241.13,
-    "proceedsUsd": 349.48,
+    "pnlUsd": 109.88,
+    "costUsd": 244.55,
+    "proceedsUsd": 354.43,
     "holdingValueUsd": 0,
-    "avgEntry": 0.00009294093026202696,
-    "peakPrice": 0.000245157058381876,
-    "avgExit": 0.00013470217021414177,
+    "avgEntry": 0.00009425560861046378,
+    "peakPrice": 0.00024862477362230334,
+    "avgExit": 0.00013660742630976864,
     "firstTs": 1781817985,
     "lastTs": 1781818001,
     "partialHistory": false,
     "daysHeld": 130,
-    "stillHolding": true
+    "stillHolding": true,
+    "fills": [
+      {
+        "t": 1781817985,
+        "side": "buy",
+        "price": 0.00008528998655111053,
+        "usd": 209.063869618404
+      },
+      {
+        "t": 1781817992,
+        "side": "buy",
+        "price": 0.00024862477362230334,
+        "usd": 17.740860816204
+      },
+      {
+        "t": 1781817992,
+        "side": "buy",
+        "price": 0.0002466562022665932,
+        "usd": 17.740860816204
+      },
+      {
+        "t": 1781818001,
+        "side": "sell",
+        "price": 0.00013660742630976864,
+        "usd": 354.42711928407675
+      }
+    ],
+    "window": {
+      "start": 1781814385,
+      "end": 1781821601,
+      "tooOld": false
+    },
+    "supply": 1000000000
   },
   "counterfactual": {
     "major": "SOL",
-    "tradingPnlUsd": -978.91,
-    "holdPnlUsd": 6056.67,
-    "justHeldDiffUsd": 7035.58,
+    "tradingPnlUsd": 329.88,
+    "holdPnlUsd": 9911.08,
+    "justHeldDiffUsd": 9581.2,
     "verdict": "should_have_held"
   },
   "gas": {
@@ -146,32 +472,32 @@
     "priciestTxUsd": 0.04
   },
   "rugs": {
-    "count": 18,
-    "lostUsd": -3906.44,
+    "count": 39,
+    "lostUsd": -4133.41,
     "tokens": [
       "ASTEROID",
       "BARRON",
-      "COMOS",
       "DORAEMON",
       "ZEC",
-      "Foid",
       "DAWN",
+      "DAWNNY",
       "Asteroid",
       "TOPO",
-      "VOYAGER"
+      "VOYAGER",
+      "Juanita"
     ],
-    "dodged": 56,
+    "dodged": 35,
     "dodgedTokens": [
       "TRENCHES",
       "1B",
       "coin",
-      "NeGa",
-      "ASTEROID",
-      "GREG",
-      "ENIGMA",
+      "BED",
       "VOYAGER",
-      "BARRON",
-      "ALON"
+      "grace",
+      "NeGa",
+      "ギコ猫",
+      "ASTEROID",
+      "bread"
     ]
   },
   "airdrops": {
@@ -181,12 +507,12 @@
   },
   "sleep": {
     "hourHistogramUtc": [
-      65,
-      5,
+      77,
+      8,
       0,
       0,
-      3,
-      7,
+      18,
+      11,
       0,
       1,
       0,
@@ -196,20 +522,20 @@
       0,
       0,
       0,
-      5,
+      6,
+      0,
+      1,
       0,
       0,
-      0,
-      0,
-      37,
-      109,
-      86,
-      65
+      41,
+      125,
+      99,
+      74
     ],
     "peakHourUtc": 21,
-    "peakHourCount": 109,
-    "topMinuteUtc": "21:13",
-    "topMinuteCount": 11
+    "peakHourCount": 125,
+    "topMinuteUtc": "04:29",
+    "topMinuteCount": 16
   },
   "bridges": {
     "hops": [],
@@ -219,5 +545,20 @@
   },
   "percentile": {
     "activity": null
-  }
+  },
+  "cards": [
+    "archetype",
+    "overview",
+    "pnl",
+    "best",
+    "worst",
+    "roundTrip",
+    "diamondHands",
+    "counterfactual",
+    "gas",
+    "rugs",
+    "sleep",
+    "chains",
+    "summary"
+  ]
 }

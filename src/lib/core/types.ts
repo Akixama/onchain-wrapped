@@ -78,6 +78,8 @@ export interface FetchResult {
   currentPrices?: Record<string, number>;
   /** Human-readable data-quality notes shown in the UI ("filled 18 missing txs"). */
   notes?: string[];
+  /** The address history is mostly other programs' transactions that never touch this wallet's balances. */
+  junkFlooded?: boolean;
 }
 
 /** A chain adapter = one data provider covering one or more chains. */

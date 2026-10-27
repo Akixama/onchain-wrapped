@@ -11,6 +11,7 @@ const MIN_GAP_MS: Record<string, number> = {
   dexscreener: 220, // 300 req/min
   geckoterminal: 2100, // ~30 req/min
   "evm-rpc": 100, // publicnode, for token supply
+  "helius-rpc": 120, // Helius free plan: 10 RPC requests/s (a little headroom avoids 429s)
 };
 
 const lastCall: Record<string, number> = {};

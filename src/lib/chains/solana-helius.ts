@@ -6,7 +6,6 @@ import { fetchJson } from "../infra/http";
 // every DEX/aggregator without per-program parsers.
 
 const WSOL = "So11111111111111111111111111111111111111112";
-const ATA_RENT_SOL = 0.0021;
 const BRIDGE_SOURCES = new Set(["WORMHOLE", "DEBRIDGE", "ALLBRIDGE", "MAYAN", "PORTAL", "CCTP", "RELAY"]);
 
 interface HeliusTx {
@@ -22,7 +21,7 @@ interface HeliusTx {
   accountData?: {
     account: string;
     nativeBalanceChange: number;
-    tokenBalanceChanges?: { userAccount: string; mint: string; rawTokenAmount: { tokenAmount: string; decimals: number } }[];
+    tokenBalanceChanges?: { userAccount: string; tokenAccount?: string; mint: string; rawTokenAmount: { tokenAmount: string; decimals: number } }[];
   }[];
 }
 
@@ -46,6 +45,9 @@ export const heliusAdapter: ChainAdapter = {
     let before: string | undefined;
     let requests = 0;
     let truncated = false;
+    let real = 0; // entries that actually move this wallet's tokens or SOL
+    // The cap counts real activity; this bounds credits spent wading through junk (100 credits/page).
+    const maxPages = Math.ceil(opts.maxTxs / 100) * 3 + 2;
     const pageParam = process.env.HELIUS_BEFORE_PARAM ?? "before-signature";
 
     for (;;) {
@@ -62,14 +64,24 @@ export const heliusAdapter: ChainAdapter = {
       for (const tx of page) {
         if (tx.timestamp < opts.sinceTs) { reachedSince = true; break; }
         raw.push(tx);
+        if (normalize(address, tx)) real++;
       }
-      opts.onProgress?.({ chain: "solana", fetched: raw.length });
+      opts.onProgress?.({ chain: "solana", fetched: real });
       if (reachedSince) break;
-      if (raw.length >= opts.maxTxs) { truncated = true; break; }
+      // Bots that only reference this address can bury its real activity (seen: 2 real in 400).
+      if (requests >= 4 && real / raw.length < 0.05) return { events: [], truncated: true, requests, junkFlooded: true };
+      if (real >= opts.maxTxs || requests >= maxPages) { truncated = true; break; }
       before = page[page.length - 1].signature;
     }
 
     const events = raw.map((tx) => normalize(address, tx)).filter((e): e is UnifiedEvent => !!e);
+    // Failed transactions still burn fees but aren't in the parsed history: add their fees for the gas card.
+    const oldest = raw.length ? raw[raw.length - 1].timestamp : opts.sinceTs;
+    const failed = await failedFees(address, Math.max(opts.sinceTs, truncated ? oldest : opts.sinceTs), (n) =>
+      opts.onProgress?.({ chain: "solana", fetched: raw.length, message: `Adding fees from failed transactions (${n})` }),
+    ).catch(() => [] as UnifiedEvent[]);
+    const known = new Set(events.map((e) => e.txHash));
+    events.push(...failed.filter((e) => !known.has(e.txHash)));
     const meta = await fetchTokenMeta(events);
     requests += meta.requests;
     const currentPrices: Record<string, number> = {};
@@ -92,11 +104,17 @@ function normalize(wallet: string, tx: HeliusTx): UnifiedEvent | null {
   };
   if (tx.transactionError) return feeSol ? { ...base, type: "other", in: [], out: [] } : null;
 
+  // The wallet's own token accounts. SOL moving into/out of them is the refundable account deposit
+  // (~0.00204 SOL each) or wrapped SOL — never a trade cost — so it's netted into the SOL change.
+  const myTokenAccounts = new Set<string>();
+  for (const acc of tx.accountData ?? [])
+    for (const tb of acc.tokenBalanceChanges ?? []) if (tb.userAccount === wallet) myTokenAccounts.add(tb.tokenAccount ?? acc.account);
+
   // Net change per mint for this wallet.
   const delta = new Map<string, { amount: number; decimals: number }>();
   let solLamports = 0;
   for (const acc of tx.accountData ?? []) {
-    if (acc.account === wallet) solLamports += acc.nativeBalanceChange;
+    if (acc.account === wallet || myTokenAccounts.has(acc.account)) solLamports += acc.nativeBalanceChange;
     for (const tb of acc.tokenBalanceChanges ?? []) {
       if (tb.userAccount !== wallet) continue;
       const dec = tb.rawTokenAmount.decimals;
@@ -108,12 +126,9 @@ function normalize(wallet: string, tx: HeliusTx): UnifiedEvent | null {
       delta.set(mint, cur);
     }
   }
-  let sol = solLamports / 1e9 + feeSol; // add back the fee so gas isn't counted as a trade leg
-  const solFromWsol = delta.get("native");
-  if (solFromWsol) { sol += solFromWsol.amount; delta.delete("native"); }
-  const tokenLegCount = [...delta.values()].filter((d) => Math.abs(d.amount) > 0).length;
-  // Creating a token account costs ~0.002 SOL rent; don't treat that as a trade leg.
-  if (tokenLegCount > 0 && sol < 0 && -sol <= ATA_RENT_SOL) sol = 0;
+  // Fee added back so gas isn't a trade leg. Wrapped SOL is already inside the token-account lamports.
+  const sol = solLamports / 1e9 + feeSol;
+  delta.delete("native");
   if (Math.abs(sol) > 1e-9) delta.set("native", { amount: sol, decimals: 9 });
 
   const ins: Leg[] = [];
@@ -179,4 +194,48 @@ function enrichToken(t: TokenRef, byMint: Map<string, DasAsset>, prices: Record<
   t.icon = a.content?.links?.image;
   const p = a.token_info?.price_info?.price_per_token;
   if (p) prices[`solana:${t.address}`] = p;
+}
+
+/** Fees paid by the wallet on failed transactions since `sinceTs` (via Helius RPC; ~10 lookups/s on the free plan). */
+async function failedFees(wallet: string, sinceTs: number, onCount?: (n: number) => void): Promise<UnifiedEvent[]> {
+  const sigs: { signature: string; blockTime: number }[] = [];
+  let before: string | undefined;
+  for (let page = 0; page < 20; page++) {
+    const r = await fetchJson<{ result: { signature: string; blockTime: number | null; err: unknown }[] }>("helius-rpc", rpcUrl(), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getSignaturesForAddress", params: [wallet, { limit: 1000, ...(before ? { before } : {}) }] }),
+      endpoint: "rpc/getSignaturesForAddress",
+    });
+    const list = r.result ?? [];
+    let done = !list.length;
+    for (const x of list) {
+      if ((x.blockTime ?? 0) < sinceTs) { done = true; break; }
+      if (x.err && x.blockTime) sigs.push({ signature: x.signature, blockTime: x.blockTime });
+    }
+    if (done) break;
+    before = list[list.length - 1].signature;
+  }
+  const cap = sigs.slice(0, Number(process.env.FAILED_FEE_MAX ?? 400));
+  onCount?.(cap.length);
+  const out: UnifiedEvent[] = [];
+  await Promise.all(cap.map(async (x) => {
+    try {
+      const r = await fetchJson<{ result: { meta: { fee: number } | null; transaction: { message: { accountKeys: { pubkey: string }[] } } } | null }>("helius-rpc", rpcUrl(), {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [x.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 1 }] }),
+        endpoint: "rpc/getTransaction",
+      });
+      const t = r.result;
+      if (!t?.meta || t.transaction.message.accountKeys[0]?.pubkey !== wallet) return; // someone else paid
+      out.push({
+        id: `solana:${x.signature}:${wallet}`, wallet, chain: "solana", timestamp: x.blockTime, txHash: x.signature,
+        type: "other", in: [], out: [], gasUsd: null, gasNative: t.meta.fee / 1e9,
+      });
+    } catch {
+      /* skip: one missing fee shouldn't fail the lookup */
+    }
+  }));
+  return out;
 }

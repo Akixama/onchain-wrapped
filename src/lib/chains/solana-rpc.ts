@@ -6,7 +6,6 @@ import { fetchJson } from "../infra/http";
 // Helius adapter, so no per-DEX parsing.
 
 const WSOL = "So11111111111111111111111111111111111111112";
-const ATA_RENT_SOL = 0.0021;
 // Set SOLANA_RPC_URL to a dedicated node (e.g. https://mainnet.helius-rpc.com/?api-key=...) for ~10x faster checks.
 const rpcUrl = () => process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
 
@@ -83,10 +82,14 @@ export function normalizeRaw(wallet: string, tx: RawTx): UnifiedEvent | null {
   for (const b of tx.meta.preTokenBalances ?? []) add(b, -1);
   for (const b of tx.meta.postTokenBalances ?? []) add(b, 1);
 
-  const idx = keys.indexOf(wallet);
-  let sol = idx >= 0 ? (tx.meta.postBalances[idx] - tx.meta.preBalances[idx]) / 1e9 + feeSol : 0;
-  const wsol = byMintOwner.get(WSOL)?.get(wallet);
-  if (wsol) sol += wsol.d;
+  // SOL change = the wallet + its own token accounts (account deposits and wrapped SOL net out),
+  // with the fee added back so gas isn't counted as a trade leg.
+  const lamports = (i: number) => tx.meta!.postBalances[i] - tx.meta!.preBalances[i];
+  const mine = new Set<number>();
+  const walletIdx = keys.indexOf(wallet);
+  if (walletIdx >= 0) mine.add(walletIdx);
+  for (const b of [...(tx.meta.preTokenBalances ?? []), ...(tx.meta.postTokenBalances ?? [])]) if (b.owner === wallet) mine.add(b.accountIndex);
+  const sol = [...mine].reduce((s, i) => s + lamports(i), 0) / 1e9 + feeSol;
 
   const ins: Leg[] = [], outs: Leg[] = [];
   const push = (token: TokenRef, d: number, cp?: string) => {
@@ -102,12 +105,11 @@ export function normalizeRaw(wallet: string, tx: RawTx): UnifiedEvent | null {
     for (const [o, v] of owners) if (o !== wallet && Math.sign(v.d) === -Math.sign(mine.d) && Math.abs(v.d) > best) { best = Math.abs(v.d); cp = o; }
     push({ chain: "solana", address: mint, symbol: "", decimals: mine.dec }, mine.d, cp);
   }
-  if (ins.length + outs.length > 0 && sol < 0 && -sol <= ATA_RENT_SOL) sol = 0;
   if (Math.abs(sol) > 1e-9) {
     let cp: string | undefined, best = 0;
     keys.forEach((k, i) => {
       const d = (tx.meta!.postBalances[i] - tx.meta!.preBalances[i]) / 1e9;
-      if (k !== wallet && Math.sign(d) === -Math.sign(sol) && Math.abs(d) > best) { best = Math.abs(d); cp = k; }
+      if (k !== wallet && !mine.has(i) && Math.sign(d) === -Math.sign(sol) && Math.abs(d) > best) { best = Math.abs(d); cp = k; }
     });
     push({ chain: "solana", address: "native", symbol: "SOL", decimals: 9 }, sol, cp);
   }
@@ -142,7 +144,8 @@ export async function currentTokenBalances(wallet: string): Promise<Map<string, 
 export async function verifySolanaTransfers(
   events: UnifiedEvent[],
   isMoney: (t: TokenRef) => boolean,
-  max = Number(process.env.SOLANA_VERIFY_MAX ?? 400),
+  // A dedicated RPC (~10/s) can afford to check far more than the ~1/s public node.
+  max = Number(process.env.SOLANA_VERIFY_MAX ?? (process.env.SOLANA_RPC_URL ? 2000 : 400)),
   onProgress?: (done: number, total: number) => void,
 ): Promise<{ checked: number; fixed: number; skipped: number }> {
   const suspects = events.filter(
