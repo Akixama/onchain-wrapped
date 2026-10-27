@@ -72,7 +72,7 @@ export function shareText(s: WrappedStats, card: CardId): string {
   const tail = "My onchain Wrapped 👇";
   switch (card) {
     case "archetype": return `I'm a "${s.archetype.title}". ${tail}`;
-    case "overview": return `${num(s.overview.totalTrades)} trades, ${usd(s.overview.volumeUsd)} volume across ${s.overview.chainsUsed.length} chains. ${tail}`;
+    case "overview": return `${num(s.overview.totalTrades)} trades, ${usd(s.overview.volumeUsd)} volume${s.overview.chainsUsed.length > 1 ? ` across ${s.overview.chainsUsed.length} chains` : ""}. ${tail}`;
     case "pnl": return `${usd(s.pnl.totalUsd, { sign: true })} trading PnL, ${pct(s.pnl.winRate)} win rate. ${tail}`;
     case "best": return s.bestTrade ? `Best trade: $${s.bestTrade.symbol} ${usd(s.bestTrade.pnlUsd, { sign: true })}. ${tail}` : tail;
     case "worst": return s.worstTrade ? `Worst trade: $${s.worstTrade.symbol} ${usd(s.worstTrade.pnlUsd)}. Pain. ${tail}` : tail;

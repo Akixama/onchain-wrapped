@@ -5,6 +5,7 @@ import type { CardId, WrappedStats } from "@/lib/engine/stats";
 import { getJob } from "@/lib/store";
 import { NARRATIVE_LABEL } from "@/lib/engine/extras";
 import { CARD_THEME, CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel } from "@/components/format";
+import { EVM_ENABLED } from "@/lib/site";
 
 // Fonts are the same for every request: read once.
 const fontDir = join(process.cwd(), "assets", "fonts");
@@ -30,7 +31,7 @@ function content(s: WrappedStats, card: CardId): Content {
     case "archetype":
       return { kicker: "My onchain personality", big: s.archetype.title, sub: s.archetype.tagline, chips: s.overview.chainsUsed.map((c) => ({ label: CHAIN_NAME[c], color: CHAIN_COLOR[c] })) };
     case "overview":
-      return { kicker: "The numbers", big: `${num(s.overview.totalTrades)} trades`, sub: `${m(s.overview.volumeUsd)} volume across ${s.overview.chainsUsed.length} chains · ${s.overview.activeDays} active days` };
+      return { kicker: "The numbers", big: `${num(s.overview.totalTrades)} trades`, sub: `${m(s.overview.volumeUsd)} volume${s.overview.chainsUsed.length > 1 ? ` across ${s.overview.chainsUsed.length} chains` : ""} · ${s.overview.activeDays} active days` };
     case "pnl":
       return { kicker: "Trading result", big: m(s.pnl.totalUsd, true), bigColor: signColor(s.pnl.totalUsd), sub: `${pct(s.pnl.winRate)} win rate · ${s.pnl.wins} wins, ${s.pnl.losses} losses` };
     case "best": {
@@ -147,7 +148,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/og/[id]/[card]"
             )}
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", fontSize: 24, opacity: 0.7 }}>
-            <span>{s ? `${whoLabel(s)} · ${periodLabel(s)}` : "Solana · Ethereum · Base · Arbitrum · BNB · Polygon · Optimism"}</span>
+            <span>{s ? `${whoLabel(s)} · ${periodLabel(s)}` : (EVM_ENABLED ? "Solana · Ethereum · Base · Arbitrum · BNB · Polygon · Optimism" : "Solana")}</span>
             <span>Get yours →</span>
           </div>
         </div>

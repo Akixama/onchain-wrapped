@@ -131,7 +131,7 @@ const Overview = ({ s }: CardProps) => {
       <Body>
         <Line className="text-lg opacity-80">You made</Line>
         <BigNumber className="text-[76px] @3xl:text-[106px]"><CountUp value={s.overview.totalTrades} format={(n) => num(Math.round(n))} /></BigNumber>
-        <Line className="text-lg opacity-80">trades, moving <b className="font-display text-2xl">{money(s.overview.volumeUsd)}</b> across {s.overview.chainsUsed.length} {s.overview.chainsUsed.length === 1 ? "chain" : "chains"}.</Line>
+        <Line className="text-lg opacity-80">trades, moving <b className="font-display text-2xl">{money(s.overview.volumeUsd)}</b>{s.overview.chainsUsed.length > 1 && ` across ${s.overview.chainsUsed.length} chains`}.</Line>
         <R><motion.div variants={rise} className="space-y-2 pt-2 @3xl:space-y-3">
           {bars.map(([c, n]) => (
             <div key={c} className="flex items-center gap-3 text-sm">
