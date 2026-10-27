@@ -52,3 +52,10 @@ usage.log
 # local Claude/agent tooling
 .claude/
 !.env.example
+
+# Demo run scratch; the big gucci events file is committed gzipped instead
+/out/full/
+/out/old/
+/out/*.log
+/out/user2.*
+/out/gucci.events.json

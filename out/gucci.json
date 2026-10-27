@@ -4,16 +4,17 @@
       "YvEsBWpHK5PJ6Q8m4YrocwKeWys1NG67pbgi73UPnuX"
     ],
     "timeframe": "12m",
-    "fromTs": 1792018466,
-    "toTs": 1793083392,
-    "generatedAt": "2026-10-27T06:43:12.630Z",
-    "eventCount": 932,
-    "truncated": true,
-    "txCap": 1000,
-    "spamFiltered": 270,
+    "fromTs": 1761604547,
+    "toTs": 1793140843,
+    "generatedAt": "2026-10-27T22:40:43.491Z",
+    "eventCount": 50424,
+    "truncated": false,
+    "txCap": 0,
+    "spamFiltered": 4330,
     "note": "All USD figures are estimates from public price data. Coins with no price are valued at $0.",
     "notes": [
-      "11 tokens left your wallets by routes we can't trace (bots, other wallets). We count them as moved, not sold."
+      "44 tokens left your wallets by routes we can't trace (bots, other wallets). We count them as moved, not sold.",
+      "Paper hands is estimated from DefiLlama prices (chart data was unavailable)."
     ],
     "names": {}
   },
@@ -23,1086 +24,957 @@
     "style": "sniper"
   },
   "overview": {
-    "totalTrades": 379,
-    "volumeUsd": 49222.5,
+    "totalTrades": 28065,
+    "volumeUsd": 6741930.59,
     "chainsUsed": [
       "solana"
     ],
     "topChain": "solana",
     "tradesByChain": {
-      "solana": 379
+      "solana": 28065
     },
-    "tokensTraded": 109,
-    "activeDays": 8
+    "tokensTraded": 7705,
+    "activeDays": 322
   },
   "pnl": {
-    "realizedUsd": 1646.37,
-    "unrealizedUsd": 176.49,
-    "totalUsd": 1822.86,
-    "winRate": 0.46,
-    "wins": 46,
-    "losses": 54,
+    "realizedUsd": 258681.41,
+    "unrealizedUsd": -3046.51,
+    "totalUsd": 255634.9,
+    "winRate": 0.33,
+    "wins": 2241,
+    "losses": 4522,
     "byChain": {
       "solana": {
-        "pnlUsd": 1822.86,
-        "trades": 379,
-        "tokens": 109
+        "pnlUsd": 255634.9,
+        "trades": 28065,
+        "tokens": 7705
       }
     }
   },
   "bestTrade": {
-    "symbol": "SCS",
-    "name": "Squad Champion Series",
-    "icon": "https://ipfs.io/ipfs/bafkreie7335im2cg2tvbbcr5zjskz6clwdzb3aa5sxk7p5fub7nzyqpkoi",
+    "symbol": "EYE",
+    "name": "BULLS'S EYE",
+    "icon": "https://cdn.helius-rpc.com/cdn-cgi/image//https://ipfs.io/ipfs/bafybeibbbhasppfwansavamal2fniroe26363abzeokep4to5xtjqgizmu",
     "chain": "solana",
-    "address": "4U6QvbLXyTpJTiU9HbgaN9yGa6CQ7gXFnWL1HFaWpump",
-    "pnlUsd": 1261.49,
-    "costUsd": 207.81,
-    "proceedsUsd": 1469.3,
+    "address": "RmtMAYVTTFv2iK9muMrXEoAnSSsZPPgRPbqZCKwNDYk",
+    "pnlUsd": 24625.92,
+    "costUsd": 523.99,
+    "proceedsUsd": 25149.91,
     "holdingValueUsd": 0,
-    "avgEntry": 0.00003396380924556163,
-    "peakPrice": 0.00027415329575343126,
-    "avgExit": 0.0002401414795849967,
-    "firstTs": 1792970094,
-    "lastTs": 1792972649,
+    "avgEntry": 0.000004511972831154706,
+    "peakPrice": 0.004473891850894113,
+    "avgExit": 0.0002165601336699397,
+    "firstTs": 1786981932,
+    "lastTs": 1786982298,
     "partialHistory": false,
     "fills": [
       {
-        "t": 1792970094,
-        "side": "buy",
-        "price": 0.00003351956340752926,
-        "usd": 194.81281809007297
-      },
-      {
-        "t": 1792970187,
-        "side": "buy",
-        "price": 0.00004267080687586253,
-        "usd": 5.720953071462356
-      },
-      {
-        "t": 1792970190,
-        "side": "buy",
-        "price": 0.0000421644434537907,
-        "usd": 7.273089334513998
-      },
-      {
-        "t": 1792972491,
+        "t": 1786981940,
         "side": "sell",
-        "price": 0.00026815340289675695,
-        "usd": 410.17275465493674
+        "price": 0.0002163547670793871,
+        "usd": 381.33646041244776,
+        "sig": "2xkZz9ZjFX27TJDWGHMjeBa9VFZKv1nTMnYMiBURFzRjky8JBoGbhF9ZCHhSTNVcSEfkftjhso4JTnrtsn9PJFkA"
       },
       {
-        "t": 1792972570,
+        "t": 1786981941,
         "side": "sell",
-        "price": 0.00027415329575343126,
-        "usd": 314.51273217718114
+        "price": 0.0003721005493475265,
+        "usd": 254.0883532205431,
+        "sig": "xtXw3TAfgmBai2qr6kD5vXriaFZPtuGfFidMJz2PyJR8mMQpjThTkrybDdNB4iCnsxm6CKmwSbCtGBXGAKRaMt9"
       },
       {
-        "t": 1792972649,
+        "t": 1786981941,
         "side": "sell",
-        "price": 0.0002163544638347404,
-        "usd": 744.6151615913387
+        "price": 0.0003695071048079001,
+        "usd": 280.35269238851987,
+        "sig": "4rQQs6iaockg8bXSoc4dmG4fuFPFWbNakqi3yHMRJPDpWRWdDUGEeH6CbS3qGg8h9aY22HiEorGGWpupTDCn6nw8"
+      },
+      {
+        "t": 1786981941,
+        "side": "sell",
+        "price": 0.00026403292792815097,
+        "usd": 274.7973253338894,
+        "sig": "62pnzAKfnArped5hW8cC5iEsYvSTjBaag5ahqcvU6vcq29M2nyVLUWtiq64dRX9L6r5pbz3F6sBD1K8PDbTZ9Pbw"
+      },
+      {
+        "t": 1786981941,
+        "side": "sell",
+        "price": 0.00027592419862005637,
+        "usd": 258.4560536961453,
+        "sig": "56X6BfdjNkfW3Y1w8smWCp7Ma4LdHD22XexvtekRgaSanc3YGR7mN8wxWajwqdaecBg3kd242WHwVGHnWcyPFzAj"
+      },
+      {
+        "t": 1786981941,
+        "side": "sell",
+        "price": 0.000305685492378425,
+        "usd": 257.69990375849363,
+        "sig": "4YZjmiqGT57geF55C1pUqipUMMNLETV4b4rXYsh6CdBUSNS24riwPNGRw8ZivwQdEjPmmCC3XfDMHpCGJoKe8FVL"
+      },
+      {
+        "t": 1786981942,
+        "side": "sell",
+        "price": 0.00046103925297809876,
+        "usd": 185.89807705590263,
+        "sig": "4dJcmzHCMyUTFdiMxXgvFoXqF3DSgwXSxaaqZWzmcXEoCFtfnvbpBCRiL8LTDbZQxKQQDxHpYVWagGChk77Lqp9e"
+      },
+      {
+        "t": 1786981942,
+        "side": "sell",
+        "price": 0.0005952277926873871,
+        "usd": 216.00445346146338,
+        "sig": "5UJqf4cPJKwiorwZQAztrXkjmzcKTHSGKkyACSJuuVecmvM27rM7kbL6CaoPSqNMRa3xjvKfFaEaVecj7JVhdB4H"
+      },
+      {
+        "t": 1786981942,
+        "side": "sell",
+        "price": 0.0005091295725067229,
+        "usd": 281.6033323614084,
+        "sig": "icqFHc1XrKxtRG2tKG7M66A8rbEyT1NBBu9ELJESu7SirAwukfQB1GmNkkETwxV9McvupvVsiDyWtJ7WXfp414y"
+      },
+      {
+        "t": 1786981942,
+        "side": "sell",
+        "price": 0.0005718853983251123,
+        "usd": 351.46004866558326,
+        "sig": "4b9w2M4vCpRNKutvbn4JUss6JWffSCkU5kdopnGETSPqe31RdNKCb4TM7FPtCCKNLRbeWHSKzyaUFWoNazbtB962"
+      },
+      {
+        "t": 1786981942,
+        "side": "sell",
+        "price": 0.00047989737612988756,
+        "usd": 215.00217854520548,
+        "sig": "3YuEq8tVmXd7eoXtBUABFgqQUVtUKCZXLkAXuQ8anyo4RZ36NskwXtKsKLz6boQpoAFPfKJjhuwEvVk4JZTWbVw4"
+      },
+      {
+        "t": 1786981942,
+        "side": "sell",
+        "price": 0.0004986326294778922,
+        "usd": 248.21765597784426,
+        "sig": "451Zh8nuxkBF5P36L3DgdKYxWfcUPR1pRyakpbK25H4Q3XPS4n8acKgGxgd3xLXaFUgXZYfCxNRyoLpbEhdKbDDi"
+      },
+      {
+        "t": 1786981943,
+        "side": "sell",
+        "price": 0.0008056418029870685,
+        "usd": 213.13217897274416,
+        "sig": "5Bj89bztu9zAkGDepFYrY7WQ9tm1RiZWFkQeDHcxSmioY4FgjEwBiAdft6AWuUjTJxX7Ey1LEtMxEjpJ2uqXg5ur"
+      },
+      {
+        "t": 1786981943,
+        "side": "sell",
+        "price": 0.0006258055063199514,
+        "usd": 149.00091034579674,
+        "sig": "4peHfnPyU32o59rpBPJrNE6YMgs2fyGijUucZoLddTAbKzgwbz5fMkdzQywdxeCGDVxQY1QYWAE1SsGkNpx15t88"
+      },
+      {
+        "t": 1786981943,
+        "side": "sell",
+        "price": 0.0007718169133784171,
+        "usd": 226.87091060222966,
+        "sig": "5NjtmA9etFSh84dvrBGcC8zikhXZboEjkJWoueebn1384LFJ7s4BChv4JwLB2GVF6A9x8dm5qCnP95TjwNNZ2ZTQ"
+      },
+      {
+        "t": 1786981943,
+        "side": "sell",
+        "price": 0.000742259172390877,
+        "usd": 242.42510169323472,
+        "sig": "5RurYNpynKMv9AWNQ4P8uUNoydgeos5Hug69WMXMNLUjq36EpFVUApsnjLFSGAUscVSpHskMTAma4gpqmVW1Jre1"
+      },
+      {
+        "t": 1786981944,
+        "side": "sell",
+        "price": 0.000575963548801473,
+        "usd": 61.71021428161789,
+        "sig": "3GLwCAzPqzCG4TjVCMm8fFG317pTp99ngAv7evZk7zf8MW5GihJ1MsSQ5bScpZfgmyadeTDjhW2n7U4y1ZbHwDH"
+      },
+      {
+        "t": 1786981975,
+        "side": "sell",
+        "price": 0.0009418578561442407,
+        "usd": 191.73483368674002,
+        "sig": "5GbeQ4yn1fWoYZf37YGBSVZj3xHfkdgraZX1kiwTRBxdSeUUTvb9tCSLyL6HMzJ1QriYpDZaL63nMgj48XtLhF4N"
+      },
+      {
+        "t": 1786982132,
+        "side": "sell",
+        "price": 0.001754485518224666,
+        "usd": 321.44594660839175,
+        "sig": "5XC1AJSxvce8QxmZCjqmSJi7yGANNmQUqUzKsxZQfLTXekPkWWMSqSiBfPzLdJMXSMcDFQsgwLTqRG3FvdfJY1gH"
+      },
+      {
+        "t": 1786982133,
+        "side": "sell",
+        "price": 0.0013234636315012716,
+        "usd": 218.22911267682207,
+        "sig": "4eN88thJQQ37LQF1EdzB3krjexwA5rvkCvoFuqtgGpaTssqffs7MoonwJf9z3RRje5gXmPYhfC6mmDng1apPGS1s"
+      },
+      {
+        "t": 1786982137,
+        "side": "sell",
+        "price": 0.0016398943785092808,
+        "usd": 243.36552809462862,
+        "sig": "2fFvc9NH9W8pTdBnH8TZdxp1fAJuGeh9qbc6n1BwrKMwfN56bAwSrgPJPmGnd9XfsDdYHrnLTDGQkHT8jLrreJ2q"
+      },
+      {
+        "t": 1786982153,
+        "side": "sell",
+        "price": 0.002600971005766451,
+        "usd": 173.6965568046516,
+        "sig": "3XWv7nT2ycvzRrhLQQdtNAHGypNnqE8Q1GSEotvYzJLPLg4USKnwdsC5CVwr8n1B25D1d8QrRNsuxn2rsMv6zndn"
+      },
+      {
+        "t": 1786982154,
+        "side": "sell",
+        "price": 0.0021543685770134607,
+        "usd": 129.8443076777477,
+        "sig": "2GEFfSFeUoXCcWcmQ2VXYEAtgKT1EsETww8SKatyzxaGPMmuATqvWHE1tjxwCorEvJsq5i8Zg76HTVEAkSocJ5hF"
+      },
+      {
+        "t": 1786982154,
+        "side": "sell",
+        "price": 0.0024639209085220598,
+        "usd": 156.31694788026965,
+        "sig": "5CJuw5PRDJ4KdMh5W1uCStbLVhZ5ie17pvygkMTSM99CWpQ2uB87ZucnLjemCBMi1Vh4ZoKVXu2ZfMkRjXbkNByy"
+      },
+      {
+        "t": 1786982155,
+        "side": "sell",
+        "price": 0.00224322464255411,
+        "usd": 128.43969973134938,
+        "sig": "3pgGae83rvdVBLvDwfgbTbgNmdZmt6L9vDsWRJqyXLk3EP7maCiuudCDNjpBAF5pFsywksSft89PR9PYj34S5mrs"
+      },
+      {
+        "t": 1786982155,
+        "side": "sell",
+        "price": 0.002208447871218543,
+        "usd": 120.12607086489383,
+        "sig": "9cC7gV8DrdsntRLFHyogSwC6m3Z6M7qsZQW3oYpumuZSWCj6WawEszSiDWjcj1quZnpAm3Wrq3ZKxVvqs2PbxLj"
+      },
+      {
+        "t": 1786982156,
+        "side": "sell",
+        "price": 0.0022093452944254317,
+        "usd": 114.16614094510363,
+        "sig": "zeRX7wD2M4ZCibvcLwSsykGehwGLoi9jmtvw324ixgEKWFUJyWbLzJtqpguGdDSHaLb4CFSGU47BwRTRoEPXyeQ"
+      },
+      {
+        "t": 1786982158,
+        "side": "sell",
+        "price": 0.002384259348812314,
+        "usd": 117.0444498089113,
+        "sig": "7aiVkcudyp1MdhPTe31TNtuUEvWbuWP9Ez7qxzoQZrTC7rGvhaMaQoDzkMir9te2mKULfd7oHfVxoPZGRgcwMWX"
+      },
+      {
+        "t": 1786982160,
+        "side": "sell",
+        "price": 0.0026640499173010627,
+        "usd": 124.24052951319709,
+        "sig": "2czmMKVqzCypx43yCfQsRUrd3Hj1jbR7tvFt2tn6g3hbLmSANL1Rz1Z1kF2fWT9dfvD6fJ958ad5cQh8houC6Ff2"
+      },
+      {
+        "t": 1786982236,
+        "side": "sell",
+        "price": 0.002931140263653792,
+        "usd": 129.86171740320992,
+        "sig": "2HBgeNssU2g2JDLnQtPGwA8L5s7tyywkG65dsiVbNH6XuEZuQdWG7yu4PWWijwNr7zqE4gDBGq2d2m5rgQbBUTgw"
+      },
+      {
+        "t": 1786982237,
+        "side": "sell",
+        "price": 0.003072302141392355,
+        "usd": 129.30998749408482,
+        "sig": "3HXWKj3TyFnDAN2Sob1Cq8H8oE8ZtrrHKJnGvvZ5PtSsJBg3KSX674pjPSLFEFj1d7LU85Q5gvQSMV9kicECKi2d"
+      },
+      {
+        "t": 1786982238,
+        "side": "sell",
+        "price": 0.002805351869408223,
+        "usd": 112.17061295787407,
+        "sig": "4HxkUrRWRx27zdnAjMwqhGDHL9GRieUpziP6UkEKWTdwWjTAFXg6GHqZytJm37wL29H388qew17qiDwXAT6BEVs4"
+      },
+      {
+        "t": 1786982239,
+        "side": "sell",
+        "price": 0.002549972923398358,
+        "usd": 96.86144099054675,
+        "sig": "9EJ7Suay5DZ2NE1n1WPCugzF4CN1hJm8LDxEszf4dDFsqmiYxZaZ9w1qv8vGRvDFceV6yh2pqxGvPE97jmtaqz3"
+      },
+      {
+        "t": 1786982250,
+        "side": "sell",
+        "price": 0.0029013967733495126,
+        "usd": 104.69985633330226,
+        "sig": "3VDs8DXgu5A9roSij5ZD8snyS2MQdyx857KpbPLUmjCSbKdn85N8YrGYzWtqBCN4gQ3NoinHoEDWWH5cQ9vhEuoh"
+      },
+      {
+        "t": 1786982252,
+        "side": "sell",
+        "price": 0.003042807935290741,
+        "usd": 104.31268097028426,
+        "sig": "2mQYyUWjVqwULNtHvE1drECvhmGz5etkLuWLwy21JfmrWWEGRcgxtmA1CcDy1CQvTYiSQubTLpYRWJbSsQo3TCyX"
+      },
+      {
+        "t": 1786982260,
+        "side": "sell",
+        "price": 0.0029011285021754833,
+        "usd": 89.7587392160236,
+        "sig": "2vkHJEu97gdNa2nnrwgwnNSwTg3SdhbcsbmnJBvDpV4qpUvMyKKW3R53Bq3DLjVfzsm4QS7Tb6CWv5veGjLXHFSk"
+      },
+      {
+        "t": 1786982260,
+        "side": "sell",
+        "price": 0.002856553780594594,
+        "usd": 93.0311902864603,
+        "sig": "sgqTFhLctNNWDPDLskcxgNBHKnZyVNVyLDc2kCPgJUmAUFDBMTj9Kr9sHGackkxcQFChUctomTP3nXMwNGseMCw"
+      },
+      {
+        "t": 1786982264,
+        "side": "sell",
+        "price": 0.003403478870887021,
+        "usd": 200.07205717336092,
+        "sig": "3Gds9XTyG2VQSGvR15vujwYKUJ2BcjXfd5PTb46LKTwpxTgitSpL9MqiKAL2mQPhVAq9odkd92cYPZ1HHXuwmDzj"
+      },
+      {
+        "t": 1786982268,
+        "side": "sell",
+        "price": 0.003244441249299545,
+        "usd": 85.82539421620056,
+        "sig": "62VTQZoK9fLANpm67JsUry6u8roT14bPMXaBDsDVvXPk44yUq2j5cG1qD4M7YMYhE8k2uoyuLoPtknqHjFpNZKro"
+      },
+      {
+        "t": 1786982269,
+        "side": "sell",
+        "price": 0.004473891850894113,
+        "usd": 112.43071677876486,
+        "sig": "3AFhtMMRvtdy7A6wAmVaudZHBGRn4sLCgo3kVPivZ3kGh1KTeCyu7tyS34NdkhwffM5niQDW964Wt2BcSx7VRpuf"
+      },
+      {
+        "t": 1786982270,
+        "side": "sell",
+        "price": 0.0037004111961594,
+        "usd": 88.34319249694944,
+        "sig": "4L3KBkW7CFc5Z6cWGYz2jpig2qy1VHJmm5PDHGt7DW8BdeCrexFqAdomEc3oXGmEFCZRqgbBQiNbqMExU9okjMjm"
+      },
+      {
+        "t": 1786982279,
+        "side": "sell",
+        "price": 0.003932676737503081,
+        "usd": 89.19385972479719,
+        "sig": "B9uM572Kb1P6BojFmcHS2SupNYGMJ5Q9aha5ngixsBCQjEDFKPdSDc1msVdZeeTkBJSgDf9yTdBoN4t42aeUKGz"
+      },
+      {
+        "t": 1786982281,
+        "side": "sell",
+        "price": 0.003696570608732327,
+        "usd": 79.64698123373964,
+        "sig": "5jveDoq6g961wdPEcztsYTxJxpYq8j5V3vdWPHcPqvKwDego41abUhzZK7rvBXVVGmHEX1JEeV2KfAXi854bxWyd"
+      },
+      {
+        "t": 1786982282,
+        "side": "sell",
+        "price": 0.003991468187180559,
+        "usd": 81.7008530839046,
+        "sig": "4aQbfmHr52okxkgW4gZjWqbWfEVmHxW9Y4tMTJtPG2aAeoc29CKKpnpR28iDarjj7zVTurGmguW7QWkxuh8BCYXn"
+      },
+      {
+        "t": 1786982283,
+        "side": "sell",
+        "price": 0.003589701752000327,
+        "usd": 69.80328982098851,
+        "sig": "3B3iHhqBw7fhiADWg9hRWyr9tELuL5N6A6nsx5VUBn1ZKFJRb6Kft4orKFn6DSDTZa5PJxWRzBPnujWZuDGCm9TJ"
+      },
+      {
+        "t": 1786982284,
+        "side": "sell",
+        "price": 0.003568601701537933,
+        "usd": 65.92334077696819,
+        "sig": "JZ5gcYMTUQxKhZ4QozDWqvqMhaBk2eg52UKjwxqJctXWN4M2CjhhyU1Rj8tXkWwy7KxW2wqtWRDwR4nrvxEmi7X"
+      },
+      {
+        "t": 1786982285,
+        "side": "sell",
+        "price": 0.0034197633093883827,
+        "usd": 120.03026890464452,
+        "sig": "4CRDbzT565PJkRcArgNznZmpKDMtmJk24G63CSrN4hExaZ8mEN53jgvv3zQgQD7XA9ExLc4v57f3A4QJPv9ecKwy"
+      },
+      {
+        "t": 1786982286,
+        "side": "sell",
+        "price": 0.003515104014437595,
+        "usd": 111.03896899209005,
+        "sig": "JxtdY1TvJwkXVro9yJmpoNre7XHpzUzK9Tg2pdoSPX5FdTUGsGf5CEZB8MtYFGc7fckMV1eTwYjs4R5w7goFkcS"
+      },
+      {
+        "t": 1786982287,
+        "side": "sell",
+        "price": 0.003682903819715402,
+        "usd": 94.23508706784781,
+        "sig": "5G9kMjsLBAnzQ3bFDD9JsXg3JN7UeanZzX5hFBF2jX2gDJ7w26HeBv6qrKQHmPMYCXpp7NqU7jyQ6JcuX5KgC4hc"
+      },
+      {
+        "t": 1786982287,
+        "side": "sell",
+        "price": 0.003888297216024155,
+        "usd": 110.54502541241597,
+        "sig": "jQPnRoULxpoLyLcbZ1nwaC4xsJcEioKnKKXYyJsaMMeRbsjuRkWV4NJDiCuebvsrzjKb6WG3BxQK4FpS8jQvF4i"
+      },
+      {
+        "t": 1786982288,
+        "side": "sell",
+        "price": 0.0034251292133772133,
+        "usd": 78.87542789696384,
+        "sig": "8Q61x6o5axdMC4sBumoVw8LV8S5nzs8jYCPML3sDZG8T5N4k3ZJkJovc7upTjGwmzhR9vWigyJn9GkNSYu2v2pk"
+      },
+      {
+        "t": 1786982290,
+        "side": "sell",
+        "price": 0.0033962233146167266,
+        "usd": 63.349913504003496,
+        "sig": "D7QevQEzZS6SwowEBrCc3JQsH4CXU8TTH9jCG5zvQXxsb4LSbEqrs1fkXYudKjePDtCa7DfMSCxHY1GAWSruj3T"
+      },
+      {
+        "t": 1786982290,
+        "side": "sell",
+        "price": 0.0036728511309295753,
+        "usd": 76.1220724404279,
+        "sig": "65F1MFdKft12zL6L7WCXEcJ6r9c3r2AeMrxEd1wHdSLSUzYoFbUE1ahWdcj6x2fM5g1uM2RVb5t8aWNPnjhGSSxz"
+      },
+      {
+        "t": 1786982291,
+        "side": "sell",
+        "price": 0.003497314743545726,
+        "usd": 58.71201902385429,
+        "sig": "3mJ8yf9yfBn1NAgH4WjkjXyuU8CYKuXPDz2xR4No8XdJJLZbCjnRJvC6SJqBMoQUxoMjef2AMxkxEeEgGDgCZknt"
+      },
+      {
+        "t": 1786982292,
+        "side": "sell",
+        "price": 0.003270063516010194,
+        "usd": 49.407285557655925,
+        "sig": "ehFVTj1qQg3pJ2DorfiWGNiHn74rK78PiTWMPjQxVwUqo7YVbMNYriLodboxa4bEb4HhUK7nQnTTHB6CZHunfyq"
+      },
+      {
+        "t": 1786982294,
+        "side": "sell",
+        "price": 0.0035545846215172816,
+        "usd": 120.83873823973893,
+        "sig": "5EszphAdw9TazAm18GAuPNfmA5BSVQMKJt2DCwBPX5XeHkQ7id6tVPVLLcCV3iMGmgniYV29D42F1HfmTpr94rk7"
+      },
+      {
+        "t": 1786982295,
+        "side": "sell",
+        "price": 0.0034565700326068985,
+        "usd": 88.13003610342288,
+        "sig": "2Z5EyZQPZrirDtKruQcGpqVTG5TJwfVCVZ4n2GMZQgZLTyekHXfmv3Bu8m3mdzUgndCKGSfCWinCtuhkkiNS8NaG"
+      },
+      {
+        "t": 1786982296,
+        "side": "sell",
+        "price": 0.003930500475268906,
+        "usd": 75.1601614158353,
+        "sig": "5qy9Fz4RAFKjGfT12dgh4XWddPyRbRzP4nSPmer42oAuK2oNLskztPVr1d6qryL4U72sdxdPuw8omQzQbgGBfcBd"
+      },
+      {
+        "t": 1786982297,
+        "side": "sell",
+        "price": 0.004312779584704201,
+        "usd": 61.85265943532815,
+        "sig": "59y4hyGzUo4nNqSdhgXKwP5JyazwfNnYaUJcjhi1syvSr44rzXuJ1L7dXQfkhBWXeQfUfQByRvJiA68NUaVz4SUQ"
+      },
+      {
+        "t": 1786982298,
+        "side": "sell",
+        "price": 0.0038740226878929847,
+        "usd": 166.68039805306898,
+        "sig": "29yhDaYzTayU1U6GzFiND4rAWuZqEkhMURTKPzzLJ2weWmkR2yLpE4ECtgaUCabyJX1uMM4v7UWpcUX12ZJSBENv"
       }
     ],
+    "solUsd": 76.08784805200571,
     "window": {
-      "start": 1792966494,
-      "end": 1792976249,
+      "start": 1786978332,
+      "end": 1786985898,
       "tooOld": false
     },
-    "supply": 964939388.196305
+    "supply": 999113098.005747
   },
   "worstTrade": {
-    "symbol": "RDSTR",
-    "name": "Flying Tesla Roadster",
-    "icon": "https://axiomtrading-v2.axiom-cdn.io/Afkbv7eaxzW1qQyYcf5NeffDRKX4be6fs4TPuJeXpump.webp",
+    "symbol": "BUDDY",
+    "name": "Barking Puppy",
+    "icon": "https://cdn.helius-rpc.com/cdn-cgi/image//https://ipfs.io/ipfs/bafkreigeabj5bpa52jejiigm7sussuax3qkbglirxnaskw7rode5tvde7e",
     "chain": "solana",
-    "address": "7uXeapeKSTv4fr2mSDrC9KTCLqgnoECBttd6h1NYpump",
-    "pnlUsd": -330.99,
-    "costUsd": 469.98,
-    "proceedsUsd": 138.98,
+    "address": "AdNDw9rNhnhy1KrQAGsaDT2C6uaRGP2VxRbcSvVbpump",
+    "pnlUsd": -6223.8,
+    "costUsd": 9203.58,
+    "proceedsUsd": 2979.79,
     "holdingValueUsd": 0,
-    "avgEntry": 0.00005086626182694027,
-    "peakPrice": 0.00005318200691651108,
-    "avgExit": 0.000015042428562262715,
-    "firstTs": 1792112783,
-    "lastTs": 1792112787,
+    "avgEntry": 0.005290144162573662,
+    "peakPrice": 0.006931582340002213,
+    "avgExit": 0.001712757356121201,
+    "firstTs": 1769888583,
+    "lastTs": 1769888897,
     "partialHistory": false,
     "fills": [
       {
-        "t": 1792112783,
+        "t": 1769888583,
         "side": "buy",
-        "price": 0.00005318200691651108,
-        "usd": 229.71525158973057
+        "price": 0.00501937627500895,
+        "usd": 1022.6196425794227,
+        "sig": "337eii3kDeXbLMjP79hPDXftAhEXp4CAykut9es6CU2RJHJVo9VjA3AmAw2xhAGKvRzaCsDTmmpYBqC7GPykgddF"
       },
       {
-        "t": 1792112783,
+        "t": 1769888583,
         "side": "buy",
-        "price": 0.00004883322013781116,
-        "usd": 240.2619176718685
+        "price": 0.004556339002586732,
+        "usd": 1022.6196425794227,
+        "sig": "2q1qHnL3u2KHdhBo8EvvcvpvwXNBuoUyeEiD4LzNrCnBzQbWM1eKDZZXxYrz9ccvyV9xbdLx6So8cFcQR85knKoX"
       },
       {
-        "t": 1792112785,
-        "side": "sell",
-        "price": 0.00003175680623033746,
-        "usd": 73.35399418429043
+        "t": 1769888583,
+        "side": "buy",
+        "price": 0.0042974042091679055,
+        "usd": 1022.6196425794227,
+        "sig": "5BBxcVLY9jMoXNVF1Yfu2yKCfga2ADDUH7u2YXVXAuxy1K5ZimjjCAwJPwUnJk5bKAw7idSwnTbzdJxRwiLzEn5J"
       },
       {
-        "t": 1792112787,
+        "t": 1769888584,
+        "side": "buy",
+        "price": 0.006931582340002213,
+        "usd": 1022.6204839914377,
+        "sig": "VXmzqSsaKYXXn7XMhpcyvebAKimDscV2FVD21Rtz7tDwwxAiRePHbaVveHs5H2dZizH2H4EASHt9U2Gemwiah7M"
+      },
+      {
+        "t": 1769888584,
+        "side": "buy",
+        "price": 0.006303419474257411,
+        "usd": 1022.6204839914377,
+        "sig": "xNaqXcrnWXf95DDVwA7fSMrQnjmeF42R6Skdtn6d6DuqYo6ZvSyfFAsDM3VK6nRHNQYF9E4Q9XwoGXewu3p6WEE"
+      },
+      {
+        "t": 1769888584,
+        "side": "buy",
+        "price": 0.005999276635238536,
+        "usd": 1022.6204839914377,
+        "sig": "5QdWVNyRWXoxNjiSLh9tVMNVeyZAr6x4tqXxPQZptJrUqea4HCv56Z44C8LDBkhXYAwBVbQtBLAxSjmhynS4igJw"
+      },
+      {
+        "t": 1769888584,
+        "side": "buy",
+        "price": 0.005382851234195851,
+        "usd": 1022.6204839914377,
+        "sig": "5qX3ErM8CSdphvtrW55RHduAUHjUDVMqSjXwmRQMgMYDPcmjaqSA88pQCkBLb9MktF6j7uNcP19C27UL6XMFUzws"
+      },
+      {
+        "t": 1769888584,
+        "side": "buy",
+        "price": 0.006168237849284998,
+        "usd": 1022.6204839914377,
+        "sig": "4a4n8U76yyreZdmDhoGB6U3KcUedrPfijJzrL6nMkPxMUJK432Qb7VSbBDYPcxjZGkMd1R9mNUjokbPm427qTLyR"
+      },
+      {
+        "t": 1769888585,
+        "side": "buy",
+        "price": 0.004303261262835044,
+        "usd": 1022.6213254034528,
+        "sig": "4usWiTCSEAoBmwgb6jVViV1aa3zey6NAbCKryapcWtFVmxJxbQX6b4BPBi1mwEpyYUahHEagQDVz1vMaWmLiDGT"
+      },
+      {
+        "t": 1769888762,
         "side": "sell",
-        "price": 0.000009470969339572737,
-        "usd": 65.63003453330226
+        "price": 0.0020386048829928363,
+        "usd": 507.48438713492664,
+        "sig": "cKhGEP8dLo2QKmrtXJwUThG8WRdd9QsfeGKw8gSJfpKscKCb22EKUiCkr8f9ukfBL5YiorEjDs2XukgRLCaa2gt"
+      },
+      {
+        "t": 1769888765,
+        "side": "sell",
+        "price": 0.0016127595701628747,
+        "usd": 514.8092457650056,
+        "sig": "53DGZU9cwN8kWLW35a75X1jJAWKoCizbKZkAfQyzTgZfeyNs3ntZZTjydFJ36Ft2Qfg6phyuYtAbfn4Esr3SL3Mm"
+      },
+      {
+        "t": 1769888766,
+        "side": "sell",
+        "price": 0.0016760707081838906,
+        "usd": 509.2592788311706,
+        "sig": "47ZXiU6oBnaeucVzhB2TMNJgCErYhWaeh7Ae52NEfWAnQaSohYpJqXaZvNVq2WT5EecG2G1wUT5RUAB2DAfZA9Vo"
+      },
+      {
+        "t": 1769888768,
+        "side": "sell",
+        "price": 0.0015103502315679373,
+        "usd": 484.76124464142276,
+        "sig": "3k6UFQ6fDXndoDBKQHpaRC4KYAgYHGJ6hErBfVZjcmfxc8dFQQpmBXG9SbfpBbdpCU7nJSe2SbJisD6ykmyHWfxz"
+      },
+      {
+        "t": 1769888897,
+        "side": "sell",
+        "price": 0.0017619811401954958,
+        "usd": 963.4730557685565,
+        "sig": "31JogX7vCor5GAdQRFrNavdNrxiDgksbg5CMTEzAFFpVr5TAmDPJ9Zv3zvxG5yiwyjFZbbHFqFi6g7XwQAeUR7gA"
       }
     ],
+    "solUsd": 101.94593186914793,
     "window": {
-      "start": 1792109183,
-      "end": 1792116387,
-      "tooOld": false
+      "start": 1769884983,
+      "end": 1769892497,
+      "tooOld": true
     },
-    "supply": 688575139.949895
+    "supply": 996993310.537485
   },
   "roundTrip": {
-    "symbol": "Kimchi",
-    "name": "Aura Final Boss",
-    "icon": "https://axiomtrading-v2.axiom-cdn.io/Am8iBffqgaedfdK5XhtorbcRrKzwH9nyL3ySikQfpump.webp",
+    "symbol": "PMARCA",
+    "name": "PMARCA",
+    "icon": "https://cdn.helius-rpc.com/cdn-cgi/image//https://axiomtrading-v2.axiom-cdn.io/DD9L8gin2xczBkv5DFpavtWDsHNh1bLnjN9ajCBxpump.webp",
     "chain": "solana",
-    "address": "CSocnzcRpgSCr1naKcNTieWZUxb6rABe45j844m7pump",
-    "pnlUsd": 20.53,
-    "costUsd": 5257.19,
-    "proceedsUsd": 5277.72,
+    "address": "C4mSLDBkUCePyPk5RvZ71yHir4ZWe5fJ2NDgPegwpump",
+    "pnlUsd": 975.6,
+    "costUsd": 8850.19,
+    "proceedsUsd": 9825.79,
     "holdingValueUsd": 0,
-    "avgEntry": 0.030711690420109582,
-    "peakPrice": 0.035621207109605306,
-    "avgExit": 0.03083160207264375,
-    "firstTs": 1792539514,
-    "lastTs": 1792570074,
+    "avgEntry": 0.000011159162396382098,
+    "peakPrice": 0.00016038767355013646,
+    "avgExit": 0.000012389291795214015,
+    "firstTs": 1789258098,
+    "lastTs": 1790122407,
     "partialHistory": false,
-    "peakGainUsd": 840.41,
-    "peakTs": 1792564916,
-    "endedWithUsd": 20.53,
+    "peakGainUsd": 118351.19,
+    "peakTs": 1789261200,
+    "endedWithUsd": 975.6,
     "fills": [
       {
-        "t": 1792539514,
+        "t": 1789258098,
         "side": "buy",
-        "price": 0.028847711726256057,
-        "usd": 420.3955991231133
+        "price": 0.000011159162396382098,
+        "usd": 8850.186142278513,
+        "sig": "5KWCuZjD9QVvM881dc1fVWxxsmdoZSFAwGDqZBh8voTUmmYDsAmd2ZCfcZWW7pcUPpEd8YGQD77qjLu69rf2Riig"
       },
       {
-        "t": 1792539515,
-        "side": "buy",
-        "price": 0.02863141677090909,
-        "usd": 373.7842083988317
-      },
-      {
-        "t": 1792539516,
-        "side": "buy",
-        "price": 0.029345629284942193,
-        "usd": 438.15188492598674
-      },
-      {
-        "t": 1792539517,
-        "side": "buy",
-        "price": 0.028941203908797623,
-        "usd": 413.6037614395003
-      },
-      {
-        "t": 1792539518,
-        "side": "buy",
-        "price": 0.02929947317744793,
-        "usd": 414.0281940528706
-      },
-      {
-        "t": 1792539519,
-        "side": "buy",
-        "price": 0.03027932710783827,
-        "usd": 377.70125162890344
-      },
-      {
-        "t": 1792539522,
-        "side": "buy",
-        "price": 0.029641592100012045,
-        "usd": 412.01166624817813
-      },
-      {
-        "t": 1792540018,
-        "side": "buy",
-        "price": 0.03262473233699969,
-        "usd": 397.05082828424946
-      },
-      {
-        "t": 1792540020,
-        "side": "buy",
-        "price": 0.03266026189701334,
-        "usd": 404.53434486245703
-      },
-      {
-        "t": 1792540024,
-        "side": "buy",
-        "price": 0.03256190466052473,
-        "usd": 764.7698119596758
-      },
-      {
-        "t": 1792540026,
-        "side": "buy",
-        "price": 0.03262667691057154,
-        "usd": 841.1581703612993
-      },
-      {
-        "t": 1792570066,
+        "t": 1790122407,
         "side": "sell",
-        "price": 0.03090863407456527,
-        "usd": 490.8813508774093
-      },
-      {
-        "t": 1792570067,
-        "side": "sell",
-        "price": 0.030941304666523065,
-        "usd": 1066.241782301065
-      },
-      {
-        "t": 1792570069,
-        "side": "sell",
-        "price": 0.030895185553193778,
-        "usd": 1066.3196903501162
-      },
-      {
-        "t": 1792570070,
-        "side": "sell",
-        "price": 0.030886442634768013,
-        "usd": 1066.2405788547085
-      },
-      {
-        "t": 1792570074,
-        "side": "sell",
-        "price": 0.030656096427437836,
-        "usd": 1588.0326493818425
+        "price": 0.000012389291795214015,
+        "usd": 9825.785723326035,
+        "sig": "67qEnaGHrhhVA7U4yRCRJBjpcZBZ58FqBr1QgMtzAPxY3PUAd8T1xtX8S9D1stno3EXzFE1NKKR6ggZtv1nZbhVd"
       }
     ],
+    "solUsd": 101.78606213772768,
     "window": {
-      "start": 1792534930,
-      "end": 1792574658,
+      "start": 1789128451,
+      "end": 1790252053,
       "tooOld": false
     },
-    "supply": 995698603.560485
+    "supply": 992167179.907489
   },
   "paperHands": {
-    "symbol": "ARROW",
-    "name": "Arrow",
-    "icon": "https://tuhsiqv7yeihmeyt.public.blob.vercel-storage.com/coins/5QLhJag4UGsLod7H2Ci9HmgtMprgvG574Bv93v1NhDvq.jpg",
+    "symbol": "SOLANGELES",
+    "name": "SolAngeles",
+    "icon": "https://cdn.helius-rpc.com/cdn-cgi/image//https://ipfs.io/ipfs/bafybeih3nt3fc2g7fk5pv6eyzbmtlwnpjsufyixkqrxh2pcgr44md5h3t4",
     "chain": "solana",
-    "address": "5QLhJag4UGsLod7H2Ci9HmgtMprgvG574Bv93v1NhDvq",
-    "pnlUsd": 760.98,
-    "costUsd": 291.99,
-    "proceedsUsd": 838.37,
+    "address": "8wxkvAfEns76yBzu4MnbV7VnXWjg3iDPA9uwAQ6cpump",
+    "pnlUsd": -220.35,
+    "costUsd": 2990.85,
+    "proceedsUsd": 2770.5,
     "holdingValueUsd": 0,
-    "avgEntry": 0.000005255902820128359,
-    "peakPrice": 0.00007464516684537431,
-    "avgExit": 0.000056937699319938153,
-    "firstTs": 1793024534,
-    "lastTs": 1793024747,
+    "avgEntry": 0.0012922726090467188,
+    "peakPrice": 108388293.89872135,
+    "avgExit": 0.0011970629299310781,
+    "firstTs": 1786986575,
+    "lastTs": 1789776925,
     "partialHistory": false,
-    "soldAt": 0.00006792484153120789,
-    "soldTs": 1793024747,
-    "laterPeak": 0.00017783899299958115,
-    "missedUsd": 607.67,
+    "soldAt": 0.0008506937456664995,
+    "soldTs": 1789775903,
+    "laterPeak": 108388293.89872135,
+    "missedUsd": 109643491298676.1,
     "fills": [
       {
-        "t": 1793024534,
+        "t": 1786986575,
         "side": "buy",
-        "price": 0.000005255902820128359,
-        "usd": 291.9904350183333
+        "price": 0.0027984899593173924,
+        "usd": 386.6344224520442,
+        "sig": "3XpbzPugkyekCQkWvq1HPqiyD4rmh1pEzbAGbpAw5ooUF5WogNkEAzygoP8nCJULCnbtziaeqHj7LisWCtPXShak"
       },
       {
-        "t": 1793024546,
-        "side": "sell",
-        "price": 0.00003298959635097991,
-        "usd": 42.47518345269936
+        "t": 1786986575,
+        "side": "buy",
+        "price": 0.0028668352503264448,
+        "usd": 386.64067910715227,
+        "sig": "5E4mEo9KKbzFThntJ5hN17PXKgie3MhK5PJ8AzGCJff2iZ5AcpVrRFfebQeX2LoYqaaeyURV8kYja2yVQaFK7jaH"
       },
       {
-        "t": 1793024547,
-        "side": "sell",
-        "price": 0.000029985054211756278,
-        "usd": 36.67640039261559
+        "t": 1786986577,
+        "side": "buy",
+        "price": 0.002880976565558296,
+        "usd": 386.6249779253435,
+        "sig": "3cAid9X8e2b69DaJXBUzvz49LBieMkHxZqcN7YQkbsgrxXhcMrJtK3Ad8HF8Q6rHxGDvUotthuZS5vk4ypZ2qp5t"
       },
       {
-        "t": 1793024547,
+        "t": 1786986581,
         "side": "sell",
-        "price": 0.000031361306623720114,
-        "usd": 38.3597718531447
+        "price": 0.0029547278639194346,
+        "usd": 60.16183959747332,
+        "sig": "3ra6jCoHFxLdvViXXzVtYmngB1jbB1gMGDp8pb4V6C7KbSz9TVPEH2dXqcgf7jWLzfmk7RYer52q1U8UXjT3GDAP"
       },
       {
-        "t": 1793024548,
+        "t": 1786986583,
         "side": "sell",
-        "price": 0.000028175052610384142,
-        "usd": 32.7393616885848
+        "price": 0.002839114915236199,
+        "usd": 54.91742887801183,
+        "sig": "iWN9PMMcZ7QrxYCfEGk16dqoXEkV23ZFcJH62gi6L4kr1yQe1QYroYMrvJZzWGojAmmAEQkXNYKvyKesPYZdZTZ"
       },
       {
-        "t": 1793024745,
+        "t": 1786986584,
         "side": "sell",
-        "price": 0.00007464516684537431,
-        "usd": 183.4124468680817
+        "price": 0.0029917449734312342,
+        "usd": 52.22747208258893,
+        "sig": "3e6Xz8myZjMLmfuZWHNncUSc11pc47MS9QSscqP45x6yfZgUndVQfpptxqGa9Yhu9vjjW4hBjQvqcKp1nWSew5Fg"
       },
       {
-        "t": 1793024746,
+        "t": 1786986584,
         "side": "sell",
-        "price": 0.00007009949962180458,
-        "usd": 129.18238340026912
+        "price": 0.002944660073784888,
+        "usd": 54.11105458759614,
+        "sig": "2UHEdup5CWCpYCEboM3QV4R6Hp1VNYykwhufqBfEJwt8oonjQyhVVgqcCwhn5wLmHmNVauiuarGFsJ8mufg3CVnm"
       },
       {
-        "t": 1793024747,
+        "t": 1786986585,
         "side": "sell",
-        "price": 0.00006792484153120789,
-        "usd": 375.5244888379659
+        "price": 0.002920048241475262,
+        "usd": 50.97584833126738,
+        "sig": "2YBJDW4sU7ijzFgRdJjwtnAsp1VVU5XHijKkHCLYmh5hxmzontkELiQwLZv93xfTthSn6bcWGBvxJuGTtAeopGSn"
+      },
+      {
+        "t": 1786986586,
+        "side": "sell",
+        "price": 0.002909574126615074,
+        "usd": 45.713699707810804,
+        "sig": "339MrPyocg4aeZgYWbLkZBteKgrBy8mfACZta7AQQM2aVyCKxbahGAgJdzYX3SPhvFgnM1fJd5ChpcPHySYuYriU"
+      },
+      {
+        "t": 1786986587,
+        "side": "sell",
+        "price": 0.002561228813444959,
+        "usd": 40.24068120135065,
+        "sig": "67mRPqhdTbCvyg25Ckw4WusSBG2WhsaJZN2sHeMYGCPH7p7Nmn7WkNJiKrZG4oSf1hHjJquJSHLpg6ivdczc6d89"
+      },
+      {
+        "t": 1786986589,
+        "side": "sell",
+        "price": 0.002479983542824872,
+        "usd": 70.1355567706426,
+        "sig": "4Bfdm6RCLGKWsrSPBS3iFHi2KuzXJi4pXsfvpeanQ7srku5GyCNWEk7Dds6vE1QMFjMeLGME6VuR8cKHR1msnmt"
+      },
+      {
+        "t": 1786986590,
+        "side": "sell",
+        "price": 0.0023794647824145402,
+        "usd": 54.50718458488013,
+        "sig": "52s5ZWVBa8rJw8szBuQjsAeqCnuaiEmSnb5HUqLoEcj7LnJ2qNTc7UC4TnTTN19xAqadyUS58giS1XeYmiWpU7fG"
+      },
+      {
+        "t": 1786986590,
+        "side": "sell",
+        "price": 0.0024070285085994302,
+        "usd": 61.26510661374166,
+        "sig": "4RVm8fJxKS3sQ9sysikXzKPZRQBdzFJDL5SwDUwB5zp3k63eNpZkqaP2mwWWxfWTRmXEyobwkqyUD25VVRyo4txN"
+      },
+      {
+        "t": 1786986591,
+        "side": "sell",
+        "price": 0.0023819475779326064,
+        "usd": 49.10765292016077,
+        "sig": "2dnL4Pvji3577jmYia2ACxYPbKPmebZpJjefhDV3N3NwGebFaFY51VTVbWGJnnFLesZryrG2P25RGN5YwTghxSt5"
+      },
+      {
+        "t": 1786986593,
+        "side": "sell",
+        "price": 0.0026307443695600986,
+        "usd": 366.0997234801318,
+        "sig": "5XhJWoVyZBqdJasApm8yPjpXVYYNV9X1B5kKuVLHWdHKkgPGyvxfmzLx8vKQv4FiNXxkfKKfu162F39JmLHkh1Qd"
+      },
+      {
+        "t": 1786986593,
+        "side": "sell",
+        "price": 0.002654971094716523,
+        "usd": 123.15705456551368,
+        "sig": "4VtWXHn81wWm1MFFED6YFF1jSYDVQFnp3TEFRdPFzhXuo4WsaCWhdmZRQayd13usQ7RzH6w8Xa2VdNA1eC6TSJtr"
+      },
+      {
+        "t": 1789760447,
+        "side": "buy",
+        "price": 0.0008427446696232509,
+        "usd": 430.65140254583554,
+        "sig": "isT21Yh2h6A57bT1BCV3pTNo1hV7Q6Kkse85Q3a8qEZpwspY7oPiRxY45Nx86Pmd1WvJSUYs6RbT7xWjEGb5oYj"
+      },
+      {
+        "t": 1789760522,
+        "side": "buy",
+        "price": 0.0008605685105085694,
+        "usd": 430.77480487190445,
+        "sig": "SqfF5iYHS9CUTPiKybysWBFfUhHqUqQCuiiw8AH6C18yxzvUkg66GaF79KQTufiZThPeyiVcKtNCREwFD7gocSS"
+      },
+      {
+        "t": 1789775903,
+        "side": "sell",
+        "price": 0.0008506937456664995,
+        "usd": 860.5452576706294,
+        "sig": "3vVnz12AdVmj9iaRmSeVbrPozyt1yM6oUyaCbZ7bABww3GuJK3iK3KiNkQU1jZKn4TYo7CPNQ4aAcMLPaSSGkAMq"
+      },
+      {
+        "t": 1789776408,
+        "side": "buy",
+        "price": 0.000986502320045526,
+        "usd": 428.2055606149433,
+        "sig": "5dyUHMGpeL8JuwmK1UEAfubm4eFdV3rEsFbFBWNAvfuZNzaiWqQapDEM1mFiwSPPUYmgJnyb6n15yZL8bJ5g4Kpu"
+      },
+      {
+        "t": 1789776408,
+        "side": "buy",
+        "price": 0.0009408364405866801,
+        "usd": 216.4669642169309,
+        "sig": "xw6wNep2869EYLCNKwLctSZEUSSWNQ2M3vyCS5jWo36PuKjfXhckUwt6erPNHaxpVwUUxJXXwDpKzfLbuBPB6r5"
+      },
+      {
+        "t": 1789776408,
+        "side": "buy",
+        "price": 0.0009352005185962935,
+        "usd": 216.46653046336655,
+        "sig": "4gBGpLEG7oFTEZYvLDjfNvU15ZEDqkuQddGTouNNaemHYTvTVGGU7fpCnG5eL27Re5HcD9dETdXUMagj4ufMN6Vu"
+      },
+      {
+        "t": 1789776839,
+        "side": "buy",
+        "price": 108388293.89872135,
+        "usd": 108.38829389872134,
+        "sig": "3bEozkGviwMX1UozUNzAtdWPCEHDanGxWR7ETmYU4cx9Jog7aMCSBBhT79m5ciFAMdsYAF24aG28ryQFvEfzNiqE"
+      },
+      {
+        "t": 1789776924,
+        "side": "sell",
+        "price": 0.0009544664519433145,
+        "usd": 213.70720102548378,
+        "sig": "2tU7ujyMG2u3PE56gbcsYcGYK6T9tf2uutniYA5u8VV3ENjzZ5f6ME54Uxe4SDTBjTadVAg7BHAdbrHBgZzDnN1r"
+      },
+      {
+        "t": 1789776925,
+        "side": "sell",
+        "price": 0.0009135329226188207,
+        "usd": 613.6262732144951,
+        "sig": "2ZjksUVmEyRi51ezSLfms2v65aeY29dehyDwD4ykXwVku7R7KpKQj5NH7WJr9sNdVSSu9otZkfVQgJruQtEiAR2Q"
       }
     ],
+    "solUsd": 75.95240249648567,
     "window": {
-      "start": 1793015705,
-      "end": 1793083392,
+      "start": 1786063434,
+      "end": 1793140843,
       "tooOld": false
     },
-    "supply": 915093918.998204,
-    "chart": {
-      "candles": [
-        [
-          1793024400,
-          0.000042256941367883984,
-          0.0001156300103912306,
-          0.000034319419062950365,
-          0.00009314174103280463
-        ],
-        [
-          1793025000,
-          0.00009314174103280463,
-          0.00018138036666642677,
-          0.00008162955472653092,
-          0.00015253149141996372
-        ],
-        [
-          1793025600,
-          0.00015253149141996372,
-          0.00017426256212898069,
-          0.00007698263729918032,
-          0.00013965501813357104
-        ],
-        [
-          1793026200,
-          0.00013965501813357104,
-          0.00019231512693586238,
-          0.00012084570099641662,
-          0.00017783899299958115
-        ],
-        [
-          1793026800,
-          0.00017783899299958115,
-          0.00020505449445830363,
-          0.000122647603578605,
-          0.00014041291313811248
-        ],
-        [
-          1793027400,
-          0.00014041291313811248,
-          0.00017488283079888922,
-          0.00013491180351225793,
-          0.00016807406989951764
-        ],
-        [
-          1793028000,
-          0.00016807406989951764,
-          0.000176846223442913,
-          0.00012311993407072152,
-          0.0001354302227552091
-        ],
-        [
-          1793028600,
-          0.0001354302227552091,
-          0.00013551338242695453,
-          0.00009055273962585784,
-          0.0001037453658808822
-        ],
-        [
-          1793029200,
-          0.0001037453658808822,
-          0.00013631937900776499,
-          0.00009195089042649279,
-          0.00011616329205790582
-        ],
-        [
-          1793029800,
-          0.00011616329205790582,
-          0.00011622758221205695,
-          0.0000931942337201303,
-          0.00011439717328622978
-        ],
-        [
-          1793030400,
-          0.00011439717328622978,
-          0.00012180543217619752,
-          0.00009815727549590159,
-          0.0001216957207712672
-        ],
-        [
-          1793031000,
-          0.0001216957207712672,
-          0.00014671227865785353,
-          0.00011321022556010188,
-          0.00014671200007682886
-        ],
-        [
-          1793031600,
-          0.00014671200007682886,
-          0.00016680322123101136,
-          0.00013460872585719633,
-          0.00014557538286294475
-        ],
-        [
-          1793032200,
-          0.00014557538286294475,
-          0.0001587543939732586,
-          0.00010855658114551971,
-          0.00012696839022849113
-        ],
-        [
-          1793032800,
-          0.00012696839022849113,
-          0.00013870700653013276,
-          0.000052319989011082685,
-          0.00009427738318924087
-        ],
-        [
-          1793033400,
-          0.00009427738318924087,
-          0.00010338233614963689,
-          0.00007022752151647298,
-          0.0000852105559803046
-        ],
-        [
-          1793034000,
-          0.0000852105559803046,
-          0.0001030329586827183,
-          0.00007863536722495973,
-          0.00010302729881536216
-        ],
-        [
-          1793034600,
-          0.00010302729881536216,
-          0.00012538144562124676,
-          0.0001030030716249129,
-          0.00012503106302432296
-        ],
-        [
-          1793035200,
-          0.00012503106302432296,
-          0.00012945474679381655,
-          0.00011360976742554004,
-          0.00012614889185153641
-        ],
-        [
-          1793035800,
-          0.00012614889185153641,
-          0.00012614889185153641,
-          0.00010908262356365673,
-          0.00010919537964133035
-        ],
-        [
-          1793036400,
-          0.00010919537964133035,
-          0.00010919537964133035,
-          0.00008723018525604728,
-          0.00010296063676339443
-        ],
-        [
-          1793037000,
-          0.00010296063676339443,
-          0.00017056873079346918,
-          0.00010296063676339443,
-          0.00014772890599786144
-        ],
-        [
-          1793037600,
-          0.00014772890599786144,
-          0.00015086483707245523,
-          0.0001266849485093202,
-          0.0001398140960250248
-        ],
-        [
-          1793038200,
-          0.0001398140960250248,
-          0.00015068454303447345,
-          0.00013322810181333778,
-          0.00013322810181333778
-        ],
-        [
-          1793038800,
-          0.00013322810181333778,
-          0.00013758401524459509,
-          0.00011078698079171594,
-          0.0001108561927224482
-        ],
-        [
-          1793039400,
-          0.0001108561927224482,
-          0.00012434382720585268,
-          0.0001108561927224482,
-          0.00012427104213038972
-        ],
-        [
-          1793040000,
-          0.00012427104213038972,
-          0.00014833945672582615,
-          0.00011521936160221338,
-          0.00013644542823987543
-        ],
-        [
-          1793040600,
-          0.00013644542823987543,
-          0.00016139470138269068,
-          0.0001363929903278007,
-          0.0001500149593806801
-        ],
-        [
-          1793041200,
-          0.0001500149593806801,
-          0.00015093636002123668,
-          0.00011928151634738053,
-          0.00011937733895772054
-        ],
-        [
-          1793041800,
-          0.00011937733895772054,
-          0.00013430838766035835,
-          0.0001192507987019146,
-          0.00013430838766035835
-        ],
-        [
-          1793042400,
-          0.00013430838766035835,
-          0.00013579302023687762,
-          0.00012165643064989403,
-          0.00012940903018149907
-        ],
-        [
-          1793043000,
-          0.00012940903018149907,
-          0.00013927989657177764,
-          0.00012054531812762483,
-          0.00012631225214939046
-        ],
-        [
-          1793043600,
-          0.00012631225214939046,
-          0.00015104125711329588,
-          0.00012631225214939046,
-          0.0001509475623809864
-        ],
-        [
-          1793044200,
-          0.0001509475623809864,
-          0.00015876323622617295,
-          0.00014149420403288416,
-          0.00015862817796020033
-        ],
-        [
-          1793044800,
-          0.00015862817796020033,
-          0.0001586707285895041,
-          0.00013334052667900037,
-          0.00013334052667900037
-        ],
-        [
-          1793045400,
-          0.00013334052667900037,
-          0.00014494435899874242,
-          0.00012667680802124555,
-          0.00014491740792191385
-        ],
-        [
-          1793046000,
-          0.00014491740792191385,
-          0.00014604020270704115,
-          0.0001140855738585605,
-          0.00011420375225042821
-        ],
-        [
-          1793046600,
-          0.00011420375225042821,
-          0.00011769251303588021,
-          0.00010928003089326773,
-          0.00011769251303588021
-        ],
-        [
-          1793047200,
-          0.00011769251303588021,
-          0.0001234376856609948,
-          0.00011535575564896843,
-          0.00011535575564896843
-        ],
-        [
-          1793047800,
-          0.00011535575564896843,
-          0.00011620057411695097,
-          0.0000946822074362709,
-          0.00009474979764466588
-        ],
-        [
-          1793048400,
-          0.00009474979764466588,
-          0.00011076886075728768,
-          0.00009474979764466588,
-          0.00009977697364862817
-        ],
-        [
-          1793049000,
-          0.00009977697364862817,
-          0.00010441524825296629,
-          0.00009524522468365889,
-          0.00010441524825296629
-        ],
-        [
-          1793049600,
-          0.00010441524825296629,
-          0.0001250150211075519,
-          0.00010441524825296629,
-          0.00012494078754642877
-        ],
-        [
-          1793050200,
-          0.00012494078754642877,
-          0.00012766565878282327,
-          0.0001053591124050274,
-          0.00011430835982989225
-        ],
-        [
-          1793050800,
-          0.00011430835982989225,
-          0.00012787189415342269,
-          0.00011417902215374693,
-          0.0001252586965047963
-        ],
-        [
-          1793051400,
-          0.0001252586965047963,
-          0.00014489089780969617,
-          0.0001252586965047963,
-          0.00012929155938846328
-        ],
-        [
-          1793052000,
-          0.00012929155938846328,
-          0.00014026970751087193,
-          0.00012328144915241243,
-          0.00014024549400676843
-        ],
-        [
-          1793052600,
-          0.00014024549400676843,
-          0.00016334132619525267,
-          0.00014002683221152782,
-          0.00016324050289076822
-        ],
-        [
-          1793053200,
-          0.00016324050289076822,
-          0.00016514404383738066,
-          0.00014980583743918308,
-          0.00014992591142339937
-        ],
-        [
-          1793053800,
-          0.00014992591142339937,
-          0.00016313122456748796,
-          0.00014950897210591773,
-          0.00014962715021839108
-        ],
-        [
-          1793054400,
-          0.00014962715021839108,
-          0.00015853567769788868,
-          0.00011882597352856405,
-          0.00013327924987942925
-        ],
-        [
-          1793055000,
-          0.00013327924987942925,
-          0.00014476588962472958,
-          0.00012393310825880275,
-          0.00012393310825880275
-        ],
-        [
-          1793055600,
-          0.00012393310825880275,
-          0.00012826140782119,
-          0.00010119923801579601,
-          0.00011536655643003659
-        ],
-        [
-          1793056200,
-          0.00011536655643003659,
-          0.00012452512097349585,
-          0.00010631542173571912,
-          0.00010631542173571912
-        ],
-        [
-          1793056800,
-          0.00010631542173571912,
-          0.00010995309636949255,
-          0.00010182230742685379,
-          0.00010994992456315145
-        ],
-        [
-          1793057400,
-          0.00010994992456315145,
-          0.00011987013159884543,
-          0.00010980337310826892,
-          0.00011987013159884543
-        ],
-        [
-          1793058000,
-          0.00011987013159884543,
-          0.00011987013159884543,
-          0.0000981618660235091,
-          0.00010794848898960425
-        ],
-        [
-          1793058600,
-          0.00010794848898960425,
-          0.00014246585030537216,
-          0.00010794848898960425,
-          0.0001423590914334021
-        ],
-        [
-          1793059200,
-          0.0001423590914334021,
-          0.00014953182412101067,
-          0.00012715850161821877,
-          0.00012715850161821877
-        ],
-        [
-          1793059800,
-          0.00012715850161821877,
-          0.00015770302351265906,
-          0.00012610547883159246,
-          0.00015758829221128366
-        ],
-        [
-          1793060400,
-          0.00015758829221128366,
-          0.0001624952700668854,
-          0.00009918255700662114,
-          0.00011129863819890997
-        ],
-        [
-          1793061000,
-          0.00011129863819890997,
-          0.00012569364491178933,
-          0.0001030782437991364,
-          0.00012471558702386164
-        ],
-        [
-          1793061600,
-          0.00012471558702386164,
-          0.00012471558702386164,
-          0.00011275351029360083,
-          0.00011282171406510058
-        ],
-        [
-          1793062200,
-          0.00011282171406510058,
-          0.00012004277093963648,
-          0.00011282171406510058,
-          0.00012001807123584059
-        ],
-        [
-          1793062800,
-          0.00012001807123584059,
-          0.00012150405197538155,
-          0.00011350279058287019,
-          0.00011350279058287019
-        ],
-        [
-          1793063400,
-          0.00011350279058287019,
-          0.00011350279058287019,
-          0.00010202670979078824,
-          0.00010202670979078824
-        ],
-        [
-          1793064000,
-          0.00010202670979078824,
-          0.00010473819158479463,
-          0.00009493365327833237,
-          0.00009493365327833237
-        ],
-        [
-          1793064600,
-          0.00009493365327833237,
-          0.00009498290800901052,
-          0.00007885543037536234,
-          0.00008412835626416509
-        ],
-        [
-          1793065200,
-          0.00008412835626416509,
-          0.00009675780450780274,
-          0.00007695739043432959,
-          0.00009667162278247693
-        ],
-        [
-          1793065800,
-          0.00009667162278247693,
-          0.00012263012970150595,
-          0.00009660211157730209,
-          0.00012016734489753133
-        ],
-        [
-          1793066400,
-          0.00012016734489753133,
-          0.00012472579145880787,
-          0.00011008969872116348,
-          0.0001129003788437132
-        ],
-        [
-          1793067000,
-          0.0001129003788437132,
-          0.0001129003788437132,
-          0.00010604243793933951,
-          0.00011071290369891445
-        ],
-        [
-          1793067600,
-          0.00011071290369891445,
-          0.00012441314225727375,
-          0.00011071290369891445,
-          0.00011844791581061475
-        ],
-        [
-          1793068200,
-          0.00011844791581061475,
-          0.0001325278420572928,
-          0.00011484754702225333,
-          0.00013239880143223846
-        ],
-        [
-          1793068800,
-          0.00013239880143223846,
-          0.00013345100286346595,
-          0.00012167373140608735,
-          0.00012167856540512594
-        ],
-        [
-          1793069400,
-          0.00012167856540512594,
-          0.0001218137410123958,
-          0.00011115471725734919,
-          0.00011201925053930812
-        ],
-        [
-          1793070000,
-          0.00011201925053930812,
-          0.00011444243795963754,
-          0.00010918141107286463,
-          0.0001104456919809065
-        ],
-        [
-          1793070600,
-          0.0001104456919809065,
-          0.0001105544937045823,
-          0.0001013912834966748,
-          0.00010143428645497704
-        ],
-        [
-          1793071200,
-          0.00010143428645497704,
-          0.00010162782949807377,
-          0.00009030551748972164,
-          0.00009038750746655553
-        ],
-        [
-          1793071800,
-          0.00009038750746655553,
-          0.00010316429849997397,
-          0.00009038750746655553,
-          0.00010308153114422157
-        ],
-        [
-          1793072400,
-          0.00010308153114422157,
-          0.00010627886114162241,
-          0.00010308153114422157,
-          0.00010624940384424334
-        ],
-        [
-          1793073000,
-          0.00010624940384424334,
-          0.00011161638876928591,
-          0.00010624940384424334,
-          0.00011154782870802386
-        ],
-        [
-          1793073600,
-          0.00011154782870802386,
-          0.00011163612138693821,
-          0.00009098479644602727,
-          0.00010280213292473827
-        ],
-        [
-          1793074200,
-          0.00010280213292473827,
-          0.00010403732284810768,
-          0.00009631129816103745,
-          0.00009644769346481649
-        ],
-        [
-          1793074800,
-          0.00009644769346481649,
-          0.00009955743734150254,
-          0.00009346625345515052,
-          0.00009346625345515052
-        ],
-        [
-          1793075400,
-          0.00009346625345515052,
-          0.00009682848259193363,
-          0.00009141281792287609,
-          0.00009637226583202
-        ],
-        [
-          1793076000,
-          0.00009637226583202,
-          0.00009637226583202,
-          0.00008886761366362064,
-          0.00008886761366362064
-        ],
-        [
-          1793076600,
-          0.00008886761366362064,
-          0.00009164165365259196,
-          0.00008797889207209168,
-          0.00009065819384637551
-        ],
-        [
-          1793077200,
-          0.00009065819384637551,
-          0.00009214849251608148,
-          0.00008806392467039968,
-          0.00008806392467039968
-        ],
-        [
-          1793077800,
-          0.00008806392467039968,
-          0.00008808941179188561,
-          0.00008485936976567367,
-          0.00008488294885259273
-        ],
-        [
-          1793078400,
-          0.00008488294885259273,
-          0.00008819148134861498,
-          0.00006711107709805152,
-          0.00007915998391864389
-        ],
-        [
-          1793079000,
-          0.00007915998391864389,
-          0.00009103914896258151,
-          0.00007915998391864389,
-          0.00008169532712712572
-        ],
-        [
-          1793079600,
-          0.00008169532712712572,
-          0.00008652352967207375,
-          0.00008162678878767569,
-          0.0000864811411716311
-        ],
-        [
-          1793080200,
-          0.0000864811411716311,
-          0.0000864811411716311,
-          0.00007487382979749034,
-          0.00007487382979749034
-        ],
-        [
-          1793080800,
-          0.00007487382979749034,
-          0.00009670801107556921,
-          0.0000747901619495962,
-          0.0000932200857610805
-        ],
-        [
-          1793081400,
-          0.0000932200857610805,
-          0.00010540681128119987,
-          0.00009175575261678479,
-          0.00010083075107847593
-        ],
-        [
-          1793082000,
-          0.00010083075107847593,
-          0.00013202787631625174,
-          0.00010081980898720875,
-          0.00012240894516308046
-        ],
-        [
-          1793082600,
-          0.00012240894516308046,
-          0.00017156188171207646,
-          0.00012240894516308046,
-          0.00017156188171207646
-        ],
-        [
-          1793083200,
-          0.00017156188171207646,
-          0.0001715920463834735,
-          0.00015466363830944228,
-          0.00015466807511332033
-        ]
-      ],
-      "interval": "5m",
-      "supply": 915093918.998204
-    }
+    "supply": 998777131.71969
   },
-  "diamondHands": null,
+  "diamondHands": {
+    "symbol": "1",
+    "name": "#1",
+    "icon": "https://cdn.helius-rpc.com/cdn-cgi/image//https://metadata.rapidlaunch.io/images/3be1c672-bff4-403f-9da5-182c3f51ca8d.png",
+    "chain": "solana",
+    "address": "9yH6C5a34SyVjQxSvCUnFuY6DCXi1t7RTwJMmFTPbonk",
+    "pnlUsd": 201.24,
+    "costUsd": 335.13,
+    "proceedsUsd": 536.36,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.0000259304214349043,
+    "peakPrice": 0.00004424310510874921,
+    "avgExit": 0.00004150097779982011,
+    "firstTs": 1762189509,
+    "lastTs": 1787590353,
+    "partialHistory": false,
+    "daysHeld": 294,
+    "stillHolding": false,
+    "fills": [
+      {
+        "t": 1762189509,
+        "side": "buy",
+        "price": 0.0000259304214349043,
+        "usd": 335.1271529047451,
+        "sig": "2NLFidgWuj974WQhXc4yKvE3QYTUoLRbL3KQG6nndk2zAMraXregSawwfi6ZvSZPPzYUN2xEAkjmGFS36vKP8D99"
+      },
+      {
+        "t": 1762189549,
+        "side": "sell",
+        "price": 0.00004424310510874921,
+        "usd": 142.95049048837492,
+        "sig": "9iGB6SZDaK1c5Fp2vMVWc65H9W6tik2ydCKcLpr8BP2GDxvq9FXoULee6hFJ97GxFxvsbXcxNrfdUrj8h3CkLKf"
+      },
+      {
+        "t": 1762189549,
+        "side": "sell",
+        "price": 0.000042420292145158126,
+        "usd": 137.06093986634173,
+        "sig": "2c6uoEqqsbS7dTxKqbyBDCrgBeq71gSBw9gK2e8UdDzo3QFKWqQLp874y6Cy6DT13EZ7zLAhqCDR3G7S2ckb1y55"
+      },
+      {
+        "t": 1762189550,
+        "side": "sell",
+        "price": 0.000039520270670600965,
+        "usd": 127.6909037625063,
+        "sig": "3rvAxK189uP7sgpxKowRsS18o4eJbT3aAoDeM97r2W4SDF2jceCpCr2u5upma54uyJhEx1kxBMhm7zNK9kBXmK4S"
+      },
+      {
+        "t": 1762189550,
+        "side": "sell",
+        "price": 0.00003982024327477213,
+        "usd": 128.66012214792343,
+        "sig": "3YxpDxn3cUwY7P6dotPr7NoPa7B361N5hxnC9eKxvuyfpaPKvG5N8hsb5366CJxDJXfCVpuCbhZR1wE7b463LhBo"
+      }
+    ],
+    "solUsd": 168.69961543613354,
+    "window": {
+      "start": 1758379382,
+      "end": 1791400479,
+      "tooOld": false
+    },
+    "supply": 998604567.560548
+  },
   "counterfactual": {
     "major": "SOL",
-    "tradingPnlUsd": 1822.86,
-    "holdPnlUsd": -779.44,
-    "justHeldDiffUsd": -2602.3,
+    "tradingPnlUsd": 255634.9,
+    "tradingUnits": 2508.384,
+    "tradingNowUsd": 253824.23,
+    "justHeldDiffUsd": -253824.23,
     "verdict": "trading_won"
   },
   "gas": {
-    "totalUsd": 5.17,
+    "totalUsd": 15842.47,
     "byChain": {
-      "solana": 5.2
+      "solana": 15842.47
     },
-    "txCount": 466,
-    "priciestTxUsd": 0.08
+    "txCount": 33077,
+    "priciestTxUsd": 246
   },
   "rugs": {
-    "count": 31,
-    "lostUsd": -2011.63,
+    "count": 4372,
+    "lostUsd": -510732.19,
     "tokens": [
-      "ELON2028",
-      "VECTOR",
-      "RL",
-      "Roadster",
-      "TOAST",
-      "Tractor",
-      "SOON",
-      "Annautaq",
-      "GIGASAYLOR",
-      "FRIES"
+      "BUDDY",
+      "SPYx",
+      "COIN",
+      "PRLS",
+      "AMELIAJAK",
+      "BLEEBZORX",
+      "Z500",
+      "7",
+      "HUNTER",
+      "BESSENT"
     ],
-    "dodged": 29,
+    "dodged": 2151,
     "dodgedTokens": [
-      "FTR",
-      "BITDOG",
-      "LUITENANT",
-      "Hugo",
-      "Alice",
-      "CTRLTHENAR",
-      "GRINDSETFN",
-      "POTUS",
-      "©",
-      "Sossa"
+      "EYE",
+      "Steve",
+      "Shrimp",
+      "SPSN",
+      "BLOWFISH",
+      "BATHROOM",
+      "lick",
+      "SWI",
+      "GPT-6-7",
+      "MOMO"
     ]
   },
   "airdrops": {
@@ -1112,35 +984,35 @@
   },
   "sleep": {
     "hourHistogramUtc": [
-      15,
-      37,
+      1500,
+      609,
+      276,
+      52,
+      2,
+      1,
       0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      5,
-      0,
-      4,
       0,
       17,
-      9,
-      31,
-      28,
-      62,
-      26,
-      35,
-      23,
-      11,
       19,
-      9,
-      48
+      104,
+      584,
+      632,
+      1372,
+      2027,
+      2565,
+      2667,
+      2372,
+      2743,
+      2458,
+      1683,
+      2327,
+      2261,
+      1794
     ],
-    "peakHourUtc": 16,
-    "peakHourCount": 62,
-    "topMinuteUtc": "01:06",
-    "topMinuteCount": 21
+    "peakHourUtc": 18,
+    "peakHourCount": 2743,
+    "topMinuteUtc": "13:29",
+    "topMinuteCount": 278
   },
   "bridges": {
     "hops": [],
@@ -1151,15 +1023,1391 @@
   "percentile": {
     "activity": null
   },
+  "profitTimeline": {
+    "points": [
+      [
+        1761523200,
+        0
+      ],
+      [
+        1761523200,
+        351.4
+      ],
+      [
+        1761609600,
+        3130.64
+      ],
+      [
+        1761696000,
+        4378.48
+      ],
+      [
+        1761782400,
+        10550.82
+      ],
+      [
+        1761868800,
+        2561.46
+      ],
+      [
+        1761955200,
+        15962.67
+      ],
+      [
+        1762041600,
+        23498.84
+      ],
+      [
+        1762128000,
+        25629.04
+      ],
+      [
+        1762214400,
+        27205.16
+      ],
+      [
+        1762300800,
+        26732.89
+      ],
+      [
+        1762387200,
+        38182.99
+      ],
+      [
+        1762473600,
+        38504.55
+      ],
+      [
+        1762560000,
+        41575.85
+      ],
+      [
+        1762646400,
+        49128.74
+      ],
+      [
+        1762732800,
+        48193.54
+      ],
+      [
+        1762819200,
+        48607.7
+      ],
+      [
+        1762905600,
+        51971.93
+      ],
+      [
+        1762992000,
+        52368.98
+      ],
+      [
+        1763078400,
+        52060.35
+      ],
+      [
+        1763164800,
+        52211.87
+      ],
+      [
+        1763251200,
+        51900.02
+      ],
+      [
+        1763337600,
+        50817.14
+      ],
+      [
+        1763424000,
+        49897.19
+      ],
+      [
+        1763510400,
+        49043.18
+      ],
+      [
+        1763596800,
+        49392.86
+      ],
+      [
+        1763683200,
+        49228.02
+      ],
+      [
+        1763769600,
+        48472.2
+      ],
+      [
+        1763856000,
+        48697.31
+      ],
+      [
+        1763942400,
+        48464.43
+      ],
+      [
+        1764028800,
+        47193.45
+      ],
+      [
+        1764115200,
+        46814.69
+      ],
+      [
+        1764547200,
+        46713.42
+      ],
+      [
+        1764633600,
+        45817.51
+      ],
+      [
+        1764720000,
+        45881.28
+      ],
+      [
+        1764806400,
+        44049.33
+      ],
+      [
+        1764892800,
+        43875.4
+      ],
+      [
+        1764979200,
+        42341.64
+      ],
+      [
+        1765065600,
+        41298.78
+      ],
+      [
+        1765152000,
+        43617.43
+      ],
+      [
+        1765238400,
+        43655.2
+      ],
+      [
+        1765324800,
+        42755.44
+      ],
+      [
+        1765411200,
+        45422.23
+      ],
+      [
+        1765497600,
+        46357.37
+      ],
+      [
+        1765584000,
+        46251.74
+      ],
+      [
+        1765670400,
+        43943.31
+      ],
+      [
+        1765756800,
+        43424.76
+      ],
+      [
+        1765843200,
+        42982.92
+      ],
+      [
+        1765929600,
+        44891.96
+      ],
+      [
+        1766016000,
+        44698.38
+      ],
+      [
+        1766102400,
+        44748.85
+      ],
+      [
+        1766188800,
+        48547.97
+      ],
+      [
+        1766275200,
+        50856.79
+      ],
+      [
+        1766361600,
+        51969.37
+      ],
+      [
+        1766448000,
+        53595.26
+      ],
+      [
+        1766534400,
+        53753.63
+      ],
+      [
+        1766620800,
+        53624.92
+      ],
+      [
+        1767139200,
+        53523.32
+      ],
+      [
+        1767484800,
+        53624.46
+      ],
+      [
+        1767571200,
+        53774.71
+      ],
+      [
+        1767657600,
+        54577.04
+      ],
+      [
+        1767744000,
+        57464.91
+      ],
+      [
+        1767830400,
+        56283.96
+      ],
+      [
+        1767916800,
+        58982.23
+      ],
+      [
+        1768003200,
+        63205.2
+      ],
+      [
+        1768089600,
+        63199.8
+      ],
+      [
+        1768176000,
+        63021.69
+      ],
+      [
+        1768262400,
+        63907.7
+      ],
+      [
+        1768348800,
+        70611.46
+      ],
+      [
+        1768435200,
+        72882.5
+      ],
+      [
+        1768521600,
+        70871.09
+      ],
+      [
+        1768608000,
+        68767.86
+      ],
+      [
+        1768694400,
+        71423.89
+      ],
+      [
+        1768780800,
+        72357.38
+      ],
+      [
+        1768867200,
+        73129.68
+      ],
+      [
+        1768953600,
+        70397.65
+      ],
+      [
+        1769040000,
+        73116.19
+      ],
+      [
+        1769126400,
+        77647.8
+      ],
+      [
+        1769212800,
+        84137.28
+      ],
+      [
+        1769299200,
+        96010.75
+      ],
+      [
+        1769385600,
+        105390.41
+      ],
+      [
+        1769472000,
+        108504.53
+      ],
+      [
+        1769558400,
+        114458.09
+      ],
+      [
+        1769644800,
+        115941.79
+      ],
+      [
+        1769731200,
+        126427.9
+      ],
+      [
+        1769817600,
+        120329.88
+      ],
+      [
+        1769904000,
+        121000.07
+      ],
+      [
+        1769990400,
+        126780.97
+      ],
+      [
+        1770076800,
+        124273.45
+      ],
+      [
+        1770163200,
+        133175.39
+      ],
+      [
+        1770249600,
+        131899.27
+      ],
+      [
+        1770336000,
+        131170.32
+      ],
+      [
+        1770422400,
+        132323.95
+      ],
+      [
+        1770508800,
+        139786.62
+      ],
+      [
+        1770595200,
+        141770.1
+      ],
+      [
+        1770681600,
+        141556.36
+      ],
+      [
+        1770768000,
+        139381.14
+      ],
+      [
+        1770854400,
+        142808.14
+      ],
+      [
+        1770940800,
+        142334.78
+      ],
+      [
+        1771027200,
+        145067.08
+      ],
+      [
+        1771113600,
+        144719.45
+      ],
+      [
+        1771200000,
+        149372.72
+      ],
+      [
+        1771286400,
+        154323.72
+      ],
+      [
+        1771372800,
+        157755.43
+      ],
+      [
+        1771459200,
+        158351.81
+      ],
+      [
+        1771545600,
+        158133.25
+      ],
+      [
+        1771632000,
+        157767.89
+      ],
+      [
+        1771718400,
+        160027.5
+      ],
+      [
+        1771804800,
+        162761.96
+      ],
+      [
+        1771891200,
+        164211.76
+      ],
+      [
+        1771977600,
+        168748.06
+      ],
+      [
+        1772064000,
+        169437.87
+      ],
+      [
+        1772409600,
+        175220.49
+      ],
+      [
+        1772496000,
+        174396.82
+      ],
+      [
+        1772582400,
+        173064.76
+      ],
+      [
+        1772668800,
+        172583.76
+      ],
+      [
+        1772755200,
+        174634.86
+      ],
+      [
+        1772841600,
+        174420.15
+      ],
+      [
+        1772928000,
+        175107.57
+      ],
+      [
+        1773014400,
+        173588.91
+      ],
+      [
+        1773100800,
+        174220.33
+      ],
+      [
+        1773187200,
+        174550.56
+      ],
+      [
+        1773273600,
+        173059.08
+      ],
+      [
+        1773360000,
+        169565.57
+      ],
+      [
+        1773446400,
+        171252.82
+      ],
+      [
+        1773532800,
+        170579.27
+      ],
+      [
+        1773619200,
+        168549.17
+      ],
+      [
+        1773705600,
+        168088.94
+      ],
+      [
+        1773792000,
+        167730.61
+      ],
+      [
+        1773878400,
+        168229.22
+      ],
+      [
+        1773964800,
+        166757.25
+      ],
+      [
+        1774051200,
+        166302.23
+      ],
+      [
+        1774137600,
+        168313.4
+      ],
+      [
+        1774224000,
+        168732.86
+      ],
+      [
+        1774310400,
+        168466.65
+      ],
+      [
+        1774396800,
+        168379.53
+      ],
+      [
+        1774483200,
+        167923.74
+      ],
+      [
+        1774569600,
+        167959.82
+      ],
+      [
+        1774742400,
+        168106.73
+      ],
+      [
+        1774828800,
+        168712.89
+      ],
+      [
+        1774915200,
+        167646.03
+      ],
+      [
+        1775001600,
+        169307.26
+      ],
+      [
+        1775088000,
+        167965.77
+      ],
+      [
+        1775174400,
+        168085.88
+      ],
+      [
+        1775260800,
+        166948.61
+      ],
+      [
+        1775347200,
+        166029.08
+      ],
+      [
+        1775433600,
+        167017.03
+      ],
+      [
+        1775520000,
+        168579.91
+      ],
+      [
+        1775606400,
+        168280.32
+      ],
+      [
+        1775692800,
+        168342.15
+      ],
+      [
+        1775779200,
+        168246.83
+      ],
+      [
+        1775865600,
+        168818.87
+      ],
+      [
+        1775952000,
+        168776.52
+      ],
+      [
+        1776038400,
+        169426.47
+      ],
+      [
+        1776124800,
+        171400.05
+      ],
+      [
+        1776211200,
+        173152.47
+      ],
+      [
+        1776297600,
+        173690.39
+      ],
+      [
+        1776384000,
+        175782.61
+      ],
+      [
+        1776470400,
+        180065.85
+      ],
+      [
+        1776556800,
+        180141.17
+      ],
+      [
+        1776643200,
+        181078.96
+      ],
+      [
+        1776729600,
+        182561.88
+      ],
+      [
+        1776816000,
+        179877.07
+      ],
+      [
+        1776902400,
+        179490.13
+      ],
+      [
+        1776988800,
+        179996.95
+      ],
+      [
+        1777075200,
+        180117.99
+      ],
+      [
+        1777248000,
+        178648.27
+      ],
+      [
+        1777334400,
+        180268.81
+      ],
+      [
+        1777420800,
+        187756.13
+      ],
+      [
+        1777507200,
+        188844.35
+      ],
+      [
+        1777593600,
+        188977.11
+      ],
+      [
+        1777680000,
+        188931.31
+      ],
+      [
+        1777766400,
+        189042.85
+      ],
+      [
+        1777852800,
+        188750
+      ],
+      [
+        1777939200,
+        186973.4
+      ],
+      [
+        1778025600,
+        186517.79
+      ],
+      [
+        1778112000,
+        185076.96
+      ],
+      [
+        1778198400,
+        184144
+      ],
+      [
+        1778284800,
+        183724.34
+      ],
+      [
+        1778371200,
+        183713.31
+      ],
+      [
+        1778457600,
+        183926.13
+      ],
+      [
+        1778544000,
+        183501.49
+      ],
+      [
+        1778630400,
+        183984.1
+      ],
+      [
+        1778716800,
+        183611.91
+      ],
+      [
+        1778803200,
+        185413.51
+      ],
+      [
+        1778889600,
+        185553.04
+      ],
+      [
+        1778976000,
+        185188.62
+      ],
+      [
+        1779062400,
+        188798.51
+      ],
+      [
+        1779148800,
+        189061.4
+      ],
+      [
+        1779235200,
+        187996.07
+      ],
+      [
+        1779321600,
+        188782.08
+      ],
+      [
+        1779408000,
+        188972.28
+      ],
+      [
+        1779494400,
+        189152.89
+      ],
+      [
+        1779580800,
+        188953.09
+      ],
+      [
+        1779667200,
+        188586.51
+      ],
+      [
+        1779753600,
+        187184.09
+      ],
+      [
+        1779840000,
+        186722.39
+      ],
+      [
+        1779926400,
+        186340.48
+      ],
+      [
+        1780012800,
+        185800.76
+      ],
+      [
+        1780099200,
+        184527.87
+      ],
+      [
+        1780185600,
+        184310.02
+      ],
+      [
+        1780272000,
+        183755.02
+      ],
+      [
+        1780358400,
+        183353.03
+      ],
+      [
+        1780444800,
+        185446.49
+      ],
+      [
+        1780531200,
+        185935.21
+      ],
+      [
+        1780617600,
+        185882.26
+      ],
+      [
+        1780704000,
+        185480.63
+      ],
+      [
+        1780790400,
+        185275.93
+      ],
+      [
+        1780876800,
+        185790.89
+      ],
+      [
+        1780963200,
+        185093.13
+      ],
+      [
+        1781049600,
+        185898.04
+      ],
+      [
+        1781136000,
+        185824.79
+      ],
+      [
+        1781222400,
+        185623.08
+      ],
+      [
+        1781308800,
+        184915.11
+      ],
+      [
+        1781395200,
+        184439.42
+      ],
+      [
+        1781481600,
+        182730.45
+      ],
+      [
+        1781568000,
+        183240.12
+      ],
+      [
+        1781654400,
+        182997.41
+      ],
+      [
+        1781740800,
+        187311.7
+      ],
+      [
+        1781827200,
+        187116.25
+      ],
+      [
+        1781913600,
+        187508.27
+      ],
+      [
+        1782172800,
+        187503.62
+      ],
+      [
+        1782259200,
+        187439.37
+      ],
+      [
+        1782345600,
+        187526.93
+      ],
+      [
+        1782432000,
+        187332.99
+      ],
+      [
+        1782518400,
+        190279.37
+      ],
+      [
+        1782604800,
+        191534.44
+      ],
+      [
+        1782691200,
+        191668
+      ],
+      [
+        1782777600,
+        199899.65
+      ],
+      [
+        1782864000,
+        198953.61
+      ],
+      [
+        1782950400,
+        198197.91
+      ],
+      [
+        1783036800,
+        198119.75
+      ],
+      [
+        1783209600,
+        212558.21
+      ],
+      [
+        1783296000,
+        218749.24
+      ],
+      [
+        1783728000,
+        219539.43
+      ],
+      [
+        1784160000,
+        220143.22
+      ],
+      [
+        1784246400,
+        224056.13
+      ],
+      [
+        1784332800,
+        224123.28
+      ],
+      [
+        1784419200,
+        224537.99
+      ],
+      [
+        1784505600,
+        226566.92
+      ],
+      [
+        1784592000,
+        227121.12
+      ],
+      [
+        1784678400,
+        227291.24
+      ],
+      [
+        1784764800,
+        225918.39
+      ],
+      [
+        1784851200,
+        225183.74
+      ],
+      [
+        1784937600,
+        225167.94
+      ],
+      [
+        1785110400,
+        229020.52
+      ],
+      [
+        1785888000,
+        228838.87
+      ],
+      [
+        1785974400,
+        229724.28
+      ],
+      [
+        1786320000,
+        229476.35
+      ],
+      [
+        1786406400,
+        229272
+      ],
+      [
+        1786492800,
+        228922.61
+      ],
+      [
+        1786579200,
+        230149.25
+      ],
+      [
+        1786665600,
+        231363.5
+      ],
+      [
+        1786752000,
+        231580.73
+      ],
+      [
+        1786838400,
+        232025.66
+      ],
+      [
+        1786924800,
+        254224.85
+      ],
+      [
+        1787011200,
+        257053.81
+      ],
+      [
+        1787097600,
+        253141.18
+      ],
+      [
+        1787184000,
+        254524.89
+      ],
+      [
+        1787270400,
+        254235.3
+      ],
+      [
+        1787529600,
+        254807.42
+      ],
+      [
+        1787616000,
+        255346.04
+      ],
+      [
+        1787702400,
+        254118.26
+      ],
+      [
+        1787788800,
+        261484.57
+      ],
+      [
+        1787875200,
+        260971.04
+      ],
+      [
+        1787961600,
+        259606.65
+      ],
+      [
+        1788048000,
+        256350.54
+      ],
+      [
+        1788134400,
+        258111.82
+      ],
+      [
+        1788220800,
+        258210.51
+      ],
+      [
+        1788307200,
+        257840.77
+      ],
+      [
+        1788393600,
+        260415.21
+      ],
+      [
+        1788480000,
+        266012.14
+      ],
+      [
+        1788566400,
+        265508.56
+      ],
+      [
+        1788652800,
+        264532.7
+      ],
+      [
+        1788739200,
+        270057.51
+      ],
+      [
+        1788825600,
+        274005.45
+      ],
+      [
+        1788912000,
+        272504.23
+      ],
+      [
+        1788998400,
+        268963.8
+      ],
+      [
+        1789084800,
+        270058.02
+      ],
+      [
+        1789171200,
+        267118.57
+      ],
+      [
+        1789257600,
+        269731.39
+      ],
+      [
+        1789344000,
+        270391.32
+      ],
+      [
+        1789430400,
+        270287.44
+      ],
+      [
+        1789516800,
+        267601.82
+      ],
+      [
+        1789603200,
+        268557.69
+      ],
+      [
+        1789689600,
+        268781.1
+      ],
+      [
+        1789776000,
+        265292.52
+      ],
+      [
+        1789862400,
+        265362.04
+      ],
+      [
+        1789948800,
+        264599.33
+      ],
+      [
+        1790035200,
+        263832.66
+      ],
+      [
+        1790121600,
+        264942.58
+      ],
+      [
+        1790208000,
+        264481.97
+      ],
+      [
+        1790294400,
+        264104.5
+      ],
+      [
+        1790380800,
+        263721.23
+      ],
+      [
+        1790467200,
+        264549.76
+      ],
+      [
+        1790553600,
+        266990.94
+      ],
+      [
+        1790640000,
+        266179.59
+      ],
+      [
+        1790726400,
+        263945.77
+      ],
+      [
+        1790812800,
+        264486.1
+      ],
+      [
+        1790899200,
+        264038.99
+      ],
+      [
+        1790985600,
+        259892.78
+      ],
+      [
+        1791072000,
+        258530.21
+      ],
+      [
+        1791158400,
+        259682.17
+      ],
+      [
+        1791244800,
+        259208.56
+      ],
+      [
+        1791331200,
+        258434.35
+      ],
+      [
+        1791417600,
+        257363.93
+      ],
+      [
+        1791504000,
+        257322
+      ],
+      [
+        1791676800,
+        258465.26
+      ],
+      [
+        1791763200,
+        257742.62
+      ],
+      [
+        1791849600,
+        257066.16
+      ],
+      [
+        1791936000,
+        257061.39
+      ],
+      [
+        1792022400,
+        256913.39
+      ],
+      [
+        1792108800,
+        256773.71
+      ],
+      [
+        1792540800,
+        256797.2
+      ],
+      [
+        1792627200,
+        256557.26
+      ],
+      [
+        1792800000,
+        256265.87
+      ],
+      [
+        1792886400,
+        258050.14
+      ],
+      [
+        1792972800,
+        258476.91
+      ],
+      [
+        1793059200,
+        258681.41
+      ]
+    ],
+    "bestDay": {
+      "ts": 1786924800,
+      "usd": 22199.19
+    },
+    "worstDay": {
+      "ts": 1761868800,
+      "usd": -7989.35
+    },
+    "openUsd": -3046.51
+  },
+  "speed": {
+    "fastestFlip": {
+      "symbol": "Clavicular",
+      "chain": "solana",
+      "address": "4Uu22GnUh59SLCgNdVKh6hUcnsxxpt1DVsDY9uC7pump",
+      "icon": "https://cdn.helius-rpc.com/cdn-cgi/image//https://metadata.j7tracker.io/images/60678ac185f34e43",
+      "seconds": 1,
+      "pnlUsd": 2245.32
+    },
+    "medianHoldSec": 28,
+    "underMinutePct": 65,
+    "underHourPct": 95,
+    "tradesPerActiveDay": 87.2,
+    "busiestDay": {
+      "ts": 1786924800,
+      "trades": 386
+    },
+    "closedCount": 6784
+  },
+  "narratives": {
+    "top": [
+      {
+        "id": "dogs",
+        "trades": 1512,
+        "tokens": 420,
+        "pnlUsd": 4671.33
+      },
+      {
+        "id": "ai",
+        "trades": 1066,
+        "tokens": 277,
+        "pnlUsd": 13634.73
+      },
+      {
+        "id": "animals",
+        "trades": 1004,
+        "tokens": 349,
+        "pnlUsd": 796.81
+      },
+      {
+        "id": "cats",
+        "trades": 729,
+        "tokens": 192,
+        "pnlUsd": 5947.88
+      },
+      {
+        "id": "internet",
+        "trades": 679,
+        "tokens": 210,
+        "pnlUsd": 3261.48
+      }
+    ],
+    "coverage": 0.24
+  },
+  "appFees": {
+    "totalUsd": 43589.45,
+    "trades": 20923,
+    "avgRate": 0.01,
+    "byApp": [
+      {
+        "app": "Axiom",
+        "usd": 43047.27,
+        "trades": 20759
+      },
+      {
+        "app": "Bloom",
+        "usd": 329.5,
+        "trades": 75
+      },
+      {
+        "app": "Padre",
+        "usd": 176.7,
+        "trades": 57
+      },
+      {
+        "app": "GMGN",
+        "usd": 35.98,
+        "trades": 32
+      }
+    ],
+    "coverage": 1
+  },
   "cards": [
     "archetype",
     "overview",
     "pnl",
+    "profitTime",
     "best",
     "worst",
     "roundTrip",
     "paperHands",
+    "diamondHands",
+    "speed",
+    "narrative",
     "counterfactual",
+    "appFees",
     "gas",
     "rugs",
     "sleep",

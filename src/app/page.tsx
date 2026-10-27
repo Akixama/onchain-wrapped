@@ -6,7 +6,7 @@ import { EVM_ENABLED } from "@/lib/site";
 const ALL_DEMOS = [
   { id: "sol-sniper", label: "Solana sniper", sub: "461 memecoin trades" },
   { id: "machi", label: "machibigbrother.eth", sub: "EVM → Hyperliquid", evm: true },
-  { id: "sol-memes", label: "Memecoin trader", sub: "380 trades" },
+  { id: "sol-memes", label: "Memecoin trader", sub: "28,065 trades" },
   { id: "sol-cluster", label: "One trader, 3 wallets", sub: "Merged identity" },
 ];
 const DEMOS = ALL_DEMOS.filter((d) => EVM_ENABLED || !("evm" in d));

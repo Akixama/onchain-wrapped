@@ -1,6 +1,7 @@
 // Turn saved runs in out/*.events.json into demo results with the CURRENT engine, without calling
 // Zerion (only free price + Solana RPC calls).   npm run seed
 import { readFileSync, existsSync } from "node:fs";
+import { gunzipSync } from "node:zlib";
 import type { UnifiedEvent } from "../src/lib/core/types";
 import { isEvmAddress } from "../src/lib/core/identity";
 import { analyze } from "../src/lib/pipeline";
@@ -28,10 +29,16 @@ const DEMOS: { id: string; file: string; wallets: string[]; names?: Record<strin
   { id: "defi-whale", file: "tetranode", label: "DeFi whale", wallets: ["0x9c5083dd4838e120dbeac44c052179692aa5dac5"] },
 ];
 
+// Optional: npm run seed -- sol-memes   (only re-seed the demos named)
+const only = process.argv.slice(2);
 for (const d of DEMOS) {
+  if (only.length && !only.includes(d.id)) continue;
+  // Big runs are kept gzipped in git (GitHub warns above 50MB).
   const path = `out/${d.file}.events.json`;
-  if (!existsSync(path)) { console.log(`skip ${d.id}: no ${path}`); continue; }
-  const events: UnifiedEvent[] = JSON.parse(readFileSync(path, "utf8"));
+  const gz = `${path}.gz`;
+  if (!existsSync(path) && !existsSync(gz)) { console.log(`skip ${d.id}: no ${path}`); continue; }
+  const raw = existsSync(path) ? readFileSync(path, "utf8") : gunzipSync(readFileSync(gz)).toString("utf8");
+  const events: UnifiedEvent[] = JSON.parse(raw);
   const old = JSON.parse(readFileSync(`out/${d.file}.json`, "utf8"));
   // Saved events already went through identity + pricing once; let the current rules decide again.
   for (const e of events) {
