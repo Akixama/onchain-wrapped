@@ -462,7 +462,7 @@ const ProfitTime = ({ s }: CardProps) => {
   const pts = t.points;
   const end = pts[pts.length - 1];
   const final = end[1] + t.openUsd;
-  const W = 600, H = 240, L = 8, Rr = 8, T = 16, B = 26;
+  const W = 600, H = 250, L = 8, Rr = 8, T = 16, B = 34;
   const t0 = pts[0][0], t1 = Math.max(end[0], t0 + 86400);
   const vals = [...pts.map((p) => p[1]), final, 0];
   let lo = Math.min(...vals), hi = Math.max(...vals);
@@ -473,8 +473,15 @@ const ProfitTime = ({ s }: CardProps) => {
   const y = (v: number) => T + ((hi - v) / (hi - lo)) * (H - T - B);
   const line = pts.map((p, i) => (i ? `L${x(p[0])},${y(pts[i - 1][1])} L${x(p[0])},${y(p[1])}` : `M${x(p[0])},${y(p[1])}`)).join(" ");
   const area = `${line} L${x(end[0])},${y(0)} L${x(t0)},${y(0)} Z`;
-  const months = Array.from(new Set(pts.map((p) => new Date(p[0] * 1000).toISOString().slice(0, 7)))).slice(0, 14);
-  const step = Math.max(1, Math.ceil(months.length / 6));
+  // Axis labels: a few dates for short periods, month names for long ones.
+  const spanDays = (t1 - t0) / 86400;
+  const ticks = spanDays <= 60
+    ? Array.from({ length: 3 }, (_, i) => t0 + ((t1 - t0) * i) / 2).map((ts) => ({ ts, label: dayLabel(ts) }))
+    : Array.from(new Set(pts.map((p) => new Date(p[0] * 1000).toISOString().slice(0, 7))))
+        .map((m) => Date.parse(`${m}-01T00:00:00Z`) / 1000)
+        .filter((ts) => ts >= t0 && ts <= t1)
+        .filter((_, i, all) => i % Math.max(1, Math.ceil(all.length / 4)) === 0)
+        .map((ts) => ({ ts, label: new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }) }));
   const markDay = (d: { ts: number; usd: number } | null, color: string) => {
     if (!d) return null;
     const p = pts.find((q) => q[0] === d.ts);
@@ -495,10 +502,10 @@ const ProfitTime = ({ s }: CardProps) => {
                 initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 1.4, delay: 0.3, ease: "easeInOut" }} />
               {markDay(t.bestDay, "#4ADE80")}
               {markDay(t.worstDay, "#F87171")}
-              {months.filter((_, i) => i % step === 0).map((m) => {
-                const ts = Date.parse(`${m}-01T00:00:00Z`) / 1000;
-                return ts >= t0 && ts <= t1 ? <text key={m} x={x(ts)} y={H - 6} fill="rgba(255,255,255,0.55)" fontSize="13" textAnchor="middle">{new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })}</text> : null;
-              })}
+              {ticks.map((k, i) => (
+                <text key={k.ts} x={x(k.ts)} y={H - 4} fill="rgba(255,255,255,0.6)" fontSize="20"
+                  textAnchor={i === 0 ? "start" : i === ticks.length - 1 && spanDays <= 60 ? "end" : "middle"}>{k.label}</text>
+              ))}
             </svg>
           </motion.div>
           <div className="mt-3 grid grid-cols-2 gap-3">
@@ -544,7 +551,7 @@ const Speed = ({ s }: CardProps) => {
 const Narrative = ({ s }: CardProps) => {
   const n = s.narratives!;
   const fav = n.top[0];
-  const max = Math.max(1, ...n.top.map((x) => x.trades));
+  const max = Math.max(1, ...n.top.slice(0, 3).map((x) => x.trades));
   return (
     <>
       <Kicker>Favourite narrative</Kicker>
@@ -552,9 +559,9 @@ const Narrative = ({ s }: CardProps) => {
         <Line className="text-lg opacity-80">You couldn&apos;t stay away from</Line>
         <BigNumber className="text-[60px] @3xl:text-[86px]">{NARRATIVE_EMOJI[fav.id]} {NARRATIVE_LABEL[fav.id]}</BigNumber>
         <Line className="text-lg">{num(fav.trades)} trades across {fav.tokens} {fav.tokens === 1 ? "coin" : "coins"}, for <b style={{ color: gainColor(fav.pnlUsd) }}>{money(fav.pnlUsd, true)}</b>.</Line>
-        <R><motion.ul variants={rise} className="space-y-2.5">
-          {n.top.map((x) => (
-            <li key={x.id} className="rounded-xl border border-white/10 bg-white/[0.06] px-4 py-3">
+        <R><motion.ul variants={rise} className="space-y-2">
+          {n.top.slice(0, 3).map((x) => (
+            <li key={x.id} className="rounded-xl border border-white/10 bg-white/[0.06] px-4 py-2.5">
               <div className="flex items-center justify-between gap-3">
                 <span className="font-semibold">{NARRATIVE_EMOJI[x.id]} {NARRATIVE_LABEL[x.id]}</span>
                 <span className="whitespace-nowrap font-display text-lg font-bold tabular-nums" style={{ color: gainColor(x.pnlUsd) }}>{money(x.pnlUsd, true)}</span>
