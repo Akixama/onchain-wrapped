@@ -136,7 +136,8 @@ export function FitContent({ children }: { children: ReactNode }) {
       for (const c of Array.from(i.children) as HTMLElement[]) need += c.offsetHeight;
       need += 28; // breathing room between kicker and body
       const k = need > avail ? Math.max(0.5, avail / need) : 1;
-      setFit((f) => (Math.abs(f.k - k) < 0.005 && f.h === avail ? f : { k, h: avail }));
+      // Ignore tiny changes (count-up digits, chart loading) so the card never jitters.
+      setFit((f) => (Math.abs(f.k - k) < 0.03 && f.h === avail ? f : { k, h: avail }));
     };
     measure();
     const ro = new ResizeObserver(measure);
@@ -149,7 +150,7 @@ export function FitContent({ children }: { children: ReactNode }) {
       <div
         ref={inner}
         className="absolute left-0 top-0 flex flex-col"
-        style={{ transform: `scale(${fit.k})`, transformOrigin: "top left", width: `${100 / fit.k}%`, height: fit.h ? fit.h / fit.k : "100%" }}
+        style={{ transform: `scale(${fit.k})`, transformOrigin: "top center", width: "100%", height: fit.h ? fit.h / fit.k : "100%" }}
       >
         {children}
       </div>

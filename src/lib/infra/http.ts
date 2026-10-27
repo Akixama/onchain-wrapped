@@ -4,10 +4,13 @@ import { logUsage } from "./usage";
 const MIN_GAP_MS: Record<string, number> = {
   helius: 550, // free plan: 2 req/s on enhanced APIs
   zerion: 1050, // demo keys: 1 req/s + 300/day (headers: ratelimit-org-*). Developer plan: 3 req/s
-  "solana-rpc": 300, // public RPC: ~40 req/10s per method
+  // The free public Solana node allows ~1 transaction lookup/second; going faster only earns 429 penalties.
+  // A dedicated RPC (SOLANA_RPC_URL, e.g. Helius: 10/s on the free plan) is paced much faster.
+  "solana-rpc": process.env.SOLANA_RPC_URL ? 110 : 1000,
   defillama: 120,
   dexscreener: 220, // 300 req/min
   geckoterminal: 2100, // ~30 req/min
+  "evm-rpc": 100, // publicnode, for token supply
 };
 
 const lastCall: Record<string, number> = {};

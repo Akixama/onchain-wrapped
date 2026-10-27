@@ -61,10 +61,10 @@ export async function runWrapped(input: RunInput): Promise<{ stats: WrappedStats
         const res = cached ?? await a.fetchEvents(w, {
           sinceTs,
           maxTxs: cap,
-          onProgress: ({ chain, fetched: n }) => {
+          onProgress: ({ chain, fetched: n, message }) => {
             fetched += n - last;
             last = n;
-            say({ stage: "fetching", message: `Reading ${chain === "evm" ? "EVM chains" : chain} history`, fetched });
+            say({ stage: "fetching", message: message ?? `Reading ${chain === "evm" ? "EVM chains" : chain} history`, fetched });
           },
         });
         if (!cached) await cacheSet(cacheKey, res);

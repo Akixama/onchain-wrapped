@@ -7,6 +7,7 @@ import { fetchJson } from "../infra/http";
 
 const WSOL = "So11111111111111111111111111111111111111112";
 const ATA_RENT_SOL = 0.0021;
+// Set SOLANA_RPC_URL to a dedicated node (e.g. https://mainnet.helius-rpc.com/?api-key=...) for ~10x faster checks.
 const rpcUrl = () => process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
 
 interface TokenBal { accountIndex: number; mint: string; owner?: string; uiTokenAmount: { amount: string; decimals: number } }
@@ -142,21 +143,27 @@ export async function verifySolanaTransfers(
   events: UnifiedEvent[],
   isMoney: (t: TokenRef) => boolean,
   max = Number(process.env.SOLANA_VERIFY_MAX ?? 400),
+  onProgress?: (done: number, total: number) => void,
 ): Promise<{ checked: number; fixed: number; skipped: number }> {
   const suspects = events.filter(
     (e) => e.chain === "solana" && ["transfer_in", "transfer_out", "other"].includes(e.type) && [...e.in, ...e.out].some((l) => !isMoney(l.token)),
   );
-  let checked = 0, fixed = 0;
-  for (const e of suspects.slice(0, max)) {
+  let checked = 0, fixed = 0, done = 0;
+  const list = suspects.slice(0, max);
+  // Several requests in flight; the shared throttle in fetchJson still keeps us under the RPC's rate limit.
+  const check = async (e: UnifiedEvent) => {
     let raw: RawTx | null = null;
     try {
       raw = await rpc<RawTx | null>("getTransaction", [e.txHash, { encoding: "jsonParsed", maxSupportedTransactionVersion: 1 }]);
     } catch {
-      continue;
+      return;
+    } finally {
+      done++;
+      if (done % 10 === 0 || done === list.length) onProgress?.(done, list.length);
     }
     checked++;
     const real = raw && normalizeRaw(e.wallet, raw);
-    if (!real || real.type !== "swap") continue;
+    if (!real || real.type !== "swap") return;
     // Keep token names from the provider; take amounts and direction from the chain.
     const named = new Map([...e.in, ...e.out].map((l) => [l.token.address, l.token]));
     const fix = (legs: Leg[]) => legs.map((l) => ({ ...l, token: named.get(l.token.address) ?? l.token, usd: null }));
@@ -164,6 +171,18 @@ export async function verifySolanaTransfers(
     e.out = fix(real.out);
     e.type = "swap";
     fixed++;
-  }
+  };
+  onProgress?.(0, list.length);
+  for (let i = 0; i < list.length; i += 4) await Promise.all(list.slice(i, i + 4).map(check));
   return { checked, fixed, skipped: Math.max(0, suspects.length - max) };
+}
+
+/** Total token supply (human units) for market-cap math. 1 RPC call. */
+export async function solanaTokenSupply(mint: string): Promise<number | null> {
+  try {
+    const r = await rpc<{ value: { uiAmount: number | null } }>("getTokenSupply", [mint]);
+    return r.value?.uiAmount && r.value.uiAmount > 0 ? r.value.uiAmount : null;
+  } catch {
+    return null;
+  }
 }

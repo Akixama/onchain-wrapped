@@ -108,7 +108,9 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
         notes.push(`Couldn't double-check recent Solana activity for ${wallet.slice(0, 4)}….`);
       }
       opts.onProgress?.({ chain: "solana", fetched: seen });
-      const v = await verifySolanaTransfers(events, isMoney);
+      const v = await verifySolanaTransfers(events, isMoney, undefined, (done, total) =>
+        opts.onProgress?.({ chain: "solana", fetched: seen, message: `Double-checking trades on-chain (${done}/${total})` }),
+      );
       if (v.fixed) notes.push(`Corrected ${v.fixed} Solana trades the data provider had labeled as plain transfers.`);
       if (v.skipped) notes.push(`${v.skipped} Solana transfers weren't double-checked (very active wallet).`);
     }

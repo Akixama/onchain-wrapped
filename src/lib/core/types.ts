@@ -67,7 +67,7 @@ export interface UnifiedEvent {
 export interface FetchOptions {
   sinceTs: number; // unix seconds, 0 for all time
   maxTxs: number; // hard cap per address (cost protection)
-  onProgress?: (p: { chain: ChainId | "evm"; fetched: number }) => void;
+  onProgress?: (p: { chain: ChainId | "evm"; fetched: number; message?: string }) => void;
 }
 
 export interface FetchResult {

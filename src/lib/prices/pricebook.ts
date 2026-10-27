@@ -61,7 +61,8 @@ async function llamaChart(ids: string[], startTs: number): Promise<Record<string
   const periodDays = Math.ceil(days / 480);
   const period = `${periodDays}d`;
   const span = Math.ceil(days / periodDays);
-  for (const id of ids) {
+  // One coin per call (500-point cap), all calls in flight together; the throttle spaces their starts.
+  await Promise.all(ids.map(async (id) => {
     const batch = [id];
     try {
       const r = await fetchJson<{ coins: Record<string, { prices: { timestamp: number; price: number }[] }> }>(
@@ -73,14 +74,17 @@ async function llamaChart(ids: string[], startTs: number): Promise<Record<string
     } catch {
       /* missing coverage is normal for memecoins */
     }
-  }
+  }));
   return out;
 }
 
 /** Hourly series in windows of 480 points (DefiLlama allows 500 per request). */
-async function llamaHourly(id: string, from: number, to: number): Promise<PricePoint[]> {
+async function llamaHourly(id: string, from: number, to: number, eventTimes: number[]): Promise<PricePoint[]> {
   const out: PricePoint[] = [];
-  for (let s = from; s < to; s += 480 * 3600) {
+  const W = 480 * 3600;
+  // Only the 20-day windows that actually contain trades, fetched in parallel.
+  const windows = [...new Set(eventTimes.map((t) => Math.floor((t - from) / W)))].map((k) => from + k * W).filter((s) => s < to);
+  await Promise.all(windows.map(async (s) => {
     try {
       const r = await fetchJson<{ coins: Record<string, { prices: { timestamp: number; price: number }[] }> }>(
         "defillama",
@@ -91,8 +95,8 @@ async function llamaHourly(id: string, from: number, to: number): Promise<PriceP
     } catch {
       /* fall back to daily for this window */
     }
-  }
-  return out;
+  }));
+  return out.sort((a, b) => a.ts - b.ts);
 }
 
 /** Daily points outside the hourly window + all hourly points, sorted. */
@@ -159,21 +163,7 @@ export async function buildPriceBook(
   const majors = Object.entries(MAJOR_LLAMA_ID) as [Exclude<Major, "USD">, string][];
   // Majors (the money side of every trade) get HOURLY prices over the period the user actually traded,
   // falling back to the daily series. Hourly keeps USD conversions within a fraction of a percent.
-  const daily = await llamaChart(majors.map(([, id]) => id), start);
-  const usedMajors = new Set(events.flatMap((e) => [NATIVE[e.chain].major, ...[...e.in, ...e.out].map((l) => majorOf(l.token))]).filter(Boolean));
-  const tsList = events.map((e) => e.timestamp);
-  const majorCharts: Record<string, PricePoint[]> = { ...daily };
-  if (tsList.length) {
-    const lo = Math.min(...tsList) - 3600, hi = Math.min(Math.max(...tsList) + 3600, Math.floor(Date.now() / 1000));
-    for (const [m, id] of majors) {
-      if (!usedMajors.has(m)) continue;
-      const hourly = await llamaHourly(id, lo, hi);
-      if (hourly.length) majorCharts[id] = mergeSeries(daily[id] ?? [], hourly);
-    }
-  }
-  const majorCur = await llamaCurrent(majors.map(([, id]) => id));
-
-  // Rank tokens by how much the user moved, so we spend history lookups on the ones that matter.
+  // Everything below is independent: start the token lookups now so they overlap with the majors.
   const vol = new Map<string, number>();
   for (const e of events)
     for (const l of [...e.in, ...e.out]) {
@@ -182,12 +172,27 @@ export async function buildPriceBook(
       vol.set(k, (vol.get(k) ?? 0) + (l.usd ?? 0) + 1e-9);
     }
   const tokens = [...vol.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
+  const seriesP = llamaChart(tokens.slice(0, maxSeriesTokens).map(llamaId), start);
+  const curLlamaP = llamaCurrent(tokens.map(llamaId));
+  const majorCurP = llamaCurrent(majors.map(([, id]) => id));
+  const dexP = curLlamaP.then((cur) => {
+    const needDex = tokens.filter((k) => providerCurrent[k] === undefined && cur[llamaId(k)] === undefined);
+    // Liquidity is useful for rug detection on everything, but only query DexScreener for what we need + top tokens.
+    return dexscreener([...new Set([...needDex, ...tokens.slice(0, maxSeriesTokens)])]);
+  });
 
-  const seriesRaw = await llamaChart(tokens.slice(0, maxSeriesTokens).map(llamaId), start);
-  const curLlama = await llamaCurrent(tokens.map(llamaId));
-  const needDex = tokens.filter((k) => providerCurrent[k] === undefined && curLlama[llamaId(k)] === undefined);
-  // Liquidity is useful for rug detection on everything, but only query DexScreener for what we need + top tokens.
-  const dex = await dexscreener([...new Set([...needDex, ...tokens.slice(0, maxSeriesTokens)])]);
+  const daily = await llamaChart(majors.map(([, id]) => id), start);
+  const usedMajors = new Set(events.flatMap((e) => [NATIVE[e.chain].major, ...[...e.in, ...e.out].map((l) => majorOf(l.token))]).filter(Boolean));
+  const tsList = events.map((e) => e.timestamp);
+  const majorCharts: Record<string, PricePoint[]> = { ...daily };
+  if (tsList.length) {
+    const lo = Math.min(...tsList) - 3600, hi = Math.min(Math.max(...tsList) + 3600, Math.floor(Date.now() / 1000));
+    await Promise.all(majors.filter(([m]) => usedMajors.has(m)).map(async ([, id]) => {
+      const hourly = await llamaHourly(id, lo, hi, tsList);
+      if (hourly.length) majorCharts[id] = mergeSeries(daily[id] ?? [], hourly);
+    }));
+  }
+  const [majorCur, seriesRaw, curLlama, dex] = await Promise.all([majorCurP, seriesP, curLlamaP, dexP]);
 
   return {
     majorAt: (m, ts) => (m === "USD" ? 1 : interp(majorCharts[MAJOR_LLAMA_ID[m]] ?? [], ts)),

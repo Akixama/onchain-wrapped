@@ -29,6 +29,10 @@ export interface TradeCard {
   fills?: { t: number; side: "buy" | "sell"; price: number; usd: number }[];
   /** Real candles (USD price) when available; supply turns prices into market cap. */
   chart?: TradeChart;
+  /** Token supply from the chain (market cap = price x supply). */
+  supply?: number | null;
+  /** Time range the chart should cover (unix seconds). */
+  window?: { start: number; end: number; tooOld?: boolean };
 }
 
 export interface TradeChart {

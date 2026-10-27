@@ -80,11 +80,11 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
   return (
     <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-black sm:p-3">
       {/* Desktop: the card's colours glow behind the frame instead of a flat black page. */}
-      <div className="pointer-events-none absolute inset-0 hidden sm:block" aria-hidden style={{ background: `radial-gradient(60% 70% at 30% 30%, ${theme.a}40, transparent 70%), radial-gradient(50% 60% at 75% 75%, ${theme.b}33, transparent 70%), ${theme.bg}`, transition: "background 600ms ease" }} />
+      <div className="pointer-events-none absolute inset-0 hidden sm:block" aria-hidden style={{ background: `radial-gradient(60% 70% at 30% 30%, ${theme.a}22, transparent 70%), radial-gradient(50% 60% at 75% 75%, ${theme.b}18, transparent 70%), #050507`, transition: "background 600ms ease" }} />
       <button aria-label="Previous card" onClick={() => go(-1)} disabled={i === 0}
         className="relative z-10 mr-5 hidden h-12 w-12 place-items-center rounded-full bg-white/10 text-xl text-white backdrop-blur transition hover:bg-white/20 disabled:opacity-0 sm:grid">‹</button>
       <div
-        className="relative h-[100dvh] w-full overflow-hidden text-white sm:h-[calc(100dvh-24px)] sm:max-h-[1040px] sm:w-auto sm:aspect-[9/16] sm:rounded-[28px] sm:shadow-[0_30px_120px_rgba(0,0,0,0.6)]"
+        className="@container relative h-[100dvh] w-full overflow-hidden text-white sm:h-[calc(100dvh-24px)] sm:max-h-[1040px] sm:w-auto sm:aspect-[9/16] sm:rounded-[28px] sm:shadow-[0_30px_120px_rgba(0,0,0,0.6)] lg:aspect-auto lg:h-[min(820px,calc(100dvh-40px))] lg:w-[min(1280px,calc(100vw-180px))]"
         style={{ background: theme.bg, color: theme.ink, transition: "background 600ms ease" }}
       >
         <Glow a={theme.a} b={theme.b} k={card} />
@@ -137,7 +137,7 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: dir * -60, scale: 0.98 }}
               transition={{ type: "spring", stiffness: 260, damping: 30 }}
-              className={`absolute inset-0 flex flex-col px-6 pt-[72px] sm:px-7 ${card === "summary" ? "pb-[196px]" : "pb-16"}`}
+              className={`absolute inset-0 flex flex-col px-6 pt-[72px] sm:px-7 @3xl:px-14 @3xl:pt-[84px] ${card === "summary" ? "pb-[196px] @3xl:pb-[120px]" : "pb-16"}`}
               aria-label={CARD_TITLE[card]}
             >
               <motion.div variants={stagger} initial="hidden" animate="show" className="flex min-h-0 flex-1 flex-col">
@@ -152,9 +152,11 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
         {/* footer */}
         <div className="absolute inset-x-0 bottom-0 z-20 px-5 pb-5">
           {card === "summary" ? (
-            <div className="space-y-3">
-              <button onClick={() => setSheet(true)} className="w-full rounded-2xl bg-white py-3.5 font-display text-base font-bold text-black active:scale-[0.98]">Share my Wrapped</button>
-              <Link href="/" className="block w-full rounded-2xl border border-white/25 py-3 text-center text-sm font-semibold">Check another wallet</Link>
+            <div className="space-y-3 @3xl:px-9">
+              <div className="space-y-3 @3xl:flex @3xl:gap-3 @3xl:space-y-0">
+                <button onClick={() => setSheet(true)} className="w-full rounded-2xl bg-white py-3.5 font-display text-base font-bold text-black active:scale-[0.98]">Share my Wrapped</button>
+                <Link href="/" className="block w-full rounded-2xl border border-white/25 py-3 text-center text-sm font-semibold @3xl:py-3.5">Check another wallet</Link>
+              </div>
               <Notes s={s} />
             </div>
           ) : (
