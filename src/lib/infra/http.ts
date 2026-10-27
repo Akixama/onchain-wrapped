@@ -65,8 +65,16 @@ export async function fetchJson<T>(
       continue;
     }
     logUsage({ provider, endpoint: init.endpoint ?? new URL(url).pathname, status: res.status, ms: Date.now() - t0 });
-    if (res.ok) return (await res.json()) as T;
-    const body = await res.text();
+    // The timeout also covers downloading the body: a connection that stalls mid-download is retried too.
+    let body: string;
+    try {
+      body = await res.text();
+    } catch (e) {
+      if (attempt >= retries) throw e;
+      await sleep(1000 * 2 ** attempt);
+      continue;
+    }
+    if (res.ok) return JSON.parse(body) as T;
     // Daily quota gone (Zerion sends ratelimit-org-day-remaining): retrying won't help, fail fast.
     if (res.status === 429 && res.headers.get("ratelimit-org-day-remaining") === "0") {
       const resetH = Math.ceil(Number(res.headers.get("ratelimit-org-day-reset") ?? 0) / 3600);

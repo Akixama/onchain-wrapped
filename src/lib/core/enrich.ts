@@ -15,6 +15,7 @@ export function enrichEvents(events: UnifiedEvent[], pb: PriceBook): UnifiedEven
 
     const majorPx = pb.majorAt(NATIVE[e.chain].major, e.timestamp) ?? 0;
     if (e.gasUsd === null) e.gasUsd = e.gasNative * majorPx;
+    if (e.appFee && e.appFee.usd == null) e.appFee.usd = majorPx ? e.appFee.native * majorPx : null;
 
     for (const l of [...e.in, ...e.out]) {
       const m = majorOf(l.token);

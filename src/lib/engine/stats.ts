@@ -3,7 +3,7 @@ import { CHAIN_LABEL, counterfactualMajor, isMoney } from "../core/assets";
 import type { BridgeHop } from "../core/identity";
 import type { PriceBook } from "../prices/pricebook";
 import { type Position, pricePoints } from "./pnl";
-import { narrativeStats, profitTimeline, speedStats, type NarrativeStats, type ProfitTimeline, type SpeedStats } from "./extras";
+import { appFeeStats, narrativeStats, profitTimeline, speedStats, type AppFeeStats, type NarrativeStats, type ProfitTimeline, type SpeedStats } from "./extras";
 
 // Everything the cards need, as plain JSON. The UI never recomputes anything.
 
@@ -105,13 +105,14 @@ export interface WrappedStats {
   profitTimeline?: ProfitTimeline;
   speed?: SpeedStats;
   narratives?: NarrativeStats;
+  appFees?: AppFeeStats;
   /** Story order, only cards with something worth saying. The UI renders exactly these. */
   cards: CardId[];
 }
 
 export type CardId =
   | "archetype" | "overview" | "pnl" | "profitTime" | "best" | "worst" | "roundTrip" | "paperHands" | "diamondHands" | "speed" | "narrative"
-  | "counterfactual" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "roast" | "summary";
+  | "counterfactual" | "appFees" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "roast" | "summary";
 
 export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
   const t = s.overview.totalTrades;
@@ -128,6 +129,7 @@ export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
     ["speed", (s.speed?.closedCount ?? 0) >= 3 && !!s.speed?.fastestFlip],
     ["narrative", !!s.narratives?.top.length && s.narratives.top[0].id !== "other" && s.narratives.coverage >= 0.15],
     ["counterfactual", Math.abs(s.counterfactual.justHeldDiffUsd) >= 50],
+    ["appFees", (s.appFees?.totalUsd ?? 0) >= 1 && (s.appFees?.coverage ?? 0) >= 0.8],
     ["gas", s.gas.totalUsd >= 1],
     ["rugs", s.rugs.count + s.rugs.dodged > 0],
     ["airdrops", s.airdrops.count > 0],
@@ -371,6 +373,7 @@ export function computeStats(input: {
     profitTimeline: profitTimeline(traded, input.fromTs),
     speed: speedStats(traded.filter((p) => !isMoney(p.token)), trades),
     narratives: narrativeStats(traded.filter((p) => !isMoney(p.token))),
+    appFees: appFeeStats(trades),
     cards: [],
   };
 }

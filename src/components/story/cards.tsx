@@ -579,7 +579,41 @@ const Narrative = ({ s }: CardProps) => {
   );
 };
 
+/** What the trading apps (Axiom, GMGN, Photon...) took on top of each trade. */
+const AppFees = ({ s }: CardProps) => {
+  const f = s.appFees!;
+  const top = f.byApp[0];
+  const one = f.byApp.length === 1 || top.usd >= f.totalUsd * 0.8;
+  const before = s.pnl.totalUsd + f.totalUsd;
+  return (
+    <>
+      <Kicker>App fees</Kicker>
+      <Body className="space-y-6">
+        <Line className="text-xl opacity-80">{one ? <>You paid <b>{top.app}</b></> : "You paid trading apps"}</Line>
+        <BigNumber className="text-[76px] @3xl:text-[106px]" color="#FDA4AF"><CountUp value={f.totalUsd} format={(n) => money(n)} /></BigNumber>
+        <Line className="text-xl opacity-80">in fees on {num(f.trades)} trades, about <b>{(f.avgRate * 100).toFixed(1)}%</b> every time you clicked buy or sell.</Line>
+        {f.byApp.length > 1 && (
+          <R><motion.div variants={rise} className="space-y-2 text-base">
+            {f.byApp.slice(0, 4).map((a) => (
+              <div key={a.app} className="flex items-center justify-between gap-3">
+                <span className="opacity-80">{a.app} <span className="opacity-60">· {num(a.trades)} trades</span></span>
+                <b className="tabular-nums">{money(a.usd)}</b>
+              </div>
+            ))}
+          </motion.div></R>
+        )}
+        <Line className="text-base opacity-75">
+          {s.pnl.totalUsd < 0 && before > 0
+            ? <>Without them you&apos;d be <b style={{ color: gainColor(before) }}>up {money(before)}</b> instead of down.</>
+            : <>Before fees you&apos;d be at <b style={{ color: gainColor(before) }}>{money(before, true)}</b>.</>}
+        </Line>
+      </Body>
+    </>
+  );
+};
+
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
+  appFees: AppFees,
   archetype: Archetype, overview: Overview, pnl: Pnl, profitTime: ProfitTime, best: Best, worst: Worst, roundTrip: RoundTrip,
   paperHands: PaperHands, diamondHands: DiamondHands, speed: Speed, narrative: Narrative, counterfactual: Counterfactual, gas: Gas, rugs: Rugs,
   airdrops: Airdrops, sleep: Sleep, bridges: Bridges, percentile: Percentile, chains: Chains, roast: Roast, summary: Summary,

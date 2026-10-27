@@ -80,6 +80,7 @@ export function shareText(s: WrappedStats, card: CardId): string {
     case "paperHands": return s.paperHands ? `Sold $${s.paperHands.symbol} right before it ran. Left ${usd(s.paperHands.missedUsd)} on the table. ${tail}` : tail;
     case "diamondHands": return s.diamondHands ? `${s.diamondHands.daysHeld} days of diamond hands on $${s.diamondHands.symbol}. ${tail}` : tail;
     case "counterfactual": return s.counterfactual.verdict === "should_have_held" ? `If I'd just held ${s.counterfactual.major}, I'd have ${usd(s.counterfactual.justHeldDiffUsd)} more. ${tail}` : `My trading beat just holding ${s.counterfactual.major} by ${usd(-s.counterfactual.justHeldDiffUsd)}. ${tail}`;
+    case "appFees": return s.appFees ? `I paid ${s.appFees.byApp[0]?.app ?? "trading apps"} ${usd(s.appFees.totalUsd)} in fees this year. ${tail}` : tail;
     case "gas": return `I burned ${usd(s.gas.totalUsd)} on gas. ${tail}`;
     case "rugs": return `Caught in ${s.rugs.count} rugs, dodged ${s.rugs.dodged}. ${tail}`;
     case "airdrops": return `${s.airdrops.count} airdrops claimed, ${usd(s.airdrops.valueUsd)} free money. ${tail}`;
@@ -112,7 +113,7 @@ export const CARD_TITLE: Record<CardId, string> = {
   archetype: "Your era", overview: "The numbers", pnl: "The bottom line", profitTime: "Profit over time", best: "Best trade", worst: "Worst trade",
   speed: "Speed", narrative: "Favourite narrative",
   roundTrip: "The round trip", paperHands: "Paper hands", diamondHands: "Diamond hands", counterfactual: "What if",
-  gas: "Gas burned", rugs: "Rugs", airdrops: "Airdrops", sleep: "Sleep schedule", bridges: "Bridge journey",
+  appFees: "App fees", gas: "Gas burned", rugs: "Rugs", airdrops: "Airdrops", sleep: "Sleep schedule", bridges: "Bridge journey",
   percentile: "Ranking", chains: "Profit by chain", roast: "The roast", summary: "Your Wrapped",
 };
 
@@ -130,6 +131,7 @@ export const CARD_THEME: Record<CardId, { bg: string; a: string; b: string; ink:
   paperHands: { bg: "#1A1033", a: "#F472B6", b: "#A78BFA", ink: "#FFF0FA" },
   diamondHands: { bg: "#071A26", a: "#22D3EE", b: "#A5F3FC", ink: "#ECFEFF" },
   counterfactual: { bg: "#14122B", a: "#818CF8", b: "#F59E0B", ink: "#F1F0FF" },
+  appFees: { bg: "#1F0A16", a: "#F43F5E", b: "#F59E0B", ink: "#FFF1F4" },
   gas: { bg: "#1C0F05", a: "#FB923C", b: "#FACC15", ink: "#FFF6EC" },
   rugs: { bg: "#1A0A1F", a: "#E11D48", b: "#8B5CF6", ink: "#FFF0F5" },
   airdrops: { bg: "#06201F", a: "#2DD4BF", b: "#FDE68A", ink: "#EFFFFC" },

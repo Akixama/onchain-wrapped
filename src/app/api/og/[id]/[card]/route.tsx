@@ -59,6 +59,11 @@ function content(s: WrappedStats, card: CardId): Content {
       const held = c.verdict === "should_have_held";
       return { kicker: `If I'd just held ${c.major.replace("+", " & ")}`, big: held ? `${m(c.justHeldDiffUsd)} richer` : `${m(-c.justHeldDiffUsd)} poorer`, bigColor: held ? "#FBBF24" : green, sub: held ? "Should've just held." : "My trading actually won." };
     }
+    case "appFees": {
+      const f = s.appFees!;
+      const one = f.byApp.length === 1 || (f.byApp[0] && f.byApp[0].usd >= f.totalUsd * 0.8);
+      return { kicker: one ? `Paid to ${f.byApp[0].app}` : "Paid to trading apps", big: m(f.totalUsd), bigColor: "#FDA4AF", sub: `in fees on ${num(f.trades)} trades · ${(f.avgRate * 100).toFixed(1)}% each` };
+    }
     case "gas":
       return { kicker: "Gas burned", big: m(s.gas.totalUsd), bigColor: "#FDBA74", sub: `${num(s.gas.txCount)} transactions · priciest ${m(s.gas.priciestTxUsd)}` };
     case "rugs":

@@ -1,6 +1,7 @@
 import type { ChainAdapter, EventType, FetchOptions, FetchResult, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { fetchJson } from "../infra/http";
 import { drain, timeUp } from "../infra/drain";
+import { appFeeOf } from "./app-fees";
 
 // Helius Enhanced Transactions: already-parsed Solana txs (type SWAP/TRANSFER/..., source JUPITER/PUMP_FUN/...).
 // We compute the wallet's *net* balance change per token from accountData, which is robust across
@@ -192,7 +193,10 @@ function normalize(wallet: string, tx: HeliusTx): UnifiedEvent | null {
   }
   if (!ins.length && !outs.length && !feeSol) return null;
 
-  return { ...base, type: classify(tx, ins, outs), in: ins, out: outs };
+  const type = classify(tx, ins, outs);
+  if (type !== "swap") return { ...base, type, in: ins, out: outs };
+  const fee = appFeeOf(tx, wallet, Math.abs(sol));
+  return { ...base, type, in: ins, out: outs, feeScan: true, ...(fee ? { appFee: fee } : {}) };
 }
 
 function classify(tx: HeliusTx, ins: Leg[], outs: Leg[]): EventType {

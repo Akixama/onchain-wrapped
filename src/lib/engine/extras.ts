@@ -1,6 +1,7 @@
 // Extra story stats: profit over time, speed, and narratives. Pure functions of the PnL positions.
 import type { ChainId, UnifiedEvent } from "../core/types";
 import type { Position } from "./pnl";
+import { isMoney } from "../core/assets";
 
 const DAY = 86400;
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -128,5 +129,44 @@ export function narrativeStats(traded: Position[]): NarrativeStats {
   return {
     top: list.map(([id, a]) => ({ id, trades: a.trades, tokens: a.tokens, pnlUsd: r2(a.pnlUsd) })),
     coverage: total ? Math.round((1 - (agg.get("other")?.tokens ?? 0) / total) * 100) / 100 : 0,
+  };
+}
+
+// ---------- Trading app fees ----------
+export interface AppFeeStats {
+  totalUsd: number;
+  /** Swaps that paid an app fee. */
+  trades: number;
+  /** Most paid first. */
+  byApp: { app: string; usd: number; trades: number }[];
+  /** Fees as a share of those trades' size (0.01 = 1%). */
+  avgRate: number;
+  /** Share of Solana swaps we could check for fees (0..1). Lookups from a source without transfer detail are lower. */
+  coverage: number;
+}
+
+export function appFeeStats(trades: UnifiedEvent[]): AppFeeStats {
+  const sol = trades.filter((t) => t.chain === "solana");
+  const seen = new Set<string>();
+  const by = new Map<string, { usd: number; trades: number }>();
+  let total = 0, n = 0, size = 0;
+  for (const t of sol) {
+    if (!t.appFee?.usd || seen.has(t.txHash)) continue;
+    seen.add(t.txHash);
+    const a = by.get(t.appFee.app) ?? { usd: 0, trades: 0 };
+    a.usd += t.appFee.usd;
+    a.trades++;
+    by.set(t.appFee.app, a);
+    total += t.appFee.usd;
+    n++;
+    const money = (legs: typeof t.in) => legs.filter((l) => isMoney(l.token)).reduce((s, l) => s + (l.usd ?? 0), 0);
+    size += Math.max(money(t.in), money(t.out));
+  }
+  return {
+    totalUsd: r2(total),
+    trades: n,
+    avgRate: size ? Math.round((total / size) * 10000) / 10000 : 0,
+    byApp: [...by].sort((a, b) => b[1].usd - a[1].usd).map(([app, a]) => ({ app, usd: r2(a.usd), trades: a.trades })),
+    coverage: sol.length ? Math.round((sol.filter((t) => t.feeScan).length / sol.length) * 100) / 100 : 0,
   };
 }

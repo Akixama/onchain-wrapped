@@ -64,6 +64,10 @@ export interface UnifiedEvent {
   ownTransfer?: boolean;
   /** Already re-read from the chain (provider transfer labels double-checked). */
   verified?: boolean;
+  /** Fee paid to a trading app (Axiom, GMGN...) in this swap, in native units. Already inside the trade cost. */
+  appFee?: { app: string; native: number; usd?: number | null };
+  /** This swap was checked for app fees (the source shows every transfer). */
+  feeScan?: boolean;
 }
 
 export interface FetchOptions {
