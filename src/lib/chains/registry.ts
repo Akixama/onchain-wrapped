@@ -1,7 +1,10 @@
-import type { ChainAdapter, FetchOptions } from "../core/types";
+import type { ChainAdapter, FetchOptions, FetchResult } from "../core/types";
 import { isEvmAddress, isSolanaAddress } from "../core/identity";
 import { heliusAdapter } from "./solana-helius";
 import { zerionAdapter, zerionSolanaAdapter } from "./evm-zerion";
+
+/** Where the Solana router was when a run hit its deadline. */
+interface AutoState { source: "helius" | "zerion"; inner?: unknown; heliusRequests: number }
 
 // Adding a chain = write one adapter and list it here.
 // Later: hyperliquidAdapter (HL info API), tronAdapter (TronGrid), bitcoinAdapter (mempool.space).
@@ -16,15 +19,24 @@ const solanaAuto: ChainAdapter = {
   family: "solana",
   chains: ["solana"],
   isConfigured: () => heliusAdapter.isConfigured() || zerionSolanaAdapter.isConfigured(),
-  async fetchEvents(address: string, opts: FetchOptions) {
+  async fetchEvents(address: string, opts: FetchOptions): Promise<FetchResult> {
     if (!heliusAdapter.isConfigured()) return zerionSolanaAdapter.fetchEvents(address, opts);
-    const h = await heliusAdapter.fetchEvents(address, opts);
-    if (!h.junkFlooded || !zerionSolanaAdapter.isConfigured()) return h;
-    opts.onProgress?.({ chain: "solana", fetched: 0, message: "Busy address — switching to a filtered history" });
-    const z = await zerionSolanaAdapter.fetchEvents(address, opts);
-    // "Recent activity couldn't be loaded" is meaningless here: the recent history IS the bot noise.
-    const notes = (z.notes ?? []).filter((n) => !n.includes("couldn't be loaded"));
-    return { ...z, requests: z.requests + h.requests, notes: [...notes, "This address is flooded with bot transactions, so its history was read from a filtered source."] };
+    // Resumable: remember which source we were on when a run hit its deadline.
+    const st = (opts.resume as AutoState | undefined) ?? { source: "helius", heliusRequests: 0 };
+    if (st.source === "helius") {
+      const h = await heliusAdapter.fetchEvents(address, { ...opts, resume: st.inner });
+      if (h.partial) return { ...h, resume: { source: "helius", inner: h.resume, heliusRequests: 0 } satisfies AutoState };
+      if (!h.junkFlooded || !zerionSolanaAdapter.isConfigured()) return h;
+      opts.onProgress?.({ chain: "solana", fetched: 0, message: "Busy address — switching to a filtered history" });
+      Object.assign(st, { source: "zerion", inner: undefined, heliusRequests: h.requests });
+    }
+    const z = await zerionSolanaAdapter.fetchEvents(address, { ...opts, resume: st.inner, junkFlooded: true });
+    if (z.partial) return { ...z, resume: { ...st, inner: z.resume } satisfies AutoState };
+    return {
+      ...z,
+      requests: z.requests + st.heliusRequests,
+      notes: [...(z.notes ?? []), "This address is flooded with bot transactions, so its history was read from a filtered source."],
+    };
   },
 };
 

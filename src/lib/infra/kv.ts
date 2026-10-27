@@ -20,12 +20,12 @@ const restToken = () => process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_R
 export const usingRedis = () => !!(restUrl() && restToken());
 
 // ---------- Upstash Redis over REST ----------
-async function redis<T>(commands: (string | number)[][]): Promise<T[]> {
+async function redis<T>(commands: (string | number)[][], timeoutMs = 8000): Promise<T[]> {
   const res = await fetch(`${restUrl()}/pipeline`, {
     method: "POST",
     headers: { authorization: `Bearer ${restToken()}`, "content-type": "application/json" },
     body: JSON.stringify(commands),
-    signal: AbortSignal.timeout(8000),
+    signal: AbortSignal.timeout(timeoutMs),
     cache: "no-store",
   });
   if (!res.ok) throw new Error(`Redis ${res.status}: ${(await res.text()).slice(0, 200)}`);
@@ -37,10 +37,11 @@ async function redis<T>(commands: (string | number)[][]): Promise<T[]> {
 
 const redisKV: KV = {
   async get(key) {
-    return (await redis<string | null>([["GET", key]]))[0];
+    return (await redis<string | null>([["GET", key]], 120_000))[0]; // saved-progress pieces can be large
   },
   async set(key, value, ttl) {
-    await redis([ttl ? ["SET", key, value, "EX", ttl] : ["SET", key, value]]);
+    // Big values (saved progress pieces) get longer to upload.
+    await redis([ttl ? ["SET", key, value, "EX", ttl] : ["SET", key, value]], value.length > 100_000 ? 60_000 : 8000);
   },
   async incr(key, ttl) {
     const [n] = await redis<number>([["INCR", key], ["EXPIRE", key, ttl, "NX"]]);

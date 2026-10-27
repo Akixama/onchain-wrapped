@@ -1,5 +1,6 @@
 import type { EventType, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { fetchJson } from "../infra/http";
+import { drain } from "../infra/drain";
 
 // Raw Solana RPC: ground truth, free, but one call per transaction. Used to fill gaps a provider
 // left (Zerion sometimes stops indexing very spammy wallets). Same net-balance-change idea as the
@@ -27,11 +28,11 @@ async function rpc<T>(method: string, params: unknown[]): Promise<T> {
   return r.result;
 }
 
-/** Successful signatures newer than `afterTs` (newest first), up to `limit`. */
-export async function signaturesSince(wallet: string, afterTs: number, limit = 1000): Promise<{ sigs: string[]; more: boolean }> {
+/** Successful signatures newer than `afterTs` (newest first), up to `limit` (default: all). */
+export async function signaturesSince(wallet: string, afterTs: number, limit = Infinity): Promise<{ sigs: string[]; more: boolean }> {
   const sigs: string[] = [];
   let before: string | undefined;
-  for (let page = 0; page < 5; page++) {
+  for (;;) {
     const res = await rpc<{ signature: string; blockTime: number | null; err: unknown }[]>("getSignaturesForAddress", [
       wallet,
       { limit: 1000, ...(before ? { before } : {}) },
@@ -44,17 +45,11 @@ export async function signaturesSince(wallet: string, afterTs: number, limit = 1
     }
     before = res[res.length - 1].signature;
   }
-  return { sigs, more: true };
 }
 
-export async function fetchRawEvents(wallet: string, sigs: string[]): Promise<UnifiedEvent[]> {
-  const out: UnifiedEvent[] = [];
-  for (const sig of sigs) {
-    const tx = await rpc<RawTx | null>("getTransaction", [sig, { encoding: "jsonParsed", maxSupportedTransactionVersion: 1 }]);
-    const e = tx && normalizeRaw(wallet, tx);
-    if (e) out.push(e);
-  }
-  return out;
+export async function fetchRawEvent(wallet: string, sig: string): Promise<UnifiedEvent | null> {
+  const tx = await rpc<RawTx | null>("getTransaction", [sig, { encoding: "jsonParsed", maxSupportedTransactionVersion: 1 }]);
+  return tx && normalizeRaw(wallet, tx);
 }
 
 export function normalizeRaw(wallet: string, tx: RawTx): UnifiedEvent | null {
@@ -144,16 +139,13 @@ export async function currentTokenBalances(wallet: string): Promise<Map<string, 
 export async function verifySolanaTransfers(
   events: UnifiedEvent[],
   isMoney: (t: TokenRef) => boolean,
-  // A dedicated RPC (~10/s) can afford to check far more than the ~1/s public node.
-  max = Number(process.env.SOLANA_VERIFY_MAX ?? (process.env.SOLANA_RPC_URL ? 2000 : 400)),
+  deadline?: number, // stop here; unchecked transfers stay unmarked so a later run picks them up
   onProgress?: (done: number, total: number) => void,
-): Promise<{ checked: number; fixed: number; skipped: number }> {
-  const suspects = events.filter(
-    (e) => e.chain === "solana" && ["transfer_in", "transfer_out", "other"].includes(e.type) && [...e.in, ...e.out].some((l) => !isMoney(l.token)),
+): Promise<{ checked: number; fixed: number; remaining: number }> {
+  const list = events.filter(
+    (e) => e.chain === "solana" && !e.verified && ["transfer_in", "transfer_out", "other"].includes(e.type) && [...e.in, ...e.out].some((l) => !isMoney(l.token)),
   );
   let checked = 0, fixed = 0, done = 0;
-  const list = suspects.slice(0, max);
-  // Several requests in flight; the shared throttle in fetchJson still keeps us under the RPC's rate limit.
   const check = async (e: UnifiedEvent) => {
     let raw: RawTx | null = null;
     try {
@@ -165,6 +157,7 @@ export async function verifySolanaTransfers(
       if (done % 10 === 0 || done === list.length) onProgress?.(done, list.length);
     }
     checked++;
+    e.verified = true;
     const real = raw && normalizeRaw(e.wallet, raw);
     if (!real || real.type !== "swap") return;
     // Keep token names from the provider; take amounts and direction from the chain.
@@ -176,8 +169,9 @@ export async function verifySolanaTransfers(
     fixed++;
   };
   onProgress?.(0, list.length);
-  for (let i = 0; i < list.length; i += 4) await Promise.all(list.slice(i, i + 4).map(check));
-  return { checked, fixed, skipped: Math.max(0, suspects.length - max) };
+  // Several requests in flight; the shared throttle in fetchJson still keeps us under the RPC's rate limit.
+  const left = await drain(list, 4, deadline, check);
+  return { checked, fixed, remaining: left.length };
 }
 
 /** Total token supply (human units) for market-cap math. 1 RPC call. */

@@ -62,18 +62,32 @@ export interface UnifiedEvent {
   spam?: boolean;
   /** Set by identity merge: this transfer was between two of the user's own wallets. */
   ownTransfer?: boolean;
+  /** Already re-read from the chain (provider transfer labels double-checked). */
+  verified?: boolean;
 }
 
 export interface FetchOptions {
   sinceTs: number; // unix seconds, 0 for all time
-  maxTxs: number; // hard cap per address (cost protection)
+  maxTxs: number; // optional cap per address (MAX_TXS_PER_ADDRESS); Infinity = whole history
   onProgress?: (p: { chain: ChainId | "evm"; fetched: number; message?: string }) => void;
+  /**
+   * Wall-clock time (ms) to stop at. Serverless runs are time-limited, so a big history is read in
+   * parts: past the deadline an adapter returns `partial` + `resume`, and a later run passes that
+   * `resume` back to carry on exactly where it stopped.
+   */
+  deadline?: number;
+  resume?: unknown;
+  /** The address is known to be flooded with bot transactions (skip work that only reads that noise). */
+  junkFlooded?: boolean;
 }
 
 export interface FetchResult {
   events: UnifiedEvent[];
-  truncated: boolean; // hit maxTxs before reaching sinceTs
+  truncated: boolean; // stopped before reaching sinceTs (cap set, or junk-flooded address)
   requests: number;
+  /** Ran out of time: `events` is empty; pass `resume` back in the next run. */
+  partial?: boolean;
+  resume?: unknown;
   /** Current USD prices the provider happened to give us, keyed by tokenKey. */
   currentPrices?: Record<string, number>;
   /** Human-readable data-quality notes shown in the UI ("filled 18 missing txs"). */

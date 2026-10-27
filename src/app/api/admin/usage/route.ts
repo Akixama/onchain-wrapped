@@ -22,7 +22,7 @@ export async function GET(req: Request) {
       limits: {
         lookupsPerDay: Number(process.env.LOOKUPS_PER_DAY ?? 25),
         lookupsPerIpHour: Number(process.env.LOOKUPS_PER_IP_HOUR ?? 5),
-        maxTxsPerAddress: Number(process.env.MAX_TXS_PER_ADDRESS ?? 2000),
+        maxTxsPerAddress: process.env.MAX_TXS_PER_ADDRESS ? Number(process.env.MAX_TXS_PER_ADDRESS) : "none (whole history)",
         roast: process.env.ANTHROPIC_API_KEY && process.env.ROAST_AI !== "off" ? process.env.ROAST_MODEL ?? "claude-opus-5-5" : "free (built-in)",
       },
       days: rows,

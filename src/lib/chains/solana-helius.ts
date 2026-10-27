@@ -1,5 +1,6 @@
 import type { ChainAdapter, EventType, FetchOptions, FetchResult, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { fetchJson } from "../infra/http";
+import { drain, timeUp } from "../infra/drain";
 
 // Helius Enhanced Transactions: already-parsed Solana txs (type SWAP/TRANSFER/..., source JUPITER/PUMP_FUN/...).
 // We compute the wallet's *net* balance change per token from accountData, which is robust across
@@ -41,62 +42,82 @@ export const heliusAdapter: ChainAdapter = {
   isConfigured: () => !!process.env.HELIUS_API_KEY,
 
   async fetchEvents(address: string, opts: FetchOptions): Promise<FetchResult> {
-    const raw: HeliusTx[] = [];
-    let before: string | undefined;
-    let requests = 0;
+    // Everything read so far lives in `st`, so a run that hits its deadline can hand it to the next run.
+    const st: HeliusState = (opts.resume as HeliusState | undefined) ?? {
+      requests: 0, raw: 0, real: 0, events: [], done: false, failed: { listed: false, pending: [], events: [] },
+    };
+    // Optional cap (MAX_TXS_PER_ADDRESS); by default the whole history is read.
+    const maxPages = Number.isFinite(opts.maxTxs) ? Math.ceil(opts.maxTxs / 100) * 3 + 2 : Infinity;
     let truncated = false;
-    let real = 0; // entries that actually move this wallet's tokens or SOL
-    // The cap counts real activity; this bounds credits spent wading through junk (100 credits/page).
-    const maxPages = Math.ceil(opts.maxTxs / 100) * 3 + 2;
     // Failed transactions still burn fees but aren't in the parsed history. Look their fees up
-    // alongside the history (separate rate limit) instead of after it; trimmed to the window below.
+    // alongside the history (separate rate limit) instead of after it.
     let stopFailed = false;
-    const failedP = failedFees(address, opts.sinceTs, () => stopFailed, (n) =>
-      opts.onProgress?.({ chain: "solana", fetched: raw.length, message: `Adding fees from failed transactions (${n})` }),
-    ).catch(() => [] as UnifiedEvent[]);
+    const failedP = failedFees(address, opts.sinceTs, st.failed, opts.deadline, () => stopFailed, (done, total) =>
+      opts.onProgress?.({ chain: "solana", fetched: st.real, message: `Adding fees from failed transactions (${done.toLocaleString()}/${total.toLocaleString()})` }),
+    ).catch(() => {});
     const pageParam = process.env.HELIUS_BEFORE_PARAM ?? "before-signature";
 
-    for (;;) {
+    while (!st.done && !timeUp(opts.deadline)) {
       // token-accounts=balanceChanged: also include txs that only touched the wallet's token accounts
       // (e.g. someone sending tokens into an existing account). Without it those receives are invisible.
       const qs = new URLSearchParams({ "api-key": process.env.HELIUS_API_KEY!, limit: "100", "token-accounts": "balanceChanged" });
-      if (before) qs.set(pageParam, before);
+      if (st.before) qs.set(pageParam, st.before);
       const page = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/addresses/${address}/transactions?${qs}`, {
         endpoint: "enhanced/transactions",
       });
-      requests++;
-      if (!page.length) break;
-      let reachedSince = false;
+      st.requests++;
+      if (!page.length) { st.done = true; break; }
       for (const tx of page) {
-        if (tx.timestamp < opts.sinceTs) { reachedSince = true; break; }
-        raw.push(tx);
-        if (normalize(address, tx)) real++;
+        if (tx.timestamp < opts.sinceTs) { st.done = true; break; }
+        st.raw++;
+        const e = normalize(address, tx);
+        if (e) { st.events.push(e); st.real++; }
       }
-      opts.onProgress?.({ chain: "solana", fetched: real });
-      if (reachedSince) break;
+      opts.onProgress?.({ chain: "solana", fetched: st.real });
+      if (st.done) break;
       // Bots that only reference this address can bury its real activity (seen: 2 real in 400).
-      if (requests >= 4 && real / raw.length < 0.05) {
+      if (st.requests >= 4 && st.real / st.raw < 0.05) {
         stopFailed = true;
-        return { events: [], truncated: true, requests, junkFlooded: true };
+        await failedP;
+        return { events: [], truncated: true, requests: st.requests, junkFlooded: true };
       }
-      if (real >= opts.maxTxs || requests >= maxPages) { truncated = true; break; }
-      before = page[page.length - 1].signature;
+      st.before = page[page.length - 1].signature;
+      if (st.real >= opts.maxTxs || st.requests >= maxPages) { truncated = true; st.done = true; break; }
+    }
+    await failedP;
+    if (!st.done || !st.failed.listed || st.failed.pending.length) {
+      return { events: [], truncated: false, requests: st.requests, partial: true, resume: st };
     }
 
-    const events = raw.map((tx) => normalize(address, tx)).filter((e): e is UnifiedEvent => !!e);
-    // Only failed fees inside the history we actually read (it may stop early at the cap).
-    const oldest = raw.length ? raw[raw.length - 1].timestamp : opts.sinceTs;
-    const cutoff = Math.max(opts.sinceTs, truncated ? oldest : opts.sinceTs);
-    const failed = await failedP;
+    const events = st.events;
+    // Failed fees only inside the history we read (it stops early only when a cap is set).
+    const oldest = events.length ? Math.min(...events.map((e) => e.timestamp)) : opts.sinceTs;
+    const cutoff = truncated ? oldest : opts.sinceTs;
     const known = new Set(events.map((e) => e.txHash));
-    events.push(...failed.filter((e) => !known.has(e.txHash) && e.timestamp >= cutoff));
+    events.push(...st.failed.events.filter((e) => !known.has(e.txHash) && e.timestamp >= cutoff));
     const meta = await fetchTokenMeta(events);
-    requests += meta.requests;
     const currentPrices: Record<string, number> = {};
     for (const e of events) for (const l of [...e.in, ...e.out]) enrichToken(l.token, meta.byMint, currentPrices);
-    return { events, truncated, requests, currentPrices };
+    return { events, truncated, requests: st.requests + meta.requests, currentPrices };
   },
 };
+
+interface FailedState {
+  before?: string; // listing cursor
+  listed: boolean; // every failed signature in the window is known
+  pending: { signature: string; blockTime: number }[]; // fees still to look up
+  looked?: number; // fees looked up so far
+  events: UnifiedEvent[];
+}
+interface HeliusState {
+  before?: string;
+  requests: number;
+  raw: number; // history entries seen
+  real: number; // entries that actually move this wallet's tokens or SOL
+  events: UnifiedEvent[];
+  done: boolean;
+  failed: FailedState;
+}
 
 function normalize(wallet: string, tx: HeliusTx): UnifiedEvent | null {
   const feeSol = tx.feePayer === wallet ? tx.fee / 1e9 : 0;
@@ -205,48 +226,46 @@ function enrichToken(t: TokenRef, byMint: Map<string, DasAsset>, prices: Record<
   if (p) prices[`solana:${t.address}`] = p;
 }
 
-/** Fees paid by the wallet on failed transactions since `sinceTs` (via Helius RPC; ~10 lookups/s on the free plan). */
-async function failedFees(wallet: string, sinceTs: number, stopped: () => boolean, onCount?: (n: number) => void): Promise<UnifiedEvent[]> {
-  const sigs: { signature: string; blockTime: number }[] = [];
-  let before: string | undefined;
-  for (let page = 0; page < 20 && !stopped(); page++) {
+/**
+ * Fees paid by the wallet on failed transactions since `sinceTs` (Helius RPC; ~8 lookups/s on the
+ * free plan). Fills `st` as it goes and stops at the deadline, so a later run can finish the rest.
+ */
+async function failedFees(
+  wallet: string, sinceTs: number, st: FailedState, deadline: number | undefined, stopped: () => boolean, onCount?: (done: number, total: number) => void,
+): Promise<void> {
+  while (!st.listed && !stopped() && !timeUp(deadline)) {
     const r = await fetchJson<{ result: { signature: string; blockTime: number | null; err: unknown }[] }>("helius-rpc", rpcUrl(), {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getSignaturesForAddress", params: [wallet, { limit: 1000, ...(before ? { before } : {}) }] }),
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getSignaturesForAddress", params: [wallet, { limit: 1000, ...(st.before ? { before: st.before } : {}) }] }),
       endpoint: "rpc/getSignaturesForAddress",
     });
     const list = r.result ?? [];
-    let done = !list.length;
+    if (!list.length) st.listed = true;
     for (const x of list) {
-      if ((x.blockTime ?? 0) < sinceTs) { done = true; break; }
-      if (x.err && x.blockTime) sigs.push({ signature: x.signature, blockTime: x.blockTime });
+      if ((x.blockTime ?? 0) < sinceTs) { st.listed = true; break; }
+      if (x.err && x.blockTime) st.pending.push({ signature: x.signature, blockTime: x.blockTime });
     }
-    if (done) break;
-    before = list[list.length - 1].signature;
+    if (list.length) st.before = list[list.length - 1].signature;
   }
-  const cap = sigs.slice(0, Number(process.env.FAILED_FEE_MAX ?? 400));
-  onCount?.(cap.length);
-  const out: UnifiedEvent[] = [];
-  await Promise.all(cap.map(async (x) => {
+  const total = st.pending.length + (st.looked ?? 0);
+  onCount?.(st.looked ?? 0, total);
+  st.pending = await drain(st.pending, 10, deadline, async (x) => {
     if (stopped()) return;
-    try {
-      // Plain "json" encoding: much smaller than jsonParsed, and the fee payer is always key 0.
-      const r = await fetchJson<{ result: { meta: { fee: number } | null; transaction: { message: { accountKeys: string[] } } } | null }>("helius-rpc", rpcUrl(), {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [x.signature, { encoding: "json", maxSupportedTransactionVersion: 1 }] }),
-        endpoint: "rpc/getTransaction",
-      }, 10); // never drop a fee to rate limiting: it just waits its turn again
-      const t = r.result;
-      if (!t?.meta || t.transaction.message.accountKeys[0] !== wallet) return; // someone else paid
-      out.push({
-        id: `solana:${x.signature}:${wallet}`, wallet, chain: "solana", timestamp: x.blockTime, txHash: x.signature,
-        type: "other", in: [], out: [], gasUsd: null, gasNative: t.meta.fee / 1e9,
-      });
-    } catch {
-      /* skip: one missing fee shouldn't fail the lookup */
-    }
-  }));
-  return out;
+    st.looked = (st.looked ?? 0) + 1;
+    if (st.looked % 25 === 0) onCount?.(st.looked, total);
+    // Plain "json" encoding: much smaller than jsonParsed, and the fee payer is always key 0.
+    const r = await fetchJson<{ result: { meta: { fee: number } | null; transaction: { message: { accountKeys: string[] } } } | null }>("helius-rpc", rpcUrl(), {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [x.signature, { encoding: "json", maxSupportedTransactionVersion: 1 }] }),
+      endpoint: "rpc/getTransaction",
+    }, 10); // never drop a fee to rate limiting: it just waits its turn again
+    const t = r.result;
+    if (!t?.meta || t.transaction.message.accountKeys[0] !== wallet) return; // someone else paid
+    st.events.push({
+      id: `solana:${x.signature}:${wallet}`, wallet, chain: "solana", timestamp: x.blockTime, txHash: x.signature,
+      type: "other", in: [], out: [], gasUsd: null, gasNative: t.meta.fee / 1e9,
+    });
+  });
 }

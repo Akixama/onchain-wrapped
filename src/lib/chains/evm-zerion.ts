@@ -1,7 +1,8 @@
 import type { ChainAdapter, ChainId, EventType, FetchOptions, FetchResult, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { NATIVE } from "../core/assets";
-import { fetchJson } from "../infra/http";
-import { fetchRawEvents, signaturesSince, verifySolanaTransfers } from "./solana-rpc";
+import { fetchJson, QuotaError } from "../infra/http";
+import { fetchRawEvent, signaturesSince, verifySolanaTransfers } from "./solana-rpc";
+import { drain, timeUp } from "../infra/drain";
 import { isMoney } from "../core/assets";
 
 // Zerion: one endpoint returns decoded history for ALL EVM chains, with USD value at tx time
@@ -71,52 +72,86 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
       "filter[trash]": "only_non_trash", // spam filtered server-side: saves requests too
     });
     if (opts.sinceTs > 0) qs.set("filter[min_mined_at]", String(opts.sinceTs * 1000));
-    let url: string | null = `https://api.zerion.io/v1/wallets/${wallet}/transactions/?${qs}`;
-
-    const events: UnifiedEvent[] = [];
-    let requests = 0;
-    let truncated = false;
-    let seen = 0;
-    while (url) {
-      const page: { data: ZTx[]; links?: { next?: string } } = await fetchJson("zerion", url, {
-        headers: { authorization: auth, accept: "application/json" },
-        endpoint: "wallets/transactions",
-      });
-      requests++;
-      for (const tx of page.data) {
-        seen++;
-        const e = normalize(wallet, tx);
-        if (e) events.push(e);
+    // Everything read so far lives in `st`, so a run that hits its deadline can hand it to the next run.
+    const st: ZerionState = (opts.resume as ZerionState | undefined) ?? {
+      url: `https://api.zerion.io/v1/wallets/${wallet}/transactions/?${qs}`, events: [], requests: 0, seen: 0, truncated: false, notes: [],
+    };
+    while (st.url && !timeUp(opts.deadline)) {
+      let page: { data: ZTx[]; links?: { next?: string } };
+      try {
+        page = await fetchJson("zerion", st.url, {
+          headers: { authorization: auth, accept: "application/json" },
+          endpoint: "wallets/transactions",
+        });
+      } catch (e) {
+        // Daily data limit ran out partway through a huge history: keep what we read (newest first)
+        // and say so, instead of failing the whole lookup. With nothing read yet, it's a real error.
+        if (!(e instanceof QuotaError) || !st.events.length) throw e;
+        st.truncated = true;
+        st.url = null;
+        st.notes.push(`Today's free data limit ran out after ${st.seen.toLocaleString()} transactions, so this covers the newest ones only.`);
+        break;
       }
-      opts.onProgress?.({ chain: family === "evm" ? "evm" : "solana", fetched: seen });
-      if (seen >= opts.maxTxs && page.links?.next) { truncated = true; break; }
-      url = page.links?.next ?? null;
+      st.requests++;
+      for (const tx of page.data) {
+        st.seen++;
+        const e = normalize(wallet, tx);
+        if (e) st.events.push(e);
+      }
+      opts.onProgress?.({ chain: family === "evm" ? "evm" : "solana", fetched: st.seen });
+      st.url = page.links?.next ?? null;
+      // Optional cap (MAX_TXS_PER_ADDRESS); by default the whole history is read.
+      if (st.seen >= opts.maxTxs && st.url) { st.truncated = true; st.url = null; }
     }
-    const notes: string[] = [];
+    const partial = (): FetchResult => ({ events: [], truncated: false, requests: st.requests, partial: true, resume: st });
+    if (st.url) return partial();
+    const { events, notes } = st;
     if (family === "solana") {
       // Zerion can lag on very spammy Solana wallets. Fill anything newer straight from Solana RPC.
-      const newest = events.reduce((m, e) => Math.max(m, e.timestamp), opts.sinceTs);
-      const cap = Number(process.env.SOLANA_BACKFILL_MAX ?? 40);
-      try {
-        const { sigs, more } = await signaturesSince(wallet, newest, cap);
-        const known = new Set(events.map((e) => e.txHash));
-        const extra = await fetchRawEvents(wallet, sigs.filter((s) => !known.has(s)));
-        events.push(...extra);
-        if (extra.length) notes.push(`Filled ${extra.length} recent Solana transactions the data provider was missing.`);
-        if (more) notes.push(`Some very recent Solana activity for ${wallet.slice(0, 4)}… couldn't be loaded.`);
-      } catch {
-        notes.push(`Couldn't double-check recent Solana activity for ${wallet.slice(0, 4)}….`);
+      // (Not for bot-flooded addresses: everything newer there is the bot noise.)
+      if (!opts.junkFlooded && !st.backfill) {
+        const newest = events.reduce((m, e) => Math.max(m, e.timestamp), opts.sinceTs);
+        try {
+          const { sigs } = await signaturesSince(wallet, newest);
+          const known = new Set(events.map((e) => e.txHash));
+          st.backfill = { pending: sigs.filter((s) => !known.has(s)), added: 0 };
+        } catch {
+          notes.push(`Couldn't double-check recent Solana activity for ${wallet.slice(0, 4)}….`);
+          st.backfill = { pending: [], added: 0 };
+        }
       }
-      opts.onProgress?.({ chain: "solana", fetched: seen });
-      const v = await verifySolanaTransfers(events, isMoney, undefined, (done, total) =>
-        opts.onProgress?.({ chain: "solana", fetched: seen, message: `Double-checking trades on-chain (${done}/${total})` }),
+      if (st.backfill?.pending.length) {
+        const bf = st.backfill;
+        bf.pending = await drain(bf.pending, 6, opts.deadline, async (sig) => {
+          const e = await fetchRawEvent(wallet, sig);
+          if (e) { events.push(e); bf.added++; }
+        });
+        if (bf.pending.length) return partial();
+        if (bf.added) notes.push(`Filled ${bf.added} recent Solana transactions the data provider was missing.`);
+      }
+      opts.onProgress?.({ chain: "solana", fetched: st.seen });
+      const v = await verifySolanaTransfers(events, isMoney, opts.deadline, (done, total) =>
+        opts.onProgress?.({ chain: "solana", fetched: st.seen, message: `Double-checking trades on-chain (${done}/${total})` }),
       );
-      if (v.fixed) notes.push(`Corrected ${v.fixed} Solana trades the data provider had labeled as plain transfers.`);
-      if (v.skipped) notes.push(`${v.skipped} Solana transfers weren't double-checked (very active wallet).`);
+      st.fixed = (st.fixed ?? 0) + v.fixed;
+      if (v.remaining) return partial();
+      if (st.fixed) notes.push(`Corrected ${st.fixed} Solana trades the data provider had labeled as plain transfers.`);
     }
+    const { truncated, requests } = st;
     return { events, truncated, requests, notes };
   },
   };
+}
+
+interface ZerionState {
+  url: string | null; // next page, null when the history is fully read
+  events: UnifiedEvent[];
+  requests: number;
+  seen: number;
+  truncated: boolean;
+  notes: string[];
+  backfill?: { pending: string[]; added: number };
+  fixed?: number;
 }
 
 export const zerionAdapter = makeZerionAdapter("evm");

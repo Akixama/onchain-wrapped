@@ -195,7 +195,7 @@ function Glow({ a, b, k }: { a: string; b: string; k: string }) {
 function Notes({ s }: { s: WrappedStats }) {
   const lines = useMemo(() => {
     const l = [s.meta.note];
-    if (s.meta.truncated) l.push(`Very active wallet: we read the newest ${s.meta.txCap.toLocaleString()} transactions per wallet.`);
+    if (s.meta.truncated && s.meta.txCap) l.push(`Very active wallet: we read the newest ${s.meta.txCap.toLocaleString()} transactions per wallet.`);
     return [...new Set([...l, ...(s.meta.notes ?? [])])];
   }, [s]);
   return (

@@ -27,26 +27,31 @@ export interface RunInput {
   timeframe: Timeframe;
   maxTxsPerAddress?: number;
   onProgress?: (p: Progress) => void;
+  /** Stop reading at this time (ms) and return `partial` (see FetchOptions.deadline). */
+  deadline?: number;
+  /** Saved progress from an earlier run that hit its deadline. */
+  resume?: FetchSlots;
 }
 
-export async function runWrapped(input: RunInput): Promise<{ stats: WrappedStats; events: UnifiedEvent[]; usage: ReturnType<typeof usageSnapshot> }> {
+/** Per adapter + wallet: the finished result, or the adapter's saved state to carry on from. */
+export type FetchSlots = Record<string, { done: true; result: FetchResult } | { done: false; state: unknown }>;
+
+export type RunOutput =
+  | { partial: FetchSlots; fetched: number }
+  | { partial?: undefined; stats: WrappedStats; events: UnifiedEvent[]; usage: ReturnType<typeof usageSnapshot> };
+
+export async function runWrapped(input: RunInput): Promise<RunOutput> {
   input.onProgress?.({ stage: "fetching", message: "Finding your wallets", fetched: 0 });
   const resolved = await resolveWallets(input.addresses);
   const wallets = resolved.map((w) => w.address);
-  const cap = input.maxTxsPerAddress ?? Number(process.env.MAX_TXS_PER_ADDRESS ?? 2000);
+  // No cap by default: the whole history in the timeframe. MAX_TXS_PER_ADDRESS can still set one.
+  const cap = input.maxTxsPerAddress ?? Number(process.env.MAX_TXS_PER_ADDRESS || Infinity);
   const now = Math.floor(Date.now() / 1000);
   const sinceTs = input.timeframe === "12m" ? now - 365 * 86400 : 0;
   const say = (p: Progress) => input.onProgress?.(p);
 
   let fetched = 0;
-  let truncated = false;
-  // When the tx cap cuts a wallet's history short, we only see it back to some date. With several
-  // wallets we analyse just the window ALL of them cover, or a buy in wallet A followed by a sale in
-  // busy wallet B (outside B's window) would look like a coin still held.
-  let coverageStart = sinceTs;
-  const providerPrices: Record<string, number> = {};
-  const notes: string[] = [];
-  const all: UnifiedEvent[] = [];
+  const slots: FetchSlots = { ...(input.resume ?? {}) };
 
   await Promise.all(
     wallets.flatMap((w) => {
@@ -54,30 +59,55 @@ export async function runWrapped(input: RunInput): Promise<{ stats: WrappedStats
       if (!adapters.length) throw new Error(`Not a Solana or EVM address: ${w}`);
       return adapters.map(async (a) => {
         if (!a.isConfigured()) throw new Error(`${a.id} API key missing (see .env.example)`);
+        const slotKey = `${a.id}:${w}`;
+        const prev = slots[slotKey];
+        if (prev?.done) return;
         let last = 0;
         // Cache raw provider output per wallet + window + cap (day-rounded so it hits all day).
-        const cacheKey = `fetch:v1:${a.id}:${w}:${Math.floor(sinceTs / 86400)}:${cap}`;
-        const cached = await cacheGet<FetchResult>(cacheKey);
+        const cacheKey = `fetch:v2:${a.id}:${w}:${Math.floor(sinceTs / 86400)}:${cap}`;
+        const cached = prev ? null : await cacheGet<FetchResult>(cacheKey);
         const res = cached ?? await a.fetchEvents(w, {
           sinceTs,
           maxTxs: cap,
+          deadline: input.deadline,
+          resume: prev?.state,
           onProgress: ({ chain, fetched: n, message }) => {
             fetched += n - last;
             last = n;
             say({ stage: "fetching", message: message ?? `Reading ${chain === "evm" ? "EVM chains" : chain} history`, fetched });
           },
         });
+        if (res.partial) { slots[slotKey] = { done: false, state: res.resume }; return; }
         if (!cached) await cacheSet(cacheKey, res);
-        truncated ||= res.truncated;
-        if (res.truncated && res.events.length) {
-          coverageStart = Math.max(coverageStart, Math.min(...res.events.map((e) => e.timestamp)));
-        }
-        Object.assign(providerPrices, res.currentPrices);
-        notes.push(...(res.notes ?? []));
-        all.push(...res.events);
+        slots[slotKey] = { done: true, result: res };
       });
     }),
   );
+  // Out of time with reading left (or no time left to analyse): hand back everything read so far.
+  if (Object.values(slots).some((s) => !s.done) || (input.deadline && Date.now() >= input.deadline)) {
+    return { partial: slots, fetched };
+  }
+
+  let truncated = false;
+  // When a cap cuts a wallet's history short, we only see it back to some date. With several
+  // wallets we analyse just the window ALL of them cover, or a buy in wallet A followed by a sale in
+  // busy wallet B (outside B's window) would look like a coin still held.
+  let coverageStart = sinceTs;
+  const providerPrices: Record<string, number> = {};
+  const notes: string[] = [];
+  const all: UnifiedEvent[] = [];
+  for (const s of Object.values(slots)) {
+    if (!s.done) continue;
+    const res = s.result;
+    truncated ||= res.truncated;
+    if (res.truncated && res.events.length) {
+      coverageStart = Math.max(coverageStart, Math.min(...res.events.map((e) => e.timestamp)));
+    }
+    Object.assign(providerPrices, res.currentPrices);
+    notes.push(...(res.notes ?? []));
+    all.push(...res.events);
+  }
+  fetched = all.length;
 
   // Same tx seen via two linked wallets keeps both perspectives; exact duplicates are dropped.
   const events = [...new Map(all.map((e) => [e.id, e])).values()]
@@ -86,7 +116,7 @@ export async function runWrapped(input: RunInput): Promise<{ stats: WrappedStats
   fillTokenInfo(events);
 
   const stats = await analyze({
-    events, resolved, timeframe: input.timeframe, sinceTs, coverageStart, truncated, cap, providerPrices, notes,
+    events, resolved, timeframe: input.timeframe, sinceTs, coverageStart, truncated, cap: Number.isFinite(cap) ? cap : 0, providerPrices, notes,
     onStage: (stage, message) => say({ stage, message, fetched }),
   });
   say({ stage: "done", message: "Done", fetched });
