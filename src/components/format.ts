@@ -56,7 +56,8 @@ export function monthDay(ts: number): string {
 }
 
 export function periodLabel(s: WrappedStats): string {
-  if (s.meta.truncated) return `Since ${monthDay(s.meta.fromTs)}`;
+  // Busy wallets are capped at their latest N transactions: say so, or "Since Aug 7" looks like a bug.
+  if (s.meta.truncated) return `Latest ${num(s.meta.txCap)} txns · since ${monthDay(s.meta.fromTs)}`;
   return s.meta.timeframe === "all" ? "All time" : "Last 12 months";
 }
 
