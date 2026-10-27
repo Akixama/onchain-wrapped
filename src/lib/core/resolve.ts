@@ -1,5 +1,8 @@
 import { isEvmAddress, isSolanaAddress, normalizeAddress } from "./identity";
 import type { ChainFamily } from "./types";
+import { EVM_ENABLED } from "../site";
+
+const SOLANA_ONLY_MSG = "Only Solana wallets work here. Paste a Solana address or .sol name.";
 
 // Turn what the user typed ("vitalik.eth, toly.sol 0xabc...") into a deduped list of addresses.
 // ENS: viem against a public Ethereum node. SNS: Bonfida SDK against public Solana RPC.
@@ -55,6 +58,7 @@ export async function resolveWallets(raw: string | string[]): Promise<ResolvedWa
 
   const out = await Promise.all(
     inputs.map(async (input): Promise<ResolvedWallet> => {
+      if (!EVM_ENABLED && (isEvmAddress(input) || isEnsName(input))) throw new InputError(SOLANA_ONLY_MSG);
       if (isEvmAddress(input)) return { input, address: normalizeAddress(input), family: "evm" };
       if (isSolanaAddress(input)) return { input, address: input, family: "solana" };
       if (isSnsName(input)) {

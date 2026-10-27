@@ -114,7 +114,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/og/[id]/[card]"
   const s = job?.stats;
   const card = (rawCard.replace(/\.png$/, "") as CardId) || "summary";
   const valid = s && (s.cards.includes(card) || card === "summary");
-  const c: Content = valid ? content(s, card) : { kicker: "Onchain Wrapped", big: "Your onchain year, wrapped.", sub: "Paste any wallet. Solana + EVM." };
+  const c: Content = valid ? content(s, card) : { kicker: "Onchain Wrapped", big: "Your onchain year, wrapped.", sub: "Paste any Solana wallet." };
   const t = CARD_THEME[valid ? card : "summary"];
   const bigSize = c.big.length > 120 ? 40 : c.big.length > 60 ? 48 : c.big.length > 28 ? 64 : c.big.length > 18 ? 84 : 112;
 

@@ -2,10 +2,14 @@
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { EVM_ENABLED } from "@/lib/site";
 
 const MAX = 6;
+const SOLANA_ONLY_MSG = "Only Solana wallets work here. Paste a Solana address or .sol name.";
 const looksValid = (s: string) =>
-  /^0x[a-fA-F0-9]{40}$/.test(s) || /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s) || /^[^\s]+\.[a-z0-9]+$/i.test(s);
+  EVM_ENABLED
+    ? /^0x[a-fA-F0-9]{40}$/.test(s) || /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s) || /^[^\s]+\.[a-z0-9]+$/i.test(s)
+    : /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s) || /^[a-z0-9-_.]+\.(sol|sns)$/i.test(s);
 
 export function LandingForm() {
   const router = useRouter();
@@ -26,9 +30,9 @@ export function LandingForm() {
   const submit = async (e?: React.FormEvent) => {
     e?.preventDefault();
     const all = [...new Set([...wallets, ...draft.split(/[\s,;]+/).filter(Boolean)])].slice(0, MAX);
-    if (!all.length) return setError("Paste a wallet address, ENS or .sol name.");
+    if (!all.length) return setError(EVM_ENABLED ? "Paste a wallet address, ENS or .sol name." : "Paste a Solana wallet address or .sol name.");
     const bad = all.find((w) => !looksValid(w));
-    if (bad) return setError(`"${bad}" doesn't look like a wallet.`);
+    if (bad) return setError(!EVM_ENABLED && (/^0x/i.test(bad) || /\.eth$/i.test(bad)) ? SOLANA_ONLY_MSG : `"${bad}" doesn't look like a wallet.`);
     setBusy(true);
     setError(null);
     try {
@@ -66,7 +70,7 @@ export function LandingForm() {
             if (e.key === "Backspace" && !draft && wallets.length) setWallets((w) => w.slice(0, -1));
           }}
           onBlur={() => draft.trim() && addFrom(draft)}
-          placeholder={wallets.length ? "Add another wallet (optional)" : "Wallet address, vitalik.eth or toly.sol"}
+          placeholder={wallets.length ? "Add another wallet (optional)" : (EVM_ENABLED ? "Wallet address, vitalik.eth or toly.sol" : "Solana wallet address or toly.sol")}
           aria-label="Wallet address or name"
           autoComplete="off" autoCapitalize="off" spellCheck={false}
           className="w-full bg-transparent px-4 py-3.5 text-base outline-none placeholder:text-white/40"

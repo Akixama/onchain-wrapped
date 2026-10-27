@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
 import type { PublicJob as PublicJobT } from "@/lib/store";
+import { EVM_ENABLED } from "@/lib/site";
 import { CARD_THEME, CARD_TITLE, periodLabel, shareText } from "../format";
 import { CARDS, type CardCtx } from "./cards";
 import { FitContent, stagger } from "./primitives";
@@ -267,8 +268,8 @@ function CompareSheet({ onClose, myId, timeframe }: { onClose: () => void; myId:
       >
         <div className="mx-auto h-1 w-10 rounded-full bg-white/30" />
         <div className="font-display text-xl font-bold">Compare with a friend</div>
-        <p className="text-sm opacity-70">Paste their wallet, ENS or .sol name. Same period as yours.</p>
-        <input autoFocus value={input} onChange={(e) => setInput(e.target.value)} placeholder="0x… · name.eth · name.sol · Solana address"
+        <p className="text-sm opacity-70">{EVM_ENABLED ? "Paste their wallet, ENS or .sol name." : "Paste their Solana wallet or .sol name."} Same period as yours.</p>
+        <input autoFocus value={input} onChange={(e) => setInput(e.target.value)} placeholder={EVM_ENABLED ? "0x… · name.eth · name.sol · Solana address" : "Solana address or name.sol"}
           className="w-full rounded-2xl border border-white/15 bg-white/[0.06] px-4 py-3.5 text-base outline-none focus:border-white/40" spellCheck={false} autoCapitalize="off" autoCorrect="off" />
         {error && <p className="text-sm text-red-300">{error}</p>}
         <button type="submit" disabled={busy || !input.trim()} className="w-full rounded-2xl bg-white py-3.5 font-display font-bold text-black disabled:opacity-50">

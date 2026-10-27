@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { LandingForm } from "@/components/LandingForm";
 import { CHAIN_COLOR, CHAIN_NAME } from "@/components/format";
+import { EVM_ENABLED } from "@/lib/site";
 
-const DEMOS = [
-  { id: "sol-sniper", label: "Solana sniper", sub: "383 memecoin trades" },
-  { id: "machi", label: "machibigbrother.eth", sub: "EVM → Hyperliquid" },
-  { id: "sol-memes", label: "Memecoin trader", sub: "Solana, 410 trades" },
+const ALL_DEMOS = [
+  { id: "sol-sniper", label: "Solana sniper", sub: "461 memecoin trades" },
+  { id: "machi", label: "machibigbrother.eth", sub: "EVM → Hyperliquid", evm: true },
+  { id: "sol-memes", label: "Memecoin trader", sub: "380 trades" },
   { id: "sol-cluster", label: "One trader, 3 wallets", sub: "Merged identity" },
 ];
-const CHAINS = ["solana", "ethereum", "base", "arbitrum", "bsc", "polygon", "optimism"];
+const DEMOS = ALL_DEMOS.filter((d) => EVM_ENABLED || !("evm" in d));
+const CHAINS = EVM_ENABLED ? ["solana", "ethereum", "base", "arbitrum", "bsc", "polygon", "optimism"] : ["solana"];
 
 export default function Home() {
   return (
@@ -28,14 +30,14 @@ export default function Home() {
             <h1 className="font-display text-[44px] font-bold leading-[0.95] tracking-tight sm:text-6xl">
               Your onchain year,<br /><span className="bg-gradient-to-r from-[#C4B5FD] via-[#F0ABFC] to-[#6EE7B7] bg-clip-text text-transparent">wrapped.</span>
             </h1>
-            <p className="text-lg text-white/75">Best trade, worst trade, the round trip that hurt, the gas you burned. Every chain, every wallet, one story.</p>
+            <p className="text-lg text-white/75">Best trade, worst trade, the round trip that hurt, the gas you burned. {EVM_ENABLED ? "Every chain, every wallet, one story." : "Every Solana wallet you own, one story."}</p>
           </div>
           <LandingForm />
           <div className="space-y-3">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Or peek at a real wallet</p>
             <div className="grid grid-cols-2 gap-2">
               {DEMOS.map((d) => (
-                <Link key={d.id} href={`/w/${d.id}`} className="rounded-2xl border border-white/10 bg-white/[0.05] p-3 transition hover:border-white/30 hover:bg-white/10">
+                <Link key={d.id} href={`/w/${d.id}`} className="last:odd:col-span-2 rounded-2xl border border-white/10 bg-white/[0.05] p-3 transition hover:border-white/30 hover:bg-white/10">
                   <div className="truncate text-sm font-semibold">{d.label}</div>
                   <div className="text-xs text-white/55">{d.sub}</div>
                 </Link>
