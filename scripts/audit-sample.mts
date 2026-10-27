@@ -8,8 +8,8 @@ const pick = [...events].sort(() => Math.random() - 0.5).slice(0, Number(nStr ??
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 let match = 0, mismatch = 0;
 for (const e of pick) {
-  await sleep(1100);
-  const r = await fetch("https://api.mainnet-beta.solana.com", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [e.txHash, { encoding: "jsonParsed", maxSupportedTransactionVersion: 1 }] }) }).then((x) => x.json());
+  await sleep(process.env.SOLANA_RPC_URL ? 150 : 1100);
+  const r = await fetch(process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [e.txHash, { encoding: "jsonParsed", maxSupportedTransactionVersion: 1 }] }) }).then((x) => x.json());
   const c = r.result && normalizeRaw(e.wallet, r.result);
   const sum = (legs: UnifiedEvent["in"]) => Object.fromEntries(legs.map((l) => [l.token.address, l.amount]));
   const a = { ...sum(e.in) }, ao = { ...sum(e.out) }, b = c ? sum(c.in) : {}, bo = c ? sum(c.out) : {};

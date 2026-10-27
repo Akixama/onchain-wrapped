@@ -6,66 +6,374 @@
       "6RE3SxJ7a1GrDEA3t1otHs1kiQyeGp6VdxYdo8y9s6NZ"
     ],
     "timeframe": "12m",
-    "fromTs": 1793083113,
-    "toTs": 1793083511,
-    "generatedAt": "2026-10-27T06:45:11.983Z",
-    "eventCount": 1,
+    "fromTs": 1791991209,
+    "toTs": 1793091479,
+    "generatedAt": "2026-10-27T08:57:59.008Z",
+    "eventCount": 1095,
     "truncated": true,
     "txCap": 1000,
-    "spamFiltered": 0,
+    "spamFiltered": 108,
     "note": "All USD figures are estimates from public price data. Coins with no price are valued at $0.",
-    "notes": [],
+    "notes": [
+      "Corrected 78 Solana trades the data provider had labeled as plain transfers.",
+      "This address is flooded with bot transactions, so its history was read from a filtered source.",
+      "42 tokens left your wallets by routes we can't trace (bots, other wallets). We count them as moved, not sold."
+    ],
     "names": {}
   },
   "archetype": {
-    "title": "Onchain Ghost",
-    "tagline": "Barely a footprint. Mysterious.",
-    "style": "ghost"
+    "title": "Solana sniper",
+    "tagline": "In and out before the candle closes.",
+    "style": "sniper"
   },
   "overview": {
-    "totalTrades": 0,
-    "volumeUsd": 0,
+    "totalTrades": 179,
+    "volumeUsd": 12298.32,
     "chainsUsed": [
       "solana"
     ],
     "topChain": "solana",
-    "tradesByChain": {},
-    "tokensTraded": 0,
-    "activeDays": 0
+    "tradesByChain": {
+      "solana": 179
+    },
+    "tokensTraded": 51,
+    "activeDays": 14
   },
   "pnl": {
-    "realizedUsd": 0,
+    "realizedUsd": 326.76,
     "unrealizedUsd": 0,
-    "totalUsd": 0,
-    "winRate": 0,
-    "wins": 0,
-    "losses": 0,
-    "byChain": {}
+    "totalUsd": 326.76,
+    "winRate": 0.44,
+    "wins": 7,
+    "losses": 9,
+    "byChain": {
+      "solana": {
+        "pnlUsd": 326.76,
+        "trades": 179,
+        "tokens": 51
+      }
+    }
   },
-  "bestTrade": null,
-  "worstTrade": null,
-  "roundTrip": null,
+  "bestTrade": {
+    "symbol": "Kongo",
+    "name": "Kongo",
+    "icon": "https://axiomtrading-v2.axiom-cdn.io/BHUrqxqx6hMPFC7Mewfm4uJ5cAV2KZGvanwUeFEJpump.webp",
+    "chain": "solana",
+    "address": "2Q3jYQWWzkfZotYMyxzAFwfpFT5RhhBvGS3mk8P7PryF",
+    "pnlUsd": 325.66,
+    "costUsd": 232.1,
+    "proceedsUsd": 419.67,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.000009683690914994208,
+    "peakPrice": 0.00005532681249057826,
+    "avgExit": 0.00004322839674458668,
+    "firstTs": 1792945501,
+    "lastTs": 1793091479,
+    "partialHistory": false,
+    "fills": [
+      {
+        "t": 1792945501,
+        "side": "buy",
+        "price": 0.000009683690914994208,
+        "usd": 232.09591221123836
+      },
+      {
+        "t": 1792945670,
+        "side": "sell",
+        "price": 0.00003527306298835602,
+        "usd": 48.9201237674907
+      },
+      {
+        "t": 1792945670,
+        "side": "sell",
+        "price": 0.00003691278659905648,
+        "usd": 51.19425238530944
+      },
+      {
+        "t": 1792945671,
+        "side": "sell",
+        "price": 0.00003453334956328976,
+        "usd": 95.78843409773881
+      },
+      {
+        "t": 1792945718,
+        "side": "sell",
+        "price": 0.00005532681249057826,
+        "usd": 115.09892898699907
+      },
+      {
+        "t": 1792945719,
+        "side": "sell",
+        "price": 0.000052237339841497345,
+        "usd": 108.67175602986558
+      }
+    ],
+    "window": {
+      "start": 1792923604,
+      "end": 1793091479,
+      "tooOld": false
+    },
+    "supply": 955995401.459467
+  },
+  "worstTrade": {
+    "symbol": "uni",
+    "name": "uni",
+    "icon": "https://axiomtrading-v2.axiom-cdn.io/Ao8ZN16xseGmKiFonHYTSGuPDQ2JcNN8CwjmVvpGpump.webp",
+    "chain": "solana",
+    "address": "9WBGhVfsZDw5RabAg5eL9upxw25w7XzqBh2nv1uxpump",
+    "pnlUsd": -165.26,
+    "costUsd": 574.04,
+    "proceedsUsd": 408.77,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.000011302986577391117,
+    "peakPrice": 0.00001781358633763409,
+    "avgExit": 0.00000804888345343106,
+    "firstTs": 1792099066,
+    "lastTs": 1793091479,
+    "partialHistory": false,
+    "fills": [
+      {
+        "t": 1792099066,
+        "side": "buy",
+        "price": 0.000007103402967387502,
+        "usd": 26.316298524109424
+      },
+      {
+        "t": 1792099067,
+        "side": "buy",
+        "price": 0.000010399891242031857,
+        "usd": 28.886465074239332
+      },
+      {
+        "t": 1792099067,
+        "side": "buy",
+        "price": 0.000009052355146759998,
+        "usd": 29.329313842918367
+      },
+      {
+        "t": 1792099067,
+        "side": "buy",
+        "price": 0.000010104645820936505,
+        "usd": 26.255739868608046
+      },
+      {
+        "t": 1792099068,
+        "side": "buy",
+        "price": 0.000012112526111102026,
+        "usd": 28.366361182601235
+      },
+      {
+        "t": 1792099068,
+        "side": "buy",
+        "price": 0.000011494012219460516,
+        "usd": 28.705667259946352
+      },
+      {
+        "t": 1792099081,
+        "side": "buy",
+        "price": 0.000008940853367078024,
+        "usd": 51.6915608080178
+      },
+      {
+        "t": 1792099082,
+        "side": "buy",
+        "price": 0.000010927207769427382,
+        "usd": 51.151034640475764
+      },
+      {
+        "t": 1792099084,
+        "side": "buy",
+        "price": 0.000012952026899844996,
+        "usd": 49.9353279224253
+      },
+      {
+        "t": 1792099085,
+        "side": "sell",
+        "price": 0.000012335279558559024,
+        "usd": 38.828986385497686
+      },
+      {
+        "t": 1792099086,
+        "side": "buy",
+        "price": 0.000013829847168152333,
+        "usd": 52.95612381090607
+      },
+      {
+        "t": 1792099086,
+        "side": "buy",
+        "price": 0.000012182513530846983,
+        "usd": 48.87982454949726
+      },
+      {
+        "t": 1792099087,
+        "side": "sell",
+        "price": 0.000011945137911242659,
+        "usd": 43.20748409616528
+      },
+      {
+        "t": 1792099088,
+        "side": "sell",
+        "price": 0.000010440150903544087,
+        "usd": 33.987333736163386
+      },
+      {
+        "t": 1792099089,
+        "side": "buy",
+        "price": 0.000010454669358328293,
+        "usd": 51.55580803014192
+      },
+      {
+        "t": 1792099090,
+        "side": "buy",
+        "price": 0.000013480355916140887,
+        "usd": 51.06371252534816
+      },
+      {
+        "t": 1792099092,
+        "side": "buy",
+        "price": 0.00001781358633763409,
+        "usd": 48.94449146564254
+      },
+      {
+        "t": 1792099093,
+        "side": "sell",
+        "price": 0.000013967736942773976,
+        "usd": 56.94083645230297
+      },
+      {
+        "t": 1792099094,
+        "side": "sell",
+        "price": 0.000009831194848761215,
+        "usd": 90.1750967742436
+      },
+      {
+        "t": 1792099094,
+        "side": "sell",
+        "price": 0.000011888321612213139,
+        "usd": 48.463897865975234
+      },
+      {
+        "t": 1792099096,
+        "side": "sell",
+        "price": 0.000004145400649977485,
+        "usd": 97.16998845904206
+      }
+    ],
+    "window": {
+      "start": 1791950204,
+      "end": 1793091479,
+      "tooOld": false
+    },
+    "supply": 1000000000
+  },
+  "roundTrip": {
+    "symbol": "Ouinu",
+    "name": "Ouinu",
+    "icon": "https://axiomtrading-v2.axiom-cdn.io/DcmoDz71XBzUqvdm4yenCgByzTUnKWzwgUGmyrpYRb9u.webp",
+    "chain": "solana",
+    "address": "6YyNWncaiF33VgF8jVkTozrpfzsdkgJM5ShVckBmpump",
+    "pnlUsd": -24.92,
+    "costUsd": 136.78,
+    "proceedsUsd": 111.86,
+    "holdingValueUsd": 0,
+    "avgEntry": 0.000006671600670811558,
+    "peakPrice": 0.000009942734225550002,
+    "avgExit": 0.000005455920277969194,
+    "firstTs": 1792254845,
+    "lastTs": 1792254857,
+    "partialHistory": false,
+    "peakGainUsd": 67.07,
+    "peakTs": 1792254846,
+    "endedWithUsd": -24.92,
+    "fills": [
+      {
+        "t": 1792254845,
+        "side": "buy",
+        "price": 0.000006522997814025131,
+        "usd": 127.56022459696163
+      },
+      {
+        "t": 1792254846,
+        "side": "buy",
+        "price": 0.000009942734225550002,
+        "usd": 4.852973773417984
+      },
+      {
+        "t": 1792254846,
+        "side": "buy",
+        "price": 0.00000952438452404288,
+        "usd": 4.371538235089372
+      },
+      {
+        "t": 1792254855,
+        "side": "sell",
+        "price": 0.000006523366943947288,
+        "usd": 33.43639230059428
+      },
+      {
+        "t": 1792254856,
+        "side": "sell",
+        "price": 0.000005628632016319868,
+        "usd": 43.275462617038535
+      },
+      {
+        "t": 1792254857,
+        "side": "sell",
+        "price": 0.000004571577428966523,
+        "usd": 35.1483499995287
+      }
+    ],
+    "window": {
+      "start": 1792251245,
+      "end": 1792258457,
+      "tooOld": false
+    },
+    "supply": 1000000000
+  },
   "paperHands": null,
   "diamondHands": null,
   "counterfactual": {
-    "major": "ETH",
-    "tradingPnlUsd": 0,
-    "holdPnlUsd": 0,
-    "justHeldDiffUsd": 0,
+    "major": "SOL",
+    "tradingPnlUsd": 326.76,
+    "holdPnlUsd": -120.09,
+    "justHeldDiffUsd": -446.85,
     "verdict": "trading_won"
   },
   "gas": {
-    "totalUsd": 0,
-    "byChain": {},
-    "txCount": 0,
-    "priciestTxUsd": 0
+    "totalUsd": 3.1,
+    "byChain": {
+      "solana": 2.72
+    },
+    "txCount": 268,
+    "priciestTxUsd": 0.11
   },
   "rugs": {
-    "count": 0,
-    "lostUsd": 0,
-    "tokens": [],
-    "dodged": 0,
-    "dodgedTokens": []
+    "count": 9,
+    "lostUsd": -576.8,
+    "tokens": [
+      "uni",
+      "Familia",
+      "Psyopcat",
+      "Memecoin",
+      "ANDURIL",
+      "Ouinu",
+      "Pißwasser",
+      "smol",
+      "pumpCJ"
+    ],
+    "dodged": 13,
+    "dodgedTokens": [
+      "Kongo",
+      "Dr3amin",
+      "WRHND",
+      "BILLIONS",
+      "PSYOP",
+      "PEPT",
+      "Pretzel",
+      "GARRY",
+      "DIY",
+      "JUMS"
+    ]
   },
   "airdrops": {
     "count": 0,
@@ -74,35 +382,35 @@
   },
   "sleep": {
     "hourHistogramUtc": [
+      34,
+      2,
+      5,
+      5,
+      37,
+      1,
       0,
       0,
       0,
       0,
       0,
       0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0
+      1,
+      5,
+      1,
+      4,
+      21,
+      7,
+      3,
+      7,
+      11,
+      25,
+      8,
+      2
     ],
-    "peakHourUtc": 0,
-    "peakHourCount": 0,
-    "topMinuteUtc": "",
-    "topMinuteCount": 0
+    "peakHourUtc": 4,
+    "peakHourCount": 37,
+    "topMinuteUtc": "04:09",
+    "topMinuteCount": 28
   },
   "bridges": {
     "hops": [],
@@ -115,6 +423,16 @@
   },
   "cards": [
     "archetype",
+    "overview",
+    "pnl",
+    "best",
+    "worst",
+    "roundTrip",
+    "counterfactual",
+    "gas",
+    "rugs",
+    "sleep",
+    "chains",
     "summary"
   ]
 }

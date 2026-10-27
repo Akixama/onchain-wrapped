@@ -1,6 +1,7 @@
 "use client";
 import { motion } from "motion/react";
-import { Children, isValidElement, type ReactNode } from "react";
+import { Children, isValidElement, useCallback, useState, type ReactNode } from "react";
+import { GT_NETWORK } from "@/lib/gecko";
 import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
 import { CHAIN_COLOR, CHAIN_NAME, capOrPrice, hourLabel, num, pct, periodLabel, usd, whoLabel } from "../format";
 import { Big, BigNumber, Chip, CountUp, Kicker, Line, Stat, rise } from "./primitives";
@@ -35,12 +36,32 @@ const Body = ({ children, className = "space-y-5" }: { children: ReactNode; clas
   );
 };
 
+/** Token logo: the token's own image, else GeckoTerminal's saved copy (launchpad hosts often delete them), else a letter. */
+function useTokenIcon(t: TradeCard) {
+  const [src, setSrc] = useState<string | null>(t.icon ?? null);
+  const [tried, setTried] = useState(false);
+  const fail = useCallback(async () => {
+    setSrc(null);
+    if (tried || t.address === "native" || !GT_NETWORK[t.chain]) return;
+    setTried(true);
+    try {
+      const r = await fetch(`https://api.geckoterminal.com/api/v2/networks/${GT_NETWORK[t.chain]}/tokens/${t.address}`);
+      const url = r.ok ? (await r.json())?.data?.attributes?.image_url : null;
+      if (typeof url === "string" && url.startsWith("https://")) setSrc(url);
+    } catch {}
+  }, [tried, t.address, t.chain]);
+  return { src, fail };
+}
+
 function TokenTitle({ t }: { t: TradeCard }) {
+  const { src, fail } = useTokenIcon(t);
   return (
     <Line className="flex min-w-0 items-center gap-3">
-      {t.icon ? (
+      {src ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={t.icon} alt="" className="h-10 w-10 shrink-0 rounded-full bg-white/10 object-cover" />
+        <img src={src} alt="" onError={() => void fail()}
+          // A dead link can fail before the page's code starts, so onError never fires: check on mount too.
+          ref={(el) => { if (el?.complete && el.naturalWidth === 0) void fail(); }} className="h-10 w-10 shrink-0 rounded-full bg-white/10 object-cover" />
       ) : (
         <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white/15 font-display text-lg font-bold">{t.symbol.slice(0, 1)}</span>
       )}
@@ -216,8 +237,12 @@ const Counterfactual = ({ s }: CardProps) => {
         <BigNumber className="text-[70px] @3xl:text-[98px]" color={held ? "#FBBF24" : "#4ADE80"}><CountUp value={Math.abs(c.justHeldDiffUsd)} format={(n) => money(n)} /></BigNumber>
         <Line className="text-2xl">{held ? "more in your pocket. Ouch." : "less. Your trading actually won."}</Line>
         <R><div className="grid grid-cols-2 gap-3">
-          <Stat label="Your trading">{money(c.tradingPnlUsd, true)}</Stat>
-          <Stat label={`Just holding ${c.major === "SOL+ETH" ? "majors" : c.major}`}>{money(c.holdPnlUsd, true)}</Stat>
+          {c.tradingUnits != null ? (
+            <Stat label={`Your trading, in ${c.major}`}>{c.tradingUnits >= 0 ? "+" : "−"}{Math.abs(c.tradingUnits).toLocaleString("en-US", { maximumFractionDigits: 3 })} {c.major}</Stat>
+          ) : (
+            <Stat label="Your trading">{money(c.tradingPnlUsd, true)}</Stat>
+          )}
+          <Stat label={c.tradingNowUsd != null ? `Worth today` : `Just holding ${c.major === "SOL+ETH" ? "majors" : c.major}`}>{money(c.tradingNowUsd ?? c.holdPnlUsd ?? 0, true)}</Stat>
         </div></R>
       </Body>
     </>

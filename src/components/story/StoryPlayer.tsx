@@ -8,6 +8,7 @@ import { CARD_THEME, CARD_TITLE, periodLabel, shareText } from "../format";
 import { CARDS, type CardCtx } from "./cards";
 import { FitContent, stagger } from "./primitives";
 import { Loading } from "./Loading";
+import { ChartJobContext } from "./TradeChart";
 
 const CARD_MS = 7000;
 const noopSubscribe = () => () => {};
@@ -142,7 +143,7 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
             >
               <motion.div variants={stagger} initial="hidden" animate="show" className="flex min-h-0 flex-1 flex-col">
                 <FitContent>
-                  <Card s={s} ctx={ctx} />
+                  <ChartJobContext.Provider value={id}><Card s={s} ctx={ctx} /></ChartJobContext.Provider>
                 </FitContent>
               </motion.div>
             </motion.section>

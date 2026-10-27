@@ -128,7 +128,7 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   if (untraced) notes.push(`${untraced} tokens left your wallets by routes we can't trace (bots, other wallets). We count them as moved, not sold.`);
   stats.meta.notes = notes;
   a.onStage?.("crunching", "Drawing your charts");
-  await addTradeCharts(stats, positions, (n) => notes.push(n)).catch(() => {});
+  await addTradeCharts(stats, positions, pb, (n) => notes.push(n)).catch(() => {});
   stats.meta.notes = notes;
   stats.cards = storyCards(stats);
   stats.meta.names = Object.fromEntries(resolved.filter((w) => w.name).map((w) => [w.address, w.name!]));

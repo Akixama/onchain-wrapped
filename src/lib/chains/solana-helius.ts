@@ -27,7 +27,7 @@ interface HeliusTx {
 
 interface DasAsset {
   id: string;
-  content?: { metadata?: { name?: string; symbol?: string }; links?: { image?: string } };
+  content?: { metadata?: { name?: string; symbol?: string }; links?: { image?: string }; files?: { uri?: string; cdn_uri?: string }[] };
   token_info?: { symbol?: string; decimals?: number; price_info?: { price_per_token?: number } };
 }
 
@@ -48,6 +48,12 @@ export const heliusAdapter: ChainAdapter = {
     let real = 0; // entries that actually move this wallet's tokens or SOL
     // The cap counts real activity; this bounds credits spent wading through junk (100 credits/page).
     const maxPages = Math.ceil(opts.maxTxs / 100) * 3 + 2;
+    // Failed transactions still burn fees but aren't in the parsed history. Look their fees up
+    // alongside the history (separate rate limit) instead of after it; trimmed to the window below.
+    let stopFailed = false;
+    const failedP = failedFees(address, opts.sinceTs, () => stopFailed, (n) =>
+      opts.onProgress?.({ chain: "solana", fetched: raw.length, message: `Adding fees from failed transactions (${n})` }),
+    ).catch(() => [] as UnifiedEvent[]);
     const pageParam = process.env.HELIUS_BEFORE_PARAM ?? "before-signature";
 
     for (;;) {
@@ -69,19 +75,21 @@ export const heliusAdapter: ChainAdapter = {
       opts.onProgress?.({ chain: "solana", fetched: real });
       if (reachedSince) break;
       // Bots that only reference this address can bury its real activity (seen: 2 real in 400).
-      if (requests >= 4 && real / raw.length < 0.05) return { events: [], truncated: true, requests, junkFlooded: true };
+      if (requests >= 4 && real / raw.length < 0.05) {
+        stopFailed = true;
+        return { events: [], truncated: true, requests, junkFlooded: true };
+      }
       if (real >= opts.maxTxs || requests >= maxPages) { truncated = true; break; }
       before = page[page.length - 1].signature;
     }
 
     const events = raw.map((tx) => normalize(address, tx)).filter((e): e is UnifiedEvent => !!e);
-    // Failed transactions still burn fees but aren't in the parsed history: add their fees for the gas card.
+    // Only failed fees inside the history we actually read (it may stop early at the cap).
     const oldest = raw.length ? raw[raw.length - 1].timestamp : opts.sinceTs;
-    const failed = await failedFees(address, Math.max(opts.sinceTs, truncated ? oldest : opts.sinceTs), (n) =>
-      opts.onProgress?.({ chain: "solana", fetched: raw.length, message: `Adding fees from failed transactions (${n})` }),
-    ).catch(() => [] as UnifiedEvent[]);
+    const cutoff = Math.max(opts.sinceTs, truncated ? oldest : opts.sinceTs);
+    const failed = await failedP;
     const known = new Set(events.map((e) => e.txHash));
-    events.push(...failed.filter((e) => !known.has(e.txHash)));
+    events.push(...failed.filter((e) => !known.has(e.txHash) && e.timestamp >= cutoff));
     const meta = await fetchTokenMeta(events);
     requests += meta.requests;
     const currentPrices: Record<string, number> = {};
@@ -191,16 +199,17 @@ function enrichToken(t: TokenRef, byMint: Map<string, DasAsset>, prices: Record<
   if (!a) return;
   t.symbol = a.token_info?.symbol || a.content?.metadata?.symbol || t.symbol;
   t.name = a.content?.metadata?.name;
-  t.icon = a.content?.links?.image;
+  // Helius's CDN copy loads reliably; many launchpad image hosts go down or block hotlinking.
+  t.icon = a.content?.files?.find((f) => f.cdn_uri)?.cdn_uri ?? a.content?.links?.image;
   const p = a.token_info?.price_info?.price_per_token;
   if (p) prices[`solana:${t.address}`] = p;
 }
 
 /** Fees paid by the wallet on failed transactions since `sinceTs` (via Helius RPC; ~10 lookups/s on the free plan). */
-async function failedFees(wallet: string, sinceTs: number, onCount?: (n: number) => void): Promise<UnifiedEvent[]> {
+async function failedFees(wallet: string, sinceTs: number, stopped: () => boolean, onCount?: (n: number) => void): Promise<UnifiedEvent[]> {
   const sigs: { signature: string; blockTime: number }[] = [];
   let before: string | undefined;
-  for (let page = 0; page < 20; page++) {
+  for (let page = 0; page < 20 && !stopped(); page++) {
     const r = await fetchJson<{ result: { signature: string; blockTime: number | null; err: unknown }[] }>("helius-rpc", rpcUrl(), {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -220,15 +229,17 @@ async function failedFees(wallet: string, sinceTs: number, onCount?: (n: number)
   onCount?.(cap.length);
   const out: UnifiedEvent[] = [];
   await Promise.all(cap.map(async (x) => {
+    if (stopped()) return;
     try {
-      const r = await fetchJson<{ result: { meta: { fee: number } | null; transaction: { message: { accountKeys: { pubkey: string }[] } } } | null }>("helius-rpc", rpcUrl(), {
+      // Plain "json" encoding: much smaller than jsonParsed, and the fee payer is always key 0.
+      const r = await fetchJson<{ result: { meta: { fee: number } | null; transaction: { message: { accountKeys: string[] } } } | null }>("helius-rpc", rpcUrl(), {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [x.signature, { encoding: "jsonParsed", maxSupportedTransactionVersion: 1 }] }),
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [x.signature, { encoding: "json", maxSupportedTransactionVersion: 1 }] }),
         endpoint: "rpc/getTransaction",
-      });
+      }, 10); // never drop a fee to rate limiting: it just waits its turn again
       const t = r.result;
-      if (!t?.meta || t.transaction.message.accountKeys[0]?.pubkey !== wallet) return; // someone else paid
+      if (!t?.meta || t.transaction.message.accountKeys[0] !== wallet) return; // someone else paid
       out.push({
         id: `solana:${x.signature}:${wallet}`, wallet, chain: "solana", timestamp: x.blockTime, txHash: x.signature,
         type: "other", in: [], out: [], gasUsd: null, gasNative: t.meta.fee / 1e9,

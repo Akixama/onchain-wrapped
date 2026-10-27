@@ -7,12 +7,13 @@ import type { Position } from "./engine/pnl";
 import { fetchJson } from "./infra/http";
 import { chartWindow, fetchCandles, topPool, GT_NETWORK, type JsonFetcher } from "./gecko";
 import { tokenSupply } from "./supply";
+import type { PriceBook } from "./prices/pricebook";
 
 const DAY = 86400;
 // Server-side GeckoTerminal calls: one quick retry at most, never the long backoff.
 const gt: JsonFetcher = (url) => fetchJson("geckoterminal", url, { endpoint: url.includes("/ohlcv/") ? "ohlcv" : "token-pools" }, 1);
 
-export async function addTradeCharts(s: WrappedStats, positions: Map<string, Position>, onNote?: (n: string) => void) {
+export async function addTradeCharts(s: WrappedStats, positions: Map<string, Position>, pb: PriceBook, onNote?: (n: string) => void) {
   const now = Math.floor(Date.now() / 1000);
   const cards: { card: TradeCard; to: number }[] = [];
   for (const c of [s.bestTrade, s.worstTrade, s.roundTrip, s.diamondHands]) if (c) cards.push({ card: c, to: c.holdingValueUsd > 0 ? now : c.lastTs });
@@ -22,9 +23,10 @@ export async function addTradeCharts(s: WrappedStats, positions: Map<string, Pos
   await Promise.all(cards.map(async ({ card: c, to }) => {
     const p = positions.get(`${c.chain}:${c.address}`);
     c.fills = [
-      ...(p?.buys ?? []).map((f) => ({ t: f.ts, side: "buy" as const, price: f.price, usd: f.usd })),
-      ...(p?.sells ?? []).map((f) => ({ t: f.ts, side: "sell" as const, price: f.price, usd: f.usd })),
+      ...(p?.buys ?? []).map((f) => ({ t: f.ts, side: "buy" as const, price: f.price, usd: f.usd, sig: f.sig })),
+      ...(p?.sells ?? []).map((f) => ({ t: f.ts, side: "sell" as const, price: f.price, usd: f.usd, sig: f.sig })),
     ].sort((a, b) => a.t - b.t).slice(-60);
+    if (c.chain === "solana") c.solUsd = pb.majorAt("SOL", c.firstTs) ?? undefined;
     // Free candle data only covers ~180 days; older charts fall back to your own fills.
     c.window = { ...chartWindow(c.firstTs, to, now), tooOld: to < now - 179 * DAY };
     const key = `${c.chain}:${c.address}`;

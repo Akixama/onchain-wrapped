@@ -10,7 +10,7 @@ import type { PriceBook, PricePoint } from "../prices/pricebook";
 /** known=false: arrived by transfer, we don't know what they paid -> break-even when sold. */
 interface Lot { amount: number; cost: number; ts: number; known: boolean }
 
-export interface Fill { ts: number; amount: number; usd: number; price: number }
+export interface Fill { ts: number; amount: number; usd: number; price: number; sig?: string }
 
 export interface Position {
   key: string;
@@ -112,7 +112,7 @@ export function runPnl(events: UnifiedEvent[], pb: PriceBook, opts: PnlOptions =
         if (knownShare < 0.999) p.partial = true;
         p.realized += usd * knownShare - cost;
         p.proceeds += usd;
-        p.sells.push({ ts: e.timestamp, amount: l.amount, usd, price: l.amount ? usd / l.amount : 0 });
+        p.sells.push({ ts: e.timestamp, amount: l.amount, usd, price: l.amount ? usd / l.amount : 0, sig: e.txHash });
       } else {
         p.sentAwayKnown += knownAmt; // bought here, then moved to a wallet we can't see
       }
@@ -125,7 +125,7 @@ export function runPnl(events: UnifiedEvent[], pb: PriceBook, opts: PnlOptions =
       if (isTrade) {
         acquire(p, l.amount, usd, e.timestamp);
         p.costIn += usd;
-        p.buys.push({ ts: e.timestamp, amount: l.amount, usd, price: l.amount ? usd / l.amount : 0 });
+        p.buys.push({ ts: e.timestamp, amount: l.amount, usd, price: l.amount ? usd / l.amount : 0, sig: e.txHash });
       } else if (e.type === "airdrop" || e.type === "mint") {
         acquire(p, l.amount, 0, e.timestamp); // free tokens: zero cost basis
         p.airdropped = true;

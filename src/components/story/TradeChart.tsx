@@ -4,7 +4,7 @@
 // a tag for the latest value. Your buys (B) and sells (S) sit on the candles at their real time.
 // Candles load here in the viewer's browser (own GeckoTerminal rate limit), cached per session.
 import { motion } from "motion/react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { TradeCard } from "@/lib/engine/stats";
 import { fetchCandles, topPool, type Candle, type JsonFetcher } from "@/lib/gecko";
 import { usd } from "../format";
@@ -21,34 +21,51 @@ const browserGet: JsonFetcher = async (url) => {
   return r.json();
 };
 
+/** The result being viewed, so a chart can ask the server to rebuild candles from the chain. */
+export const ChartJobContext = createContext<string | null>(null);
+
+// Fewer candles than this in the trade's window means the chart site barely indexed the token.
+const ENOUGH_CANDLES = 8;
+
 function useCandles(card: TradeCard): Loaded {
+  const jobId = useContext(ChartJobContext);
   const tooOld = !!card.window?.tooOld; // set by the server: past the free 180-day candle history
+  const canRebuild = !!jobId && card.chain === "solana" && !!card.fills?.length;
   const initial: Loaded = card.chart?.candles?.length
     ? { candles: card.chart.candles, interval: card.chart.interval }
-    : !card.window || card.address === "native" ? "none" : tooOld ? "too-old" : "loading";
+    : !card.window || card.address === "native" ? "none" : tooOld && !canRebuild ? "too-old" : "loading";
   const [state, setState] = useState<Loaded>(initial);
   useEffect(() => {
     if (state !== "loading" || !card.window) return;
-    const key = `wrapped-candles:${card.chain}:${card.address}:${card.window.start}:${card.window.end}`;
+    const key = `wrapped-candles2:${card.chain}:${card.address}:${card.window.start}:${card.window.end}`;
     let alive = true;
     (async () => {
       try {
         const cached = sessionStorage.getItem(key);
         if (cached) { if (alive) setState(JSON.parse(cached)); return; }
       } catch {}
-      try {
-        const pool = await topPool(browserGet, card.chain, card.address);
-        if (!pool) throw new Error("no pool");
-        const res = await fetchCandles(browserGet, card.chain, pool, card.address, card.window!.start, card.window!.end);
-        const out: Loaded = res.candles.length >= 3 ? res : "none";
-        try { sessionStorage.setItem(key, JSON.stringify(out)); } catch {}
-        if (alive) setState(out);
-      } catch {
-        if (alive) setState("none");
+      let best: Loaded = tooOld ? "too-old" : "none";
+      if (!tooOld) {
+        try {
+          const pool = await topPool(browserGet, card.chain, card.address);
+          if (pool) {
+            const res = await fetchCandles(browserGet, card.chain, pool, card.address, card.window!.start, card.window!.end);
+            if (res.candles.length >= 3) best = res;
+          }
+        } catch {}
       }
+      // Thin or missing chart data (common for fresh pump.fun launches): rebuild it from the chain.
+      if (canRebuild && (typeof best !== "object" || best.candles.length < ENOUGH_CANDLES)) {
+        try {
+          const res = await browserGet<{ candles: Candle[]; interval: string }>(`/api/chart/${jobId}?mint=${encodeURIComponent(card.address)}`);
+          if (res.candles?.length >= 3 && (typeof best !== "object" || res.candles.length > best.candles.length)) best = res;
+        } catch {}
+      }
+      try { sessionStorage.setItem(key, JSON.stringify(best)); } catch {}
+      if (alive) setState(best);
     })();
     return () => { alive = false; };
-  }, [state, card.chain, card.address, card.window]);
+  }, [state, card.chain, card.address, card.window, tooOld, canRebuild, jobId]);
   return state;
 }
 
@@ -131,7 +148,8 @@ export function TradeChart({ card, marks = [], height }: { card: TradeCard; mark
         {ticks.map((v, i) => (
           <g key={i}>
             <line x1={left} x2={width - right + 4} y1={y(v)} y2={y(v)} stroke={GRID} />
-            <text x={width - right + 8} y={y(v) + 3.5} fill={AXIS} fontSize="10" fontFamily="ui-monospace, monospace">{fmt(v)}</text>
+            {/* The latest-value tag wins over an axis label it would cover. */}
+            {Math.abs(y(v) - y(last)) >= 14 && <text x={width - right + 8} y={y(v) + 3.5} fill={AXIS} fontSize="10" fontFamily="ui-monospace, monospace">{fmt(v)}</text>}
           </g>
         ))}
         {[t0, (t0 + t1) / 2, t1].map((t, i) => (

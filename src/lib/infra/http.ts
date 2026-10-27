@@ -11,13 +11,15 @@ const MIN_GAP_MS: Record<string, number> = {
   dexscreener: 220, // 300 req/min
   geckoterminal: 2100, // ~30 req/min
   "evm-rpc": 100, // publicnode, for token supply
-  "helius-rpc": 120, // Helius free plan: 10 RPC requests/s (a little headroom avoids 429s)
+  "helius-rpc": Number(process.env.HELIUS_RPC_GAP_MS ?? 120), // Helius free plan: 10 RPC requests/s on paper; bursts above ~6/s earn 429s
 };
 
 const lastCall: Record<string, number> = {};
 const queues: Record<string, Promise<void>> = {};
 
-async function throttle(provider: string) {
+async function throttle(name: string) {
+  // When SOLANA_RPC_URL is Helius, "solana-rpc" and "helius-rpc" hit the same 10/s limit: one queue.
+  const provider = name === "solana-rpc" && process.env.SOLANA_RPC_URL?.includes("helius") ? "helius-rpc" : name;
   const gap = MIN_GAP_MS[provider] ?? 100;
   const prev = queues[provider] ?? Promise.resolve();
   let release!: () => void;
@@ -71,7 +73,8 @@ export async function fetchJson<T>(
     }
     if ((res.status === 429 || res.status >= 500) && attempt < retries) {
       const retryAfter = Number(res.headers.get("retry-after")) * 1000;
-      await sleep(retryAfter || 1500 * 2 ** attempt);
+      // Helius RPC limits reset each second: a short wait is enough; others get the long backoff.
+      await sleep(retryAfter || Math.min(8000, (provider === "helius-rpc" || provider === "solana-rpc" ? 400 : 1500) * 2 ** attempt));
       continue;
     }
     throw new HttpError(res.status, url, body);

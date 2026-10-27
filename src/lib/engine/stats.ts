@@ -26,7 +26,9 @@ export interface TradeCard {
   lastTs: number;
   partialHistory: boolean;
   /** The user's own buys/sells of this token (for chart markers). */
-  fills?: { t: number; side: "buy" | "sell"; price: number; usd: number }[];
+  fills?: { t: number; side: "buy" | "sell"; price: number; usd: number; sig?: string }[];
+  /** SOL price (USD) around the trade, for charts rebuilt from on-chain swaps. */
+  solUsd?: number;
   /** Real candles (USD price) when available; supply turns prices into market cap. */
   chart?: TradeChart;
   /** Token supply from the chain (market cap = price x supply). */
@@ -78,7 +80,16 @@ export interface WrappedStats {
   roundTrip: (TradeCard & { peakGainUsd: number; peakTs: number; endedWithUsd: number }) | null;
   paperHands: (TradeCard & { soldAt: number; soldTs: number; laterPeak: number; missedUsd: number }) | null;
   diamondHands: (TradeCard & { daysHeld: number; stillHolding: boolean }) | null;
-  counterfactual: { major: "SOL" | "ETH" | "SOL+ETH"; tradingPnlUsd: number; holdPnlUsd: number; justHeldDiffUsd: number; verdict: "trading_won" | "should_have_held" };
+  counterfactual: {
+    major: "SOL" | "ETH" | "SOL+ETH";
+    tradingPnlUsd: number; // trading result at the prices when it happened
+    tradingUnits?: number | null; // the same result in SOL/ETH (one major only)
+    tradingNowUsd?: number; // ...valued at today's SOL/ETH price
+    /** @deprecated older results only */
+    holdPnlUsd?: number;
+    justHeldDiffUsd: number;
+    verdict: "trading_won" | "should_have_held";
+  };
   gas: { totalUsd: number; byChain: Partial<Record<ChainId, number>>; txCount: number; priciestTxUsd: number };
   /** Tokens they bought that are now dead. "caught" = lost money on it, "dodged" = got out even or better. */
   rugs: { count: number; lostUsd: number; tokens: string[]; dodged: number; dodgedTokens: string[] };
@@ -233,21 +244,21 @@ export function computeStats(input: {
       .sort((a, b) => b.held - a.held || b.p.pnl - a.p.pnl),
   );
 
-  // "If you'd just held SOL/ETH": same positions and same rules as the PnL engine.
-  // Each buy's USD, had it stayed in SOL (Solana) / ETH (EVM), would be worth usd * P_now / P_then.
-  // Tokens later sent to wallets we can't see are left out on both sides.
-  let actualPnl = 0, holdPnl = 0;
+  // "If you'd skipped every trade and just held SOL/ETH": trades are paid for in SOL (Solana) / ETH
+  // (EVM) and sold back into it, so not trading would leave you with exactly the SOL/ETH your trades
+  // won or lost: each position's result converted at the price when it was realized, valued today.
+  // (Summing every buy as fresh money would count the same recycled stack over and over.)
+  let actualPnl = 0, tradingNow = 0;
+  const units: Partial<Record<"SOL" | "ETH", number>> = {};
   for (const p of closedish) {
-    const bought = p.buys.reduce((s, f) => s + f.amount, 0);
-    const f = bought ? Math.max(0, 1 - p.sentAwayKnown / bought) : 0;
     const m = counterfactualMajor(p.chain);
     const pNow = pb.majorNow(m);
-    if (!pNow || !f) continue;
+    const pThen = pb.majorAt(m, p.lastTs) ?? pNow;
+    if (!pNow || !pThen) continue;
     actualPnl += p.pnl;
-    for (const b of p.buys) {
-      const pThen = pb.majorAt(m, b.ts);
-      if (pThen) holdPnl += b.usd * (pNow / pThen - 1) * f;
-    }
+    const u = p.realized / pThen + p.unrealized / pNow; // SOL/ETH won or lost on this token
+    units[m] = (units[m] ?? 0) + u;
+    tradingNow += u * pNow;
   }
   const usedMajors = (["SOL", "ETH"] as const).filter((m) => trades.some((t) => counterfactualMajor(t.chain) === m));
 
@@ -258,7 +269,7 @@ export function computeStats(input: {
   for (const e of events) {
     if (!e.gasUsd || seenTx.has(e.chain + e.txHash)) continue;
     seenTx.add(e.chain + e.txHash);
-    gasByChain[e.chain] = r2((gasByChain[e.chain] ?? 0) + e.gasUsd);
+    gasByChain[e.chain] = (gasByChain[e.chain] ?? 0) + e.gasUsd; // round once at the end, not per fee
     gasTotal += e.gasUsd;
     gasTx++;
     priciest = Math.max(priciest, e.gasUsd);
@@ -315,11 +326,12 @@ export function computeStats(input: {
     counterfactual: {
       major: usedMajors.length === 2 ? "SOL+ETH" : usedMajors[0] ?? "ETH",
       tradingPnlUsd: r2(actualPnl),
-      holdPnlUsd: r2(holdPnl),
-      justHeldDiffUsd: r2(holdPnl - actualPnl), // > 0: holding would have made you this much more
-      verdict: actualPnl >= holdPnl ? "trading_won" : "should_have_held",
+      tradingUnits: usedMajors.length === 1 ? Math.round((units[usedMajors[0]] ?? 0) * 1e4) / 1e4 : null,
+      tradingNowUsd: r2(tradingNow),
+      justHeldDiffUsd: r2(-tradingNow), // > 0: not trading would have left you this much more
+      verdict: tradingNow >= 0 ? "trading_won" : "should_have_held",
     },
-    gas: { totalUsd: r2(gasTotal), byChain: gasByChain, txCount: gasTx, priciestTxUsd: r2(priciest) },
+    gas: { totalUsd: r2(gasTotal), byChain: Object.fromEntries(Object.entries(gasByChain).map(([c, v]) => [c, r2(v!)])), txCount: gasTx, priciestTxUsd: r2(priciest) },
     rugs: (() => {
       const caught = rugged.filter((p) => p.pnl <= -1);
       const dodged = rugged.filter((p) => p.pnl > -1);
@@ -359,7 +371,10 @@ function archetype(
   fromTs: number,
   now: number,
 ): WrappedStats["archetype"] {
-  const months = Math.max(1, (now - fromTs) / (30 * DAY));
+  // Pace over the time you were actually trading (a wallet that started last month isn't a
+  // once-a-month trader because the window is a year).
+  const firstTrade = Math.min(...positions.map((p) => p.firstTs), now);
+  const months = Math.max(1, (now - Math.max(fromTs, firstTrade)) / (30 * DAY));
   const perMonth = o.totalTrades / months;
   const holds = positions.filter((p) => p.sells.length).map((p) => p.sells[0].ts - p.firstTs);
   const medianHold = holds.length ? holds.sort((a, b) => a - b)[Math.floor(holds.length / 2)] : Infinity;

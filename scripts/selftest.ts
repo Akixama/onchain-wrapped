@@ -111,8 +111,13 @@ assert.equal(stats.rugs.count, 1);
 assert.equal(stats.airdrops.count, 1);
 near(stats.pnl.totalUsd, 500 + 50 - 500 + 4000); // airdrops are their own card, not trading PnL
 near(stats.airdrops.valueUsd, 300);
-// Held SOL instead: $3000 of Solana buys x (200/150 - 1) + $2000 Base buy x (3500/3000 - 1)
-near(stats.counterfactual.holdPnlUsd, 1000 + 2000 / 6);
+// Skipped every trade: you'd have the SOL/ETH your trades won or lost. Realized results convert at
+// the price then (SOL 150, ETH 3000) and are valued now (SOL 200, ETH 3500); open positions are already "now".
+const traded = [X, Y, Z, D].map(pos);
+const expectNow = traded.reduce((t, p) => t + p.realized * (p.chain === "solana" ? 200 / 150 : 3500 / 3000) + p.unrealized, 0);
+near(stats.counterfactual.tradingNowUsd!, expectNow);
+near(stats.counterfactual.justHeldDiffUsd, -expectNow);
+assert.equal(stats.counterfactual.verdict, expectNow >= 0 ? "trading_won" : "should_have_held");
 // Reconciliation: chain says RUGME balance is 0 (left via a bot/delegate we can't see) -> not a dead bag.
 const reconciled = runPnl(events, pb, { actualBalances: new Map([[`solana:${Z.address}`, 0], [`solana:${JUP.address}`, 300]]) });
 near(reconciled.get(`solana:${Z.address}`)!.pnl, 0);
