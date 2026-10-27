@@ -3,7 +3,7 @@ import { NATIVE } from "../core/assets";
 import { fetchJson, QuotaError } from "../infra/http";
 import { fetchRawEvent, signaturesSince, verifySolanaTransfers } from "./solana-rpc";
 import { drain, timeUp } from "../infra/drain";
-import { liveZerionKey, markZerionKeySpent, zerionAuth, zerionKeys } from "./zerion-keys";
+import { keyTag, liveZerionKey, markZerionKeySpent, zerionAuth, zerionKeys } from "./zerion-keys";
 import { verifyTransfersHelius } from "./solana-helius";
 import { clearBlob, loadBlob, saveBlob } from "../infra/blob";
 import { isMoney } from "../core/assets";
@@ -73,96 +73,146 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
       "filter[asset_types]": "fungible",
       "filter[trash]": "only_non_trash", // spam filtered server-side: saves requests too
     });
-    if (opts.sinceTs > 0) qs.set("filter[min_mined_at]", String(opts.sinceTs * 1000));
-    const startUrl = `https://api.zerion.io/v1/wallets/${wallet}/transactions/?${qs}`;
+    const base = `https://api.zerion.io/v1/wallets/${wallet}/transactions/`;
+    const nowS = Math.floor(Date.now() / 1000) + 60;
+    /** A query for one date range (seconds, both ends included; Zerion takes milliseconds). */
+    const winUrl = (w: ZWin) => {
+      const q = new URLSearchParams(qs);
+      if (w.from > 0) q.set("filter[min_mined_at]", String(w.from * 1000));
+      q.set("filter[max_mined_at]", String(w.to * 1000));
+      return `${base}?${q}`;
+    };
     // A lookup cut short by the daily data limit saves where it stopped, so the next lookup of this
     // wallet carries on from there (after picking up anything new) instead of re-reading everything.
     const savedKey = `zres:${family}:${wallet}:${opts.sinceTs === 0 ? "all" : "12m"}`;
     // Everything read so far lives in `st`, so a run that hits its deadline can hand it to the next run.
     let st = opts.resume as ZerionState | undefined;
+    if (st && !st.wins) st = upgradeState(st as unknown as OldState, opts.sinceTs, nowS); // from before parallel reading
     if (!st) {
       const saved = await loadBlob<SavedRead>(savedKey).catch(() => null);
-      st = saved
-        ? { url: saved.url, topUrl: startUrl, resumed: true, events: saved.events, requests: 0, seen: saved.seen, truncated: false, notes: [] }
-        : { url: startUrl, events: [], requests: 0, seen: 0, truncated: false, notes: [] };
+      if (saved) {
+        // Pick up what happened since (with an hour of overlap), then the ranges still unread.
+        const wins = saved.wins ?? (saved.url ? [{ from: opts.sinceTs, to: nowS, url: saved.url }] : []);
+        const since = saved.savedAt ? saved.savedAt - 3600 : opts.sinceTs;
+        st = { wins: [{ from: Math.max(opts.sinceTs, since), to: nowS, url: null }, ...wins], resumed: true, events: saved.events, requests: 0, seen: saved.seen, truncated: false, notes: [] };
+      } else {
+        st = { wins: initialWindows(opts.sinceTs, nowS), events: [], requests: 0, seen: 0, truncated: false, notes: [] };
+      }
     }
-    let key: string | null = null;
-    const spent = new Set<string>(); // used up during this run (even if saving that to the store fails)
-    // Resumed: first read what's new since last time (newest first) until we reach what we already have.
-    // (Also guards against overlap between pages read on different days.)
-    const known = st.resumed ? new Set(st.events.map((e) => e.txHash)) : null;
-    while ((st.topUrl || st.url) && !timeUp(opts.deadline)) {
-      const topping = !!st.topUrl;
-      let page: { data: ZTx[]; links?: { next?: string } };
-      try {
-        key ??= await liveZerionKey(spent);
-        page = await fetchJson("zerion", (st.topUrl ?? st.url)!, {
-          headers: { authorization: zerionAuth(key), accept: "application/json" },
-          endpoint: "wallets/transactions",
-        });
-      } catch (e) {
-        // This key is out for today: remember it and retry the same page with the next one.
-        if (e instanceof QuotaError && key) {
-          spent.add(key);
-          await markZerionKeySpent(key, e.resetHours);
-          key = null;
+    const S = st;
+    const known = new Set(S.events.map((e) => e.txHash)); // de-duplicate: ranges overlap at their edges
+    const spent = new Set<string>(); // keys used up during this run (even if saving that to the store fails)
+    const keys = zerionKeys().length;
+    // Several readers at once: each range is read newest-first with its own cursor; a free reader
+    // takes another range, and a dense range is split in half when someone is free to take a half.
+    const readers = Math.min(8, Math.max(2, keys * 2));
+    const active = new Set<ZWin>();
+    let idle = 0, stop = false, failure: unknown = null;
+    const mined = (tx: ZTx) => Math.floor(Date.parse(tx.attributes.mined_at) / 1000);
+
+    const reader = async (n: number) => {
+      let key: string | null = null;
+      while (!stop && !timeUp(opts.deadline)) {
+        const w = S.wins.find((x) => !active.has(x));
+        if (!w) {
+          if (!active.size) return; // everything read
+          idle++;
+          await new Promise((r) => setTimeout(r, 200));
+          idle--;
           continue;
         }
-        // Daily data limit ran out partway through a huge history: keep what we read (newest first)
-        // and say so, instead of failing the whole lookup. With nothing read yet, it's a real error.
-        if (!(e instanceof QuotaError) || !st.events.length) throw e;
-        // Save the spot (and what we read, before any fixes) for the next lookup: kept for 3 days.
-        await saveBlob(savedKey, { url: st.url, events: st.events, seen: st.seen } satisfies SavedRead, 3 * 86400).catch(() => {});
-        st.truncated = true;
-        st.quotaCut = true;
-        st.url = null;
-        st.topUrl = undefined;
-        st.notes.push(`Today's free data limit ran out after ${st.seen.toLocaleString()} transactions, so this covers the newest ones only. Look it up again tomorrow to read further back.`);
-        break;
-      }
-      st.requests++;
-      let caughtUp = false;
-      for (const tx of page.data) {
-        if (known?.has(tx.attributes.hash)) {
-          if (topping) { caughtUp = true; break; }
-          continue;
+        active.add(w);
+        try {
+          while (!stop && !timeUp(opts.deadline) && S.wins.includes(w)) {
+            key ??= await liveZerionKey(spent, n);
+            const page: { data: ZTx[]; links?: { next?: string } } = await fetchJson("zerion", w.url ?? winUrl(w), {
+              headers: { authorization: zerionAuth(key), accept: "application/json" },
+              endpoint: "wallets/transactions",
+              throttle: `zerion:${keyTag(key)}`,
+            });
+            S.requests++;
+            // Safety: if the date filter were ignored, ranges would overlap wholesale. Fall back to
+            // one plain newest-first read of everything (de-duplication keeps what we already have).
+            if (!S.sequential && w.to < nowS - 120 && page.data.some((tx) => mined(tx) > w.to + 1)) {
+              S.sequential = true;
+              S.wins = [{ from: opts.sinceTs, to: nowS, url: null }];
+              break;
+            }
+            let oldest = Infinity;
+            for (const tx of page.data) {
+              oldest = Math.min(oldest, mined(tx));
+              const h = tx.attributes.hash;
+              if (known.has(h)) continue;
+              known.add(h);
+              S.seen++;
+              const e = normalize(wallet, tx);
+              if (e) S.events.push(e);
+            }
+            opts.onProgress?.({ chain: family === "evm" ? "evm" : "solana", fetched: S.seen });
+            const next = page.links?.next;
+            if (!next || !page.data.length) { S.wins = S.wins.filter((x) => x !== w); break; }
+            // Optional cap (MAX_TXS_PER_ADDRESS); by default the whole history is read.
+            if (S.seen >= opts.maxTxs) { S.truncated = true; S.wins = []; stop = true; break; }
+            if (!S.sequential && idle > 0 && oldest - w.from > 2 * 3600) {
+              // Dense range and a reader is waiting: hand it the older half (1s overlap at the cut).
+              const mid = Math.floor((w.from + oldest) / 2);
+              S.wins.push({ from: w.from, to: mid + 1, url: null });
+              Object.assign(w, { from: mid, to: oldest + 1, url: null });
+            } else {
+              w.url = next;
+            }
+          }
+        } catch (e) {
+          if (e instanceof QuotaError && key) {
+            // This key is out for today: remember it; the same page is retried with another key.
+            spent.add(key);
+            await markZerionKeySpent(key, e.resetHours);
+            key = null;
+          } else {
+            if (!(e instanceof QuotaError)) failure = e;
+            else S.quotaCut = true; // every key is out
+            stop = true;
+          }
+        } finally {
+          active.delete(w);
         }
-        known?.add(tx.attributes.hash);
-        st.seen++;
-        const e = normalize(wallet, tx);
-        if (e) st.events.push(e);
       }
-      opts.onProgress?.({ chain: family === "evm" ? "evm" : "solana", fetched: st.seen });
-      if (topping) {
-        st.topUrl = caughtUp ? undefined : page.links?.next;
-        continue;
-      }
-      st.url = page.links?.next ?? null;
-      // Optional cap (MAX_TXS_PER_ADDRESS); by default the whole history is read.
-      if (st.seen >= opts.maxTxs && st.url) { st.truncated = true; st.url = null; }
+    };
+    await Promise.all(Array.from({ length: readers }, (_, n) => reader(n)));
+
+    if (failure) throw failure;
+    if (S.quotaCut) {
+      // Daily data limit ran out partway through a huge history: keep what we read and say so, instead
+      // of failing the whole lookup. With nothing read yet, it's a real error.
+      if (!S.events.length) await liveZerionKey(); // throws the QuotaError with the reset time
+      // Save the unread ranges (and what we read, before any fixes) for the next lookup: kept for 3 days.
+      if (S.wins.length) await saveBlob(savedKey, { wins: S.wins, events: S.events, seen: S.seen, savedAt: Math.floor(Date.now() / 1000) } satisfies SavedRead, 3 * 86400).catch(() => {});
+      S.truncated = true;
+      S.wins = [];
+      S.notes.push(`Today's free data limit ran out after ${S.seen.toLocaleString()} transactions, so this covers the newest ones only. Look it up again tomorrow to read further back.`);
     }
-    const partial = (): FetchResult => ({ events: [], truncated: false, requests: st.requests, partial: true, resume: st });
-    if (st.url || st.topUrl) return partial();
+    const partial = (): FetchResult => ({ events: [], truncated: false, requests: S.requests, partial: true, resume: S });
+    if (S.wins.length) return partial();
     // Read to the end this time: the saved spot isn't needed any more.
-    if (st.resumed && !st.quotaCut && !st.cleared) { await clearBlob(savedKey).catch(() => {}); st.cleared = true; }
-    if (st.resumed && !st.quotaCut && !st.notes.some((n) => n.startsWith("Continued"))) st.notes.push("Continued from where an earlier lookup of this wallet stopped.");
-    const { events, notes } = st;
+    if (S.resumed && !S.quotaCut && !S.cleared) { await clearBlob(savedKey).catch(() => {}); S.cleared = true; }
+    if (S.resumed && !S.quotaCut && !S.notes.some((n) => n.startsWith("Continued"))) S.notes.push("Continued from where an earlier lookup of this wallet stopped.");
+    const { events, notes } = S;
     if (family === "solana") {
       // Zerion can lag on very spammy Solana wallets. Fill anything newer straight from Solana RPC.
       // (Not for bot-flooded addresses: everything newer there is the bot noise.)
-      if (!opts.junkFlooded && !st.backfill) {
+      if (!opts.junkFlooded && !S.backfill) {
         const newest = events.reduce((m, e) => Math.max(m, e.timestamp), opts.sinceTs);
         try {
           const { sigs } = await signaturesSince(wallet, newest);
           const known = new Set(events.map((e) => e.txHash));
-          st.backfill = { pending: sigs.filter((s) => !known.has(s)), added: 0 };
+          S.backfill = { pending: sigs.filter((s) => !known.has(s)), added: 0 };
         } catch {
           notes.push(`Couldn't double-check recent Solana activity for ${wallet.slice(0, 4)}….`);
-          st.backfill = { pending: [], added: 0 };
+          S.backfill = { pending: [], added: 0 };
         }
       }
-      if (st.backfill?.pending.length) {
-        const bf = st.backfill;
+      if (S.backfill?.pending.length) {
+        const bf = S.backfill;
         bf.pending = await drain(bf.pending, 6, opts.deadline, async (sig) => {
           const e = await fetchRawEvent(wallet, sig);
           if (e) { events.push(e); bf.added++; }
@@ -170,28 +220,31 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
         if (bf.pending.length) return partial();
         if (bf.added) notes.push(`Filled ${bf.added} recent Solana transactions the data provider was missing.`);
       }
-      opts.onProgress?.({ chain: "solana", fetched: st.seen });
+      opts.onProgress?.({ chain: "solana", fetched: S.seen });
       // Helius batch parser (100 per request) when available; plain RPC one by one otherwise.
       const verify = process.env.HELIUS_API_KEY ? verifyTransfersHelius : verifySolanaTransfers;
       const v = await verify(events, isMoney, opts.deadline, (done, total) =>
-        opts.onProgress?.({ chain: "solana", fetched: st.seen, message: `Double-checking trades on-chain (${done.toLocaleString()}/${total.toLocaleString()})` }),
+        opts.onProgress?.({ chain: "solana", fetched: S.seen, message: `Double-checking trades on-chain (${done.toLocaleString()}/${total.toLocaleString()})` }),
       );
-      st.fixed = (st.fixed ?? 0) + v.fixed;
+      S.fixed = (S.fixed ?? 0) + v.fixed;
       if (v.remaining) return partial();
-      if (st.fixed) notes.push(`Corrected ${st.fixed} Solana trades the data provider had labeled as plain transfers.`);
+      if (S.fixed) notes.push(`Corrected ${S.fixed} Solana trades the data provider had labeled as plain transfers.`);
     }
-    const { truncated, requests, quotaCut } = st;
+    const { truncated, requests, quotaCut } = S;
     return { events, truncated, requests, notes, quotaCut };
   },
   };
 }
 
+/** A date range still to read (seconds, both ends included) and its next-page cursor, if started. */
+interface ZWin { from: number; to: number; url: string | null }
+
 /** Where a lookup cut short by the daily limit stopped (saved for the next lookup of the wallet). */
-interface SavedRead { url: string | null; events: UnifiedEvent[]; seen: number }
+interface SavedRead { wins?: ZWin[]; url?: string | null; events: UnifiedEvent[]; seen: number; savedAt?: number }
 
 interface ZerionState {
-  url: string | null; // next page, null when the history is fully read
-  topUrl?: string; // resumed from a saved read: newer pages still to pick up first
+  wins: ZWin[]; // ranges still to read; empty when the history is fully read
+  sequential?: boolean; // date filter didn't hold: reading everything newest-first instead
   resumed?: boolean;
   quotaCut?: boolean; // stopped early: daily limit ran out on every key
   cleared?: boolean;
@@ -202,6 +255,30 @@ interface ZerionState {
   notes: string[];
   backfill?: { pending: string[]; added: number };
   fixed?: number;
+}
+/** Saved state from before parallel reading (one cursor). */
+type OldState = Omit<ZerionState, "wins"> & { url: string | null; topUrl?: string };
+
+function upgradeState(old: OldState, sinceTs: number, nowS: number): ZerionState {
+  const { url, topUrl, ...rest } = old;
+  void topUrl;
+  return { ...rest, wins: url ? [{ from: sinceTs, to: nowS, url }] : [] };
+}
+
+/**
+ * Starting ranges. Recent months are usually the busiest, so they're cut finer; dense ranges are
+ * split further while reading.
+ */
+function initialWindows(sinceTs: number, nowS: number): ZWin[] {
+  const DAY = 86400;
+  const cuts = [nowS, nowS - 30 * DAY, nowS - 90 * DAY, nowS - 180 * DAY, nowS - 365 * DAY].filter((t) => t > sinceTs);
+  const wins: ZWin[] = [];
+  for (let i = 0; i < cuts.length; i++) {
+    const to = cuts[i], from = i + 1 < cuts.length ? cuts[i + 1] : sinceTs;
+    wins.push({ from: Math.max(0, from - 1), to: to + 1, url: null }); // 1s overlap at each cut
+  }
+  if (sinceTs === 0 && cuts.length === 5) wins[wins.length - 1].from = 0; // all time: everything older
+  return wins;
 }
 
 export const zerionAdapter = makeZerionAdapter("evm");

@@ -7,12 +7,17 @@ import { QuotaError } from "../infra/http";
 export const zerionKeys = () =>
   (process.env.ZERION_API_KEYS || process.env.ZERION_API_KEY || "").split(/[\s,]+/).filter(Boolean);
 
-const tag = (k: string) => createHash("sha256").update(k).digest("hex").slice(0, 12); // never store the key itself
-const spentKey = (k: string) => `zerion:spent:${tag(k)}`;
+export const keyTag = (k: string) => createHash("sha256").update(k).digest("hex").slice(0, 12); // never store the key itself
+const spentKey = (k: string) => `zerion:spent:${keyTag(k)}`;
 
-/** The first key that isn't out of requests, or throws QuotaError with the soonest reset. */
-export async function liveZerionKey(skip: Set<string> = new Set()): Promise<string> {
-  const keys = zerionKeys().filter((k) => !skip.has(k));
+/**
+ * A key that isn't out of requests (starting from key number `prefer`, so parallel readers spread
+ * across keys), or throws QuotaError with the soonest reset.
+ */
+export async function liveZerionKey(skip: Set<string> = new Set(), prefer = 0): Promise<string> {
+  const all = zerionKeys();
+  const start = all.length ? prefer % all.length : 0;
+  const keys = [...all.slice(start), ...all.slice(0, start)].filter((k) => !skip.has(k));
   let soonest = Infinity;
   for (const k of keys) {
     const until = Number(await kv().get(spentKey(k)).catch(() => null));

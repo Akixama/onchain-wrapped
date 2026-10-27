@@ -272,24 +272,32 @@ async function failedFees(
   }
   const total = st.pending.length + (st.looked ?? 0);
   onCount?.(st.looked ?? 0, total);
-  st.pending = await drain(st.pending, 10, deadline, async (x) => {
+  // Helius's batch parser: 100 fees per request instead of one RPC call each.
+  const size = Number(process.env.HELIUS_BATCH_SIZE ?? 100);
+  const batches: (typeof st.pending)[] = [];
+  for (let i = 0; i < st.pending.length; i += size) batches.push(st.pending.slice(i, i + size));
+  const left = await drain(batches, 4, deadline, async (batch) => {
     if (stopped()) return;
-    st.looked = (st.looked ?? 0) + 1;
-    if (st.looked % 25 === 0) onCount?.(st.looked, total);
-    // Plain "json" encoding: much smaller than jsonParsed, and the fee payer is always key 0.
-    const r = await fetchJson<{ result: { meta: { fee: number } | null; transaction: { message: { accountKeys: string[] } } } | null }>("helius-rpc", rpcUrl(), {
+    const txs = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/transactions?api-key=${process.env.HELIUS_API_KEY}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getTransaction", params: [x.signature, { encoding: "json", maxSupportedTransactionVersion: 1 }] }),
-      endpoint: "rpc/getTransaction",
-    }, 10); // never drop a fee to rate limiting: it just waits its turn again
-    const t = r.result;
-    if (!t?.meta || t.transaction.message.accountKeys[0] !== wallet) return; // someone else paid
-    st.events.push({
-      id: `solana:${x.signature}:${wallet}`, wallet, chain: "solana", timestamp: x.blockTime, txHash: x.signature,
-      type: "other", in: [], out: [], gasUsd: null, gasNative: t.meta.fee / 1e9,
+      body: JSON.stringify({ transactions: batch.map((x) => x.signature) }),
+      endpoint: "enhanced/transactions-batch",
+      timeoutMs: 90_000,
     });
+    const bySig = new Map(txs.map((t) => [t.signature, t]));
+    for (const x of batch) {
+      const t = bySig.get(x.signature);
+      if (!t || t.feePayer !== wallet) continue; // someone else paid
+      st.events.push({
+        id: `solana:${x.signature}:${wallet}`, wallet, chain: "solana", timestamp: x.blockTime, txHash: x.signature,
+        type: "other", in: [], out: [], gasUsd: null, gasNative: t.fee / 1e9,
+      });
+    }
+    st.looked = (st.looked ?? 0) + batch.length;
+    onCount?.(st.looked, total);
   });
+  st.pending = left.flat();
 }
 
 /**

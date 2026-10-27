@@ -19,8 +19,9 @@ const queues: Record<string, Promise<void>> = {};
 
 async function throttle(name: string) {
   // When SOLANA_RPC_URL is Helius, "solana-rpc" and "helius-rpc" hit the same 10/s limit: one queue.
+  // "zerion:<key tag>": each key has its own limit, so its own queue (with zerion's gap).
   const provider = name === "solana-rpc" && process.env.SOLANA_RPC_URL?.includes("helius") ? "helius-rpc" : name;
-  const gap = MIN_GAP_MS[provider] ?? 100;
+  const gap = MIN_GAP_MS[provider] ?? MIN_GAP_MS[provider.split(":")[0]] ?? 100;
   const prev = queues[provider] ?? Promise.resolve();
   let release!: () => void;
   queues[provider] = new Promise<void>((r) => (release = r));
@@ -49,11 +50,11 @@ export class QuotaError extends Error {
 export async function fetchJson<T>(
   provider: string,
   url: string,
-  init: RequestInit & { endpoint?: string; timeoutMs?: number } = {},
+  init: RequestInit & { endpoint?: string; timeoutMs?: number; throttle?: string } = {},
   retries = 4,
 ): Promise<T> {
   for (let attempt = 0; ; attempt++) {
-    await throttle(provider);
+    await throttle(init.throttle ?? provider);
     const t0 = Date.now();
     let res: Response;
     try {
