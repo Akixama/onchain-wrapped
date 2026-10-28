@@ -92,10 +92,11 @@ export const heliusAdapter: ChainAdapter = {
       if (!page.length) { st.done = true; break; }
       for (const tx of page) {
         if (tx.timestamp < opts.sinceTs) { st.done = true; break; }
-        if (opts.untilTs && tx.timestamp > opts.untilTs) continue; // after a custom range: skip
         st.raw++;
         const e = normalize(address, tx);
-        if (e) { st.events.push(e); st.real++; }
+        // After a custom range: still counted (the bot-flood check needs every page), but not kept.
+        if (e && !(opts.untilTs && tx.timestamp > opts.untilTs)) st.events.push(e);
+        if (e) st.real++;
       }
       opts.onProgress?.({ chain: "solana", fetched: st.real });
       if (st.done) break;
