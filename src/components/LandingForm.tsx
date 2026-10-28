@@ -113,7 +113,7 @@ export function LandingForm() {
         <p role="status" className="rounded-2xl bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
           {size.capacity! < 1000
             ? <>This wallet is flooded with bot transactions and today&apos;s free data is used up. Try again tomorrow for a full result.</>
-            : <>Big wallet: about {Math.round(size.needed! / 1000).toLocaleString()}k transactions in this period, and today&apos;s free data reads about {Math.round(size.capacity! / 1000).toLocaleString()}k. Pick a shorter period to get it all now, or the result will be partial.</>}
+            : <>Big wallet: it has more transactions in this period than today&apos;s free data can read (about {Math.round(size.capacity! / 1000).toLocaleString()}k). Pick a shorter period to get it all now, or the result will be partial.</>}
         </p>
       )}
       <button disabled={busy} className="w-full rounded-2xl bg-white py-4 font-display text-lg font-bold text-black transition active:scale-[0.98] disabled:opacity-60">
