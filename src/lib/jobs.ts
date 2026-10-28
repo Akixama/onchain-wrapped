@@ -129,6 +129,7 @@ export async function runJob(id: string) {
 
   // Progress writes cost a store command each; every ~3s is plenty for the loading screen.
   let lastWrite = 0;
+  let lastStage = "", lastMsg = "";
   try {
     const resume = seg > 0 ? (await loadCheckpoint<FetchSlots>(id)) ?? undefined : undefined;
     const run = await runWrapped({
@@ -140,7 +141,10 @@ export async function runJob(id: string) {
         // Never let the counter on the loading screen jump back to 0 at the start of a part.
         const fetched = p.stage === "fetching" ? Math.max(p.fetched, job.progress?.fetched ?? 0) : p.fetched;
         job.progress = seg > 0 && p.stage === "fetching" ? { ...p, fetched, message: `${p.message} · part ${seg + 1}` } : { ...p, fetched };
-        if (Date.now() - lastWrite > 3000) {
+        // A new stage always shows (else "Looking up prices" can be skipped and the screen looks stuck).
+        const newStage = p.stage !== lastStage || (p.stage !== "fetching" && p.message !== lastMsg);
+        lastStage = p.stage; lastMsg = p.message;
+        if (newStage || Date.now() - lastWrite > 3000) {
           lastWrite = Date.now();
           void save({ ...job }).catch(() => {});
         }
