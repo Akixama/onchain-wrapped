@@ -170,3 +170,44 @@ export function appFeeStats(trades: UnifiedEvent[]): AppFeeStats {
     coverage: sol.length ? Math.round((sol.filter((t) => t.feeScan).length / sol.length) * 100) / 100 : 0,
   };
 }
+
+// ---------- Bags still held ----------
+export interface BagStats {
+  /** Coins they bought (at least $1 of it still held) and still hold. */
+  count: number;
+  /** What those coins are worth now. Coins nobody can sell (no price / tiny pool) count as $0. */
+  valueUsd: number;
+  /** What they paid for the part still held. */
+  costUsd: number;
+  /** Bags worth under 5% of what they paid, or with no price / no pool left. */
+  dead: number;
+  deadCostUsd: number;
+  /** Biggest live bags by value now. */
+  top: { symbol: string; chain: ChainId; address: string; icon?: string; valueUsd: number; costUsd: number }[];
+}
+
+const MIN_POOL_USD = 1000;
+
+/** Only meaningful when holdings were checked against the real wallet balance (see pipeline). */
+export function bagStats(positions: Position[]): BagStats {
+  const bags = positions
+    .filter((p) => p.buys.length && p.holdingKnown > 0 && p.openCost >= 1)
+    .map((p) => {
+      const sellable = p.currentPrice > 0 && (p.liquidityUsd === undefined || p.liquidityUsd >= MIN_POOL_USD);
+      // Can't sell more than the whole pool is worth, whatever the price says.
+      const value = sellable ? Math.min(p.holdingKnown * p.currentPrice, p.liquidityUsd ?? Infinity) : 0;
+      return { p, value, cost: p.openCost, dead: value < p.openCost * 0.05 };
+    });
+  const live = bags.filter((b) => !b.dead).sort((a, b) => b.value - a.value);
+  const dead = bags.filter((b) => b.dead);
+  return {
+    count: bags.length,
+    valueUsd: r2(bags.reduce((s, b) => s + b.value, 0)),
+    costUsd: r2(bags.reduce((s, b) => s + b.cost, 0)),
+    dead: dead.length,
+    deadCostUsd: r2(dead.reduce((s, b) => s + b.cost, 0)),
+    top: live.slice(0, 3).map(({ p, value, cost }) => ({
+      symbol: p.token.symbol, chain: p.chain, address: p.token.address, icon: p.token.icon, valueUsd: r2(value), costUsd: r2(cost),
+    })),
+  };
+}

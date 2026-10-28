@@ -579,6 +579,42 @@ const Narrative = ({ s }: CardProps) => {
   );
 };
 
+/** Coins they bought and still hold, at today's prices. */
+const Bags = ({ s }: CardProps) => {
+  const b = s.bags!;
+  const diff = b.valueUsd - b.costUsd;
+  const allDead = b.dead === b.count;
+  return (
+    <>
+      <Kicker>Bags still held</Kicker>
+      <Body className="space-y-6">
+        <Line className="text-xl opacity-80">You still hold <b>{num(b.count)}</b> coin{b.count === 1 ? "" : "s"} you bought. Today {b.count === 1 ? "it's" : "they're"} worth</Line>
+        <BigNumber className="text-[76px] @3xl:text-[106px]" color="#6EE7B7"><CountUp value={b.valueUsd} format={(n) => money(n)} /></BigNumber>
+        <Line className="text-xl opacity-80">
+          You paid <b>{money(b.costUsd)}</b>.{" "}
+          {allDead ? "All of it is gone." : <>That&apos;s <b style={{ color: gainColor(diff) }}>{diff >= 0 ? "up" : "down"} {money(Math.abs(diff))}</b> on paper.</>}
+        </Line>
+        {b.top.length > 0 && (
+          <R><motion.div variants={rise} className="space-y-2 text-base">
+            {b.top.map((t) => {
+              const ch = t.costUsd ? t.valueUsd / t.costUsd - 1 : 0;
+              return (
+                <div key={t.chain + t.address} className="flex items-center justify-between gap-3">
+                  <span className="min-w-0 truncate opacity-80">${t.symbol}</span>
+                  <span className="shrink-0 tabular-nums"><b>{money(t.valueUsd)}</b> <span style={{ color: gainColor(ch) }} className="text-sm">{ch >= 0 ? "+" : ""}{Math.round(ch * 100)}%</span></span>
+                </div>
+              );
+            })}
+          </motion.div></R>
+        )}
+        {b.dead > 0 && !allDead && (
+          <Line className="text-base opacity-75">{num(b.dead)} of them are basically dead. They cost you {money(b.deadCostUsd)}.</Line>
+        )}
+      </Body>
+    </>
+  );
+};
+
 /** What the trading apps (Axiom, GMGN, Photon...) took on top of each trade. */
 const AppFees = ({ s }: CardProps) => {
   const f = s.appFees!;
@@ -613,7 +649,7 @@ const AppFees = ({ s }: CardProps) => {
 };
 
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
-  appFees: AppFees,
+  appFees: AppFees, bags: Bags,
   archetype: Archetype, overview: Overview, pnl: Pnl, profitTime: ProfitTime, best: Best, worst: Worst, roundTrip: RoundTrip,
   paperHands: PaperHands, diamondHands: DiamondHands, speed: Speed, narrative: Narrative, counterfactual: Counterfactual, gas: Gas, rugs: Rugs,
   airdrops: Airdrops, sleep: Sleep, bridges: Bridges, percentile: Percentile, chains: Chains, roast: Roast, summary: Summary,
