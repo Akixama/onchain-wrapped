@@ -171,10 +171,16 @@ export function runPnl(events: UnifiedEvent[], pb: PriceBook, opts: PnlOptions =
 
 /** Price points we know for a position: history series + every fill we observed + current. */
 export function pricePoints(p: Position, series: PricePoint[], now: number): PricePoint[] {
+  // A fill's price is usd / amount: one odd fill (a dust amount carrying a real trade's value) can be
+  // off by billions. Ignore fills more than 10,000x away from this coin's typical fill price (real
+  // memecoin runs can be 100x+, so the bar is far above that).
+  const fills = [...p.buys, ...p.sells].map((f) => f.price).filter((x) => x > 0).sort((a, b) => a - b);
+  const med = fills.length ? fills[Math.floor(fills.length / 2)] : 0;
+  const sane = (x: number) => !med || fills.length < 3 || (x <= med * 1e4 && x >= med / 1e4);
   const pts = [
     ...series,
-    ...p.buys.map((f) => ({ ts: f.ts, price: f.price })),
-    ...p.sells.map((f) => ({ ts: f.ts, price: f.price })),
+    ...p.buys.filter((f) => sane(f.price)).map((f) => ({ ts: f.ts, price: f.price })),
+    ...p.sells.filter((f) => sane(f.price)).map((f) => ({ ts: f.ts, price: f.price })),
     { ts: now, price: p.currentPrice },
   ].filter((x) => x.price > 0 || x.ts === now);
   return pts.sort((a, b) => a.ts - b.ts);

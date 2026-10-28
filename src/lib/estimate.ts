@@ -1,6 +1,6 @@
 // Before a lookup: roughly how many transactions a wallet has in the chosen period, and whether
 // today's free data budget can read them all in one go. Costs 1–2 Zerion requests + 1 RPC call per wallet.
-import { TIMEFRAME_DAYS, type Timeframe } from "./core/types";
+import { TIMEFRAME_DAYS, type DateRange, type Timeframe } from "./core/types";
 import { isSolanaAddress } from "./core/identity";
 import { fetchJson } from "./infra/http";
 import { rpc } from "./chains/solana-rpc";
@@ -65,9 +65,8 @@ async function sampledCount(address: string, since: number, now: number): Promis
   return Math.round((perDay.reduce((a, b) => a + b, 0) / SAMPLES) * (span / day));
 }
 
-async function sizeOf(address: string, timeframe: Timeframe, now: number, force = false): Promise<WalletSize> {
-  const since = timeframe === "all" ? now - 3 * 365 * DAY : now - TIMEFRAME_DAYS[timeframe] * DAY;
-  const newest = await zerionPage(address, timeframe === "all" ? 0 : since, now);
+async function sizeOf(address: string, since: number, end: number, now: number, force = false): Promise<WalletSize> {
+  const newest = await zerionPage(address, since, end);
   if (newest.length < PAGE) return { address, txs: newest.length, exact: true, flooded: false };
   // Raw signatures (bot noise included) vs real activity: same 5% rule the Helius reader uses.
   const realRate = PAGE / Math.max(60, newest[0] - newest[newest.length - 1]);
@@ -79,17 +78,19 @@ async function sizeOf(address: string, timeframe: Timeframe, now: number, force 
   }
   // Only flooded wallets are read through Zerion's daily budget, so only they need a count.
   if (!flooded && !force) return { address, txs: 0, exact: false, flooded };
-  return { address, txs: await sampledCount(address, since, now), exact: false, flooded };
+  return { address, txs: await sampledCount(address, since, end), exact: false, flooded };
 }
 
-export async function estimateSize(addresses: string[], timeframe: Timeframe, force = false): Promise<SizeEstimate> {
+export async function estimateSize(addresses: string[], timeframe: Timeframe, force = false, range?: DateRange): Promise<SizeEstimate> {
   const now = Math.floor(Date.now() / 1000);
+  const since = timeframe === "custom" && range ? range.from : timeframe === "all" || timeframe === "custom" ? now - 365 * DAY : now - TIMEFRAME_DAYS[timeframe] * DAY;
+  const end = timeframe === "custom" && range ? Math.min(range.to, now) : now;
   const wallets = await Promise.all(addresses.filter(isSolanaAddress).map(async (a) => {
     // Sizes barely move within hours; re-checking would spend the same budget we're measuring.
-    const ck = `est:${timeframe}:${a}`;
+    const ck = `est:${timeframe}${range ? `:${range.from}-${range.to}` : ""}:${a}`;
     const hit = force ? null : await kv().get(ck).catch(() => null);
     if (hit) return JSON.parse(hit) as WalletSize;
-    const w = await sizeOf(a, timeframe, now, force);
+    const w = await sizeOf(a, since, end, now, force);
     await kv().set(ck, JSON.stringify(w), 6 * 3600).catch(() => {});
     return w;
   }));

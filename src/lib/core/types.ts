@@ -74,6 +74,8 @@ export interface UnifiedEvent {
 
 export interface FetchOptions {
   sinceTs: number; // unix seconds, 0 for all time
+  /** Custom range end (unix seconds): ignore anything later. */
+  untilTs?: number;
   maxTxs: number; // optional cap per address (MAX_TXS_PER_ADDRESS); Infinity = whole history
   onProgress?: (p: { chain: ChainId | "evm"; fetched: number; message?: string }) => void;
   /**
@@ -116,6 +118,19 @@ export interface ChainAdapter {
 export const tokenKey = (t: Pick<TokenRef, "chain" | "address">) => `${t.chain}:${t.address}`;
 
 /** How far back a lookup reads. */
-export type Timeframe = "1m" | "3m" | "6m" | "12m" | "all";
-export const TIMEFRAME_DAYS: Record<Exclude<Timeframe, "all">, number> = { "1m": 30, "3m": 90, "6m": 180, "12m": 365 };
-export const isTimeframe = (v: unknown): v is Timeframe => v === "all" || (typeof v === "string" && v in TIMEFRAME_DAYS);
+export type Timeframe = "1m" | "3m" | "6m" | "12m" | "all" | "custom";
+/** A custom period (unix seconds, both inside the last 12 months). */
+export interface DateRange { from: number; to: number }
+export const TIMEFRAME_DAYS: Record<Exclude<Timeframe, "all" | "custom">, number> = { "1m": 30, "3m": 90, "6m": 180, "12m": 365 };
+export const isTimeframe = (v: unknown): v is Timeframe => v === "all" || v === "custom" || (typeof v === "string" && v in TIMEFRAME_DAYS);
+
+/** Parse a custom range from the form ("2026-03-01" dates or unix seconds); null if invalid. The end
+ * date counts in full, and the range must sit inside the last 12 months. */
+export function parseRange(from: unknown, to: unknown, nowS = Math.floor(Date.now() / 1000)): DateRange | null {
+  const ts = (v: unknown) => typeof v === "number" ? v : typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v) ? Date.parse(`${v}T00:00:00Z`) / 1000 : NaN;
+  const f = ts(from), t0 = ts(to);
+  if (!Number.isFinite(f) || !Number.isFinite(t0)) return null;
+  const t = Math.min(nowS, typeof to === "string" ? t0 + 86400 - 1 : t0);
+  if (f >= t || f < nowS - 366 * 86400) return null;
+  return { from: Math.floor(f), to: Math.floor(t) };
+}

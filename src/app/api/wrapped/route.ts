@@ -1,4 +1,4 @@
-import { isTimeframe } from "@/lib/core/types";
+import { isTimeframe, parseRange } from "@/lib/core/types";
 import { after } from "next/server";
 import { InputError, LimitError, runJob, startJob } from "@/lib/jobs";
 import { checkRequestRate, ipKey } from "@/lib/limits";
@@ -8,7 +8,7 @@ export const maxDuration = 300;
 
 export async function POST(req: Request) {
   const ip = ipKey(req.headers);
-  let body: { input?: string | string[]; timeframe?: string };
+  let body: { input?: string | string[]; timeframe?: string; from?: string | number; to?: string | number };
   try {
     body = await req.json();
   } catch {
@@ -16,10 +16,15 @@ export async function POST(req: Request) {
   }
   // All time is retired for new lookups (a busy history can take hours and blow the daily data limit);
   // results made with it still open.
-  const timeframe = isTimeframe(body.timeframe) && body.timeframe !== "all" ? body.timeframe : "12m";
+  let timeframe = isTimeframe(body.timeframe) && body.timeframe !== "all" ? body.timeframe : "12m";
+  const range = timeframe === "custom" ? parseRange(body.from, body.to) ?? undefined : undefined;
+  if (timeframe === "custom" && !range) {
+    if (body.from || body.to) return Response.json({ error: "Pick a start and end date within the last 12 months." }, { status: 400 });
+    timeframe = "12m";
+  }
   try {
     await checkRequestRate(ip);
-    const { job, reused } = await startJob(body.input ?? "", timeframe, ip);
+    const { job, reused } = await startJob(body.input ?? "", timeframe, ip, range);
     if (!reused) after(() => runJob(job.id));
     return Response.json({ id: job.id, reused });
   } catch (e) {

@@ -66,16 +66,17 @@ function sinceDate(ts: number): string {
 }
 
 export const TIMEFRAME_LABEL: Record<Timeframe, string> = {
-  "1m": "Last 30 days", "3m": "Last 3 months", "6m": "Last 6 months", "12m": "Last 12 months", all: "All time",
+  "1m": "Last 30 days", "3m": "Last 3 months", "6m": "Last 6 months", "12m": "Last 12 months", all: "All time", custom: "Custom dates",
 };
 /** "this year" / "this month" / "in the last 3 months" / "all time", for share text. */
 export function periodPhrase(t: Timeframe): string {
-  return ({ "1m": "this month", "3m": "in the last 3 months", "6m": "in the last 6 months", "12m": "this year", all: "all time" } as const)[t] ?? "this year";
+  return ({ "1m": "this month", "3m": "in the last 3 months", "6m": "in the last 6 months", "12m": "this year", all: "all time", custom: "in that stretch" } as const)[t] ?? "this year";
 }
 
 export function periodLabel(s: WrappedStats): string {
   // History cut short (a cap, or today's data limit ran out): say so, or "Since Aug 7" looks like a bug.
   if (s.meta.truncated) return s.meta.txCap ? `Latest ${num(s.meta.txCap)} txns · since ${sinceDate(s.meta.fromTs)}` : `Partial · since ${sinceDate(s.meta.fromTs)}`;
+  if (s.meta.timeframe === "custom") return `${sinceDate(s.meta.fromTs)} – ${sinceDate(s.meta.toTs)}`;
   return TIMEFRAME_LABEL[s.meta.timeframe] ?? "Last 12 months";
 }
 

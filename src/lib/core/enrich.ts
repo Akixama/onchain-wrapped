@@ -28,6 +28,13 @@ export function enrichEvents(events: UnifiedEvent[], pb: PriceBook): UnifiedEven
     if (e.type === "swap" || e.type === "mint") {
       const baseIn = sumBase(e.in), baseOut = sumBase(e.out);
       const tradeValue = baseOut ?? baseIn; // what was paid, or what was received
+      // A swap that also hands back a dust amount of another coin (a few raw units, seen on pump.fun
+      // pools) would otherwise get half the cost split onto that dust: drop the dust legs.
+      for (const side of ["in", "out"] as const) {
+        const coins = e[side].filter((l) => !isMoney(l.token));
+        const real = coins.filter((l) => !isDust(l));
+        if (coins.length > 1 && real.length && real.length < coins.length) e[side] = e[side].filter((l) => isMoney(l.token) || !isDust(l));
+      }
       const otherSide = baseOut !== null ? e.in : e.out;
       const nonBase = otherSide.filter((l) => !isMoney(l.token));
       if (tradeValue !== null && nonBase.length) {
@@ -45,6 +52,9 @@ export function enrichEvents(events: UnifiedEvent[], pb: PriceBook): UnifiedEven
   }
   return events;
 }
+
+/** At most a thousand of the coin's smallest units (e.g. 0.000001 of a 6-decimal coin). */
+const isDust = (l: Leg) => l.token.decimals != null && l.amount * 10 ** l.token.decimals <= 1000;
 
 function sumBase(legs: Leg[]): number | null {
   const b = legs.filter((l) => isMoney(l.token) && (majorOf(l.token) || l.usd !== null));

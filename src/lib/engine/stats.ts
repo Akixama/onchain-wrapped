@@ -66,7 +66,7 @@ export interface WrappedStats {
     spamFiltered: number;
     note: string;
   };
-  archetype: { title: string; tagline: string; style: string };
+  archetype: { title: string; tagline: string; style: string; traits?: { label: string; detail: string }[] };
   overview: {
     totalTrades: number;
     volumeUsd: number;

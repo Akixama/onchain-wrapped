@@ -92,6 +92,7 @@ export const heliusAdapter: ChainAdapter = {
       if (!page.length) { st.done = true; break; }
       for (const tx of page) {
         if (tx.timestamp < opts.sinceTs) { st.done = true; break; }
+        if (opts.untilTs && tx.timestamp > opts.untilTs) continue; // after a custom range: skip
         st.raw++;
         const e = normalize(address, tx);
         if (e) { st.events.push(e); st.real++; }

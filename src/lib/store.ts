@@ -2,6 +2,7 @@
 import { createHash, randomBytes } from "node:crypto";
 import type { WrappedStats } from "./engine/stats";
 import type { Progress, Timeframe } from "./pipeline";
+import type { DateRange } from "./core/types";
 import { kv } from "./infra/kv";
 import { clearBlob, loadBlob, saveBlob } from "./infra/blob";
 
@@ -12,6 +13,8 @@ export interface Job {
   wallets: string[];
   names: Record<string, string>;
   timeframe: Timeframe;
+  /** Set when timeframe is "custom". */
+  range?: DateRange;
   createdAt: number;
   updatedAt: number;
   progress?: Progress;
@@ -61,8 +64,8 @@ export const loadCheckpoint = <T>(id: string) => loadBlob<T>(`ckpt:${id}`);
 export const clearCheckpoint = (id: string) => clearBlob(`ckpt:${id}`);
 
 /** Same wallets + timeframe -> same result for RESULT_TTL_HOURS (never recompute twice). */
-export const lookupKey = (wallets: string[], timeframe: Timeframe) =>
-  createHash("sha1").update(`${timeframe}|${[...wallets].sort().join(",")}`).digest("hex");
+export const lookupKey = (wallets: string[], timeframe: Timeframe, range?: DateRange) =>
+  createHash("sha1").update(`${timeframe}${range ? `:${range.from}-${range.to}` : ""}|${[...wallets].sort().join(",")}`).digest("hex");
 
 export async function findRecent(key: string): Promise<Job | null> {
   const id = await kv().get(`idx:${key}`);

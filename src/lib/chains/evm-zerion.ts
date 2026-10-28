@@ -74,7 +74,8 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
       "filter[trash]": "only_non_trash", // spam filtered server-side: saves requests too
     });
     const base = `https://api.zerion.io/v1/wallets/${wallet}/transactions/`;
-    const nowS = Math.floor(Date.now() / 1000) + 60;
+    // A custom range that ended in the past: read up to its end instead of today.
+    const nowS = opts.untilTs ?? Math.floor(Date.now() / 1000) + 60;
     /** A query for one date range (seconds, both ends included; Zerion takes milliseconds). */
     const winUrl = (w: ZWin) => {
       const q = new URLSearchParams(qs);
@@ -85,7 +86,7 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
     // A lookup cut short by the daily data limit saves where it stopped, so the next lookup of this
     // wallet carries on from there (after picking up anything new) instead of re-reading everything.
     // Keyed by window length in days (rounded), so 1-month and 12-month lookups don't share progress.
-    const savedKey = `zres:${family}:${wallet}:${opts.sinceTs === 0 ? "all" : Math.round((nowS - opts.sinceTs) / 86400) >= 360 ? "12m" : `${Math.round((nowS - opts.sinceTs) / 86400)}d`}`;
+    const savedKey = `zres:${family}:${wallet}:${opts.untilTs ? `r${opts.sinceTs}-${opts.untilTs}` : opts.sinceTs === 0 ? "all" : Math.round((nowS - opts.sinceTs) / 86400) >= 360 ? "12m" : `${Math.round((nowS - opts.sinceTs) / 86400)}d`}`;
     // Everything read so far lives in `st`, so a run that hits its deadline can hand it to the next run.
     let st = opts.resume as ZerionState | undefined;
     if (st && !st.wins) st = upgradeState(st as unknown as OldState, opts.sinceTs, nowS); // from before parallel reading
@@ -202,7 +203,7 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
     if (family === "solana") {
       // Zerion can lag on very spammy Solana wallets. Fill anything newer straight from Solana RPC.
       // (Not for bot-flooded addresses: everything newer there is the bot noise.)
-      if (!opts.junkFlooded && !S.backfill) {
+      if (!opts.junkFlooded && !opts.untilTs && !S.backfill) {
         const newest = events.reduce((m, e) => Math.max(m, e.timestamp), opts.sinceTs);
         try {
           const { sigs } = await signaturesSince(wallet, newest);

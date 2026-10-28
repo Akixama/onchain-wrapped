@@ -10,6 +10,7 @@ import { buildPriceBook } from "./prices/pricebook";
 import { runPnl } from "./engine/pnl";
 import { bagStats } from "./engine/extras";
 import { sniperStats } from "./launch";
+import { personality } from "./engine/personality";
 import { computeStats, storyCards, type WrappedStats } from "./engine/stats";
 import { addTradeCharts } from "./charts";
 import { refinePeaks } from "./peaks";
@@ -18,7 +19,7 @@ import { cacheGet, cacheSet } from "./infra/cache";
 import { currentTokenBalances } from "./chains/solana-rpc";
 import type { FetchResult } from "./core/types";
 
-import { TIMEFRAME_DAYS, type Timeframe } from "./core/types";
+import { TIMEFRAME_DAYS, type DateRange, type Timeframe } from "./core/types";
 export type { Timeframe };
 
 export interface Progress {
@@ -30,6 +31,8 @@ export interface Progress {
 export interface RunInput {
   addresses: string[];
   timeframe: Timeframe;
+  /** Required when timeframe is "custom". */
+  range?: DateRange;
   maxTxsPerAddress?: number;
   onProgress?: (p: Progress) => void;
   /** Stop reading at this time (ms) and return `partial` (see FetchOptions.deadline). */
@@ -55,7 +58,10 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
   // No cap by default: the whole history in the timeframe. MAX_TXS_PER_ADDRESS can still set one.
   const cap = input.maxTxsPerAddress ?? Number(process.env.MAX_TXS_PER_ADDRESS || Infinity);
   const now = Math.floor(Date.now() / 1000);
-  const sinceTs = input.timeframe === "all" ? 0 : now - TIMEFRAME_DAYS[input.timeframe] * 86400;
+  const custom = input.timeframe === "custom" && input.range ? input.range : undefined;
+  const sinceTs = custom ? custom.from : input.timeframe === "all" || input.timeframe === "custom" ? 0 : now - TIMEFRAME_DAYS[input.timeframe] * 86400;
+  // A custom range that ends before today: anything later is left out.
+  const untilTs = custom && custom.to < now - 3600 ? custom.to : undefined;
   const say = (p: Progress) => input.onProgress?.(p);
 
   let fetched = 0;
@@ -74,10 +80,11 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
         if (prev?.done) return;
         let last = 0;
         // Cache raw provider output per wallet + window + cap (day-rounded so it hits all day).
-        const cacheKey = `fetch:v2:${a.id}:${w}:${Math.floor(sinceTs / 86400)}:${cap}`;
+        const cacheKey = `fetch:v2:${a.id}:${w}:${Math.floor(sinceTs / 86400)}:${untilTs ? Math.floor(untilTs / 86400) : "now"}:${cap}`;
         const cached = prev ? null : await cacheGet<FetchResult>(cacheKey);
         const res = cached ?? await a.fetchEvents(w, {
           sinceTs,
+          untilTs,
           maxTxs: cap,
           deadline: input.deadline,
           resume: prev?.state,
@@ -128,12 +135,12 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
 
   // Same tx seen via two linked wallets keeps both perspectives; exact duplicates are dropped.
   const events = [...new Map(all.map((e) => [e.id, e])).values()]
-    .filter((e) => e.timestamp >= coverageStart)
+    .filter((e) => e.timestamp >= coverageStart && (!untilTs || e.timestamp <= untilTs))
     .sort((a, b) => a.timestamp - b.timestamp);
   fillTokenInfo(events);
 
   const stats = await analyze({
-    events, resolved, timeframe: input.timeframe, sinceTs, coverageStart, truncated, cap: Number.isFinite(cap) ? cap : 0, providerPrices, notes,
+    events, resolved, timeframe: input.timeframe, sinceTs, untilTs, coverageStart, truncated, cap: Number.isFinite(cap) ? cap : 0, providerPrices, notes,
     onStage: (stage, message) => say({ stage, message, fetched }),
     // The platform stops a run ~100s after the reading deadline: the optional extras must end before.
     finishBy: input.deadline ? input.deadline + Number(process.env.ANALYZE_TAIL_SECONDS ?? 75) * 1000 : undefined,
@@ -148,6 +155,8 @@ export interface AnalyzeInput {
   resolved: { address: string; family: "evm" | "solana"; name?: string }[];
   timeframe: Timeframe;
   sinceTs: number;
+  /** Custom range ending before today. */
+  untilTs?: number;
   coverageStart: number;
   truncated: boolean;
   cap: number;
@@ -171,7 +180,8 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   const { bridges } = mergeIdentity(events, wallets);
 
   a.onStage?.("crunching", "Crunching your PnL");
-  const actualBalances = await solanaHoldings(resolved.filter((w) => w.family === "solana").map((w) => w.address));
+  // Today's balances say nothing about the end of a past range (later trades moved them): skip them.
+  const actualBalances = a.untilTs ? undefined : await solanaHoldings(resolved.filter((w) => w.family === "solana").map((w) => w.address));
   const positions = runPnl(events, pb, { actualBalances });
   // Real price peaks for positions held long enough to round-trip (DefiLlama often has no memecoin history).
   a.onStage?.("crunching", "Checking price peaks");
@@ -183,6 +193,7 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   const untraced = [...positions.values()].filter((p) => p.untracedExit).length;
   if (untraced) notes.push(`${untraced} tokens left your wallets by routes we can't trace (bots, other wallets). We count them as moved, not sold.`);
   stats.meta.notes = notes;
+  if (a.untilTs) stats.meta.toTs = a.untilTs;
   a.onStage?.("crunching", "Drawing your charts");
   // Skipped when short on time: the story then loads these charts in the viewer's browser.
   if (left(50_000)) await addTradeCharts(stats, positions, pbx, (n) => notes.push(n)).catch(() => {});
@@ -191,6 +202,8 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   if (actualBalances) stats.bags = bagStats([...positions.values()].filter((p) => p.chain === "solana"));
   a.onStage?.("crunching", "Checking how early you bought");
   stats.sniper = left(15_000) ? await sniperStats([...positions.values()], Math.min(Date.now() + 30_000, a.finishBy ?? Infinity) - (a.finishBy ? 5_000 : 0)).catch(() => undefined) : undefined;
+  // Last: the personality uses every stat, including the sniper and bags ones computed above.
+  stats.archetype = personality(stats);
   stats.cards = storyCards(stats);
   stats.meta.names = Object.fromEntries(resolved.filter((w) => w.name).map((w) => [w.address, w.name!]));
   return stats;

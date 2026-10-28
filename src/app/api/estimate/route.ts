@@ -1,4 +1,4 @@
-import { isTimeframe } from "@/lib/core/types";
+import { isTimeframe, parseRange } from "@/lib/core/types";
 import { resolveWallets } from "@/lib/core/resolve";
 import { estimateSize } from "@/lib/estimate";
 import { kv } from "@/lib/infra/kv";
@@ -12,12 +12,14 @@ export async function POST(req: Request) {
   // Each check spends a little of the shared daily budget: keep it to a sane number per person.
   const n = await kv().incr(`rl:est:${ip}:${new Date().toISOString().slice(0, 13)}`, 3600).catch(() => 0);
   if (n > Number(process.env.ESTIMATES_PER_IP_HOUR ?? 30)) return Response.json({ error: "rate" }, { status: 429 });
-  let body: { input?: string | string[]; timeframe?: string };
+  let body: { input?: string | string[]; timeframe?: string; from?: string | number; to?: string | number };
   try { body = await req.json(); } catch { return Response.json({ error: "bad json" }, { status: 400 }); }
   const timeframe = isTimeframe(body.timeframe) && body.timeframe !== "all" ? body.timeframe : "12m";
+  const range = timeframe === "custom" ? parseRange(body.from, body.to) ?? undefined : undefined;
+  if (timeframe === "custom" && !range) return Response.json({ error: "range" }, { status: 200 });
   try {
     const wallets = await resolveWallets(body.input ?? "");
-    return Response.json(await estimateSize(wallets.map((w) => w.address), timeframe));
+    return Response.json(await estimateSize(wallets.map((w) => w.address), timeframe, false, range));
   } catch {
     return Response.json({ error: "unavailable" }, { status: 200 });
   }

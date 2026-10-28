@@ -114,9 +114,19 @@ const Archetype = ({ s }: CardProps) => (
       <Line className="text-xl opacity-80">Your onchain personality is</Line>
       <Big className="text-[46px] @3xl:text-[72px]">{s.archetype.title}</Big>
       <Line className="text-lg opacity-80">{s.archetype.tagline}</Line>
-      <Line className="flex flex-wrap gap-2">
-        {s.overview.chainsUsed.map((c) => <Chip key={c} color={CHAIN_COLOR[c]}>{CHAIN_NAME[c]}</Chip>)}
-      </Line>
+      {s.archetype.traits?.length ? (
+        <R><ul className="space-y-2">
+          {s.archetype.traits.map((t) => (
+            <li key={t.label} className="flex flex-wrap items-baseline gap-x-2 rounded-xl bg-white/10 px-3 py-2 text-sm @3xl:text-base">
+              <b>{t.label}</b><span className="opacity-75">{t.detail}</span>
+            </li>
+          ))}
+        </ul></R>
+      ) : (
+        <Line className="flex flex-wrap gap-2">
+          {s.overview.chainsUsed.map((c) => <Chip key={c} color={CHAIN_COLOR[c]}>{CHAIN_NAME[c]}</Chip>)}
+        </Line>
+      )}
     </Body>
   </>
 );

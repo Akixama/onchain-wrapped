@@ -1,3 +1,4 @@
+import type { DateRange } from "./core/types";
 import { InputError, resolveWallets } from "./core/resolve";
 import { storyCards } from "./engine/stats";
 import { QuotaError } from "./infra/http";
@@ -18,10 +19,10 @@ export { InputError, LimitError };
  * Validate input, reuse a recent identical lookup (free), or — if this IP and the day still
  * have budget — create a queued job. The caller runs it with after().
  */
-export async function startJob(rawInput: string | string[], timeframe: Timeframe, ip: string): Promise<{ job: Job; reused: boolean }> {
+export async function startJob(rawInput: string | string[], timeframe: Timeframe, ip: string, range?: DateRange): Promise<{ job: Job; reused: boolean }> {
   const resolved = await resolveWallets(rawInput);
   const wallets = resolved.map((w) => w.address);
-  const key = lookupKey(wallets, timeframe);
+  const key = lookupKey(wallets, timeframe, range);
   const recent = await findRecent(key);
   // A result cut short by the daily data limit is re-run once a key has requests again: the new
   // lookup carries on from where that one stopped.
@@ -36,6 +37,7 @@ export async function startJob(rawInput: string | string[], timeframe: Timeframe
     wallets,
     names: Object.fromEntries(resolved.filter((w) => w.name).map((w) => [w.address, w.name!])),
     timeframe,
+    ...(range ? { range } : {}),
     createdAt: Date.now(),
     updatedAt: Date.now(),
     progress: { stage: "fetching", message: "In the queue", fetched: 0 },
@@ -135,6 +137,7 @@ export async function runJob(id: string) {
     const run = await runWrapped({
       addresses: job.wallets,
       timeframe: job.timeframe,
+      range: job.range,
       deadline: t0 + PART_MS(),
       resume,
       onProgress: (p) => {
