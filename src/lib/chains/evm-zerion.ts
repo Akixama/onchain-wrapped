@@ -3,7 +3,7 @@ import { NATIVE } from "../core/assets";
 import { fetchJson, QuotaError } from "../infra/http";
 import { fetchRawEvent, signaturesSince, verifySolanaTransfers } from "./solana-rpc";
 import { drain, timeUp } from "../infra/drain";
-import { keyTag, liveZerionKey, markZerionKeySpent, noteZerionUse, zerionAuth, zerionKeys } from "./zerion-keys";
+import { keyTag, liveZerionKey, markZerionKeySpent, zerionHeaders, zerionAuth, zerionKeys } from "./zerion-keys";
 import { verifyTransfersHelius } from "./solana-helius";
 import { clearBlob, loadBlob, saveBlob } from "../infra/blob";
 import { isMoney } from "../core/assets";
@@ -130,9 +130,9 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
               headers: { authorization: zerionAuth(key), accept: "application/json" },
               endpoint: "wallets/transactions",
               throttle: `zerion:${keyTag(key)}`,
+              onHeaders: zerionHeaders(key),
             });
             S.requests++;
-            noteZerionUse(key);
             // Safety: if the date filter were ignored, ranges would overlap wholesale. Fall back to
             // one plain newest-first read of everything (de-duplication keeps what we already have).
             if (!S.sequential && w.to < nowS - 120 && page.data.some((tx) => mined(tx) > w.to + 1)) {

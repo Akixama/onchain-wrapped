@@ -5,7 +5,7 @@ import { isSolanaAddress } from "./core/identity";
 import { fetchJson } from "./infra/http";
 import { rpc } from "./chains/solana-rpc";
 import { kv } from "./infra/kv";
-import { keyTag, liveZerionKey, noteZerionUse, zerionAuth, zerionRequestsLeft } from "./chains/zerion-keys";
+import { keyTag, liveZerionKey, zerionHeaders, zerionAuth, zerionRequestsLeft } from "./chains/zerion-keys";
 
 export interface WalletSize {
   address: string;
@@ -40,8 +40,8 @@ async function zerionPage(address: string, from: number, to: number): Promise<nu
     headers: { authorization: zerionAuth(key), accept: "application/json" },
     endpoint: "wallets/transactions",
     throttle: `zerion:${keyTag(key)}`,
+    onHeaders: zerionHeaders(key),
   });
-  noteZerionUse(key);
   return page.data.map((t) => Math.floor(Date.parse(t.attributes.mined_at) / 1000));
 }
 

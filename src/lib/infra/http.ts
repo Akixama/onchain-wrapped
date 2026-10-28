@@ -15,13 +15,18 @@ const MIN_GAP_MS: Record<string, number> = {
 };
 
 const lastCall: Record<string, number> = {};
+// Learned from a provider's own headers (a Zerion key on a bigger plan allows more per second).
+const learnedGap: Record<string, number> = {};
+export function setThrottleGap(name: string, ms: number) {
+  learnedGap[name] = ms;
+}
 const queues: Record<string, Promise<void>> = {};
 
 async function throttle(name: string) {
   // When SOLANA_RPC_URL is Helius, "solana-rpc" and "helius-rpc" hit the same 10/s limit: one queue.
   // "zerion:<key tag>": each key has its own limit, so its own queue (with zerion's gap).
   const provider = name === "solana-rpc" && process.env.SOLANA_RPC_URL?.includes("helius") ? "helius-rpc" : name;
-  const gap = MIN_GAP_MS[provider] ?? MIN_GAP_MS[provider.split(":")[0]] ?? 100;
+  const gap = learnedGap[provider] ?? MIN_GAP_MS[provider] ?? MIN_GAP_MS[provider.split(":")[0]] ?? 100;
   const prev = queues[provider] ?? Promise.resolve();
   let release!: () => void;
   queues[provider] = new Promise<void>((r) => (release = r));
@@ -50,7 +55,7 @@ export class QuotaError extends Error {
 export async function fetchJson<T>(
   provider: string,
   url: string,
-  init: RequestInit & { endpoint?: string; timeoutMs?: number; throttle?: string } = {},
+  init: RequestInit & { endpoint?: string; timeoutMs?: number; throttle?: string; onHeaders?: (h: Headers) => void } = {},
   retries = 4,
 ): Promise<T> {
   for (let attempt = 0; ; attempt++) {
@@ -64,6 +69,7 @@ export async function fetchJson<T>(
       await sleep(1000 * 2 ** attempt);
       continue;
     }
+    try { init.onHeaders?.(res.headers); } catch { /* never fail a request over bookkeeping */ }
     logUsage({ provider, endpoint: init.endpoint ?? new URL(url).pathname, status: res.status, ms: Date.now() - t0 });
     // The timeout also covers downloading the body: a connection that stalls mid-download is retried too.
     let body: string;

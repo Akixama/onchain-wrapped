@@ -2,7 +2,7 @@
 // that still has requests today; when one runs out, remember that until its reset and move on.
 import { createHash } from "node:crypto";
 import { kv } from "../infra/kv";
-import { QuotaError } from "../infra/http";
+import { QuotaError, setThrottleGap } from "../infra/http";
 
 export const zerionKeys = () =>
   (process.env.ZERION_API_KEYS || process.env.ZERION_API_KEY || "").split(/[\s,]+/).filter(Boolean);
@@ -35,23 +35,34 @@ export async function markZerionKeySpent(k: string, resetHours: number) {
 
 export const zerionAuth = (k: string) => "Basic " + Buffer.from(`${k}:`).toString("base64");
 
-// Our own count of requests per key per UTC day, so we can tell before a lookup how much is left.
-const DAILY = () => Number(process.env.ZERION_DAILY_LIMIT ?? 300);
-const usedKey = () => `zerion:used:${new Date().toISOString().slice(0, 10)}`;
+// Each Zerion response says the key's daily limit, what's left today and its per-second limit
+// (ratelimit-org-*). Keep those, so we know before a lookup how much is left and pace each key right.
+const leftKey = (k: string) => `zerion:left:${keyTag(k)}`;
+const limitKey = (k: string) => `zerion:limit:${keyTag(k)}`;
+const DEFAULT_DAILY = () => Number(process.env.ZERION_DAILY_LIMIT ?? 300);
 
-/** Count one request on this key (fire and forget). */
-export function noteZerionUse(k: string) {
-  kv().hincrby(usedKey(), keyTag(k), 1, 2 * 86400).catch(() => {});
+/** Pass as fetchJson's onHeaders for every Zerion request made with key `k`. */
+export function zerionHeaders(k: string) {
+  return (h: Headers) => {
+    const perSec = Number(h.get("ratelimit-org-second-limit"));
+    if (perSec > 0) setThrottleGap(`zerion:${keyTag(k)}`, Math.ceil(1000 / perSec) + 50);
+    const left = h.get("ratelimit-org-day-remaining");
+    const reset = Number(h.get("ratelimit-org-day-reset"));
+    const limit = Number(h.get("ratelimit-org-day-limit"));
+    if (left != null && reset > 0) kv().set(leftKey(k), left, Math.ceil(reset)).catch(() => {});
+    if (limit > 0) kv().set(limitKey(k), String(limit), 30 * 86400).catch(() => {});
+  };
 }
 
-/** Requests left today across keys that aren't marked spent (our count; Zerion's own may differ a bit). */
+/** Requests left today across keys, from Zerion's own last-reported numbers. */
 export async function zerionRequestsLeft(): Promise<number> {
-  const used = await kv().hgetall(usedKey()).catch(() => ({} as Record<string, string>));
   let left = 0;
   for (const k of zerionKeys()) {
     const until = Number(await kv().get(spentKey(k)).catch(() => null));
     if (until && until > Date.now()) continue;
-    left += Math.max(0, DAILY() - Number(used[keyTag(k)] ?? 0));
+    const reported = await kv().get(leftKey(k)).catch(() => null);
+    // Nothing reported since the last reset: the whole daily limit is there.
+    left += reported != null ? Number(reported) : Number((await kv().get(limitKey(k)).catch(() => null)) ?? DEFAULT_DAILY());
   }
   return left;
 }
