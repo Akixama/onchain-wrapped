@@ -230,6 +230,9 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
       const verKey = `ver:solana:${wallet}`;
       if (helius && !S.verCacheApplied) {
         S.verCacheApplied = true;
+        // Trades already checked before this point were checked by older code that didn't mark its
+        // corrections: saving now would record "checked, nothing to fix" for them. Don't save then.
+        if (events.some((e) => e.verified)) S.verCacheUnsafe = true;
         const saved = await loadBlob<VerifiedCache>(verKey).catch(() => null);
         if (saved) {
           for (const e of events) {
@@ -245,7 +248,7 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
       );
       S.fixed = (S.fixed ?? 0) + v.fixed;
       if (v.remaining) return partial();
-      if (helius && !S.verCacheSaved) {
+      if (helius && !S.verCacheSaved && !S.verCacheUnsafe) {
         S.verCacheSaved = true;
         const fixes: VerifiedCache["fixes"] = {};
         for (const e of events) if (e.onchainFix) fixes[e.txHash] = { in: e.in, out: e.out };
@@ -284,6 +287,7 @@ interface ZerionState {
   fixed?: number;
   verCacheApplied?: boolean;
   verCacheSaved?: boolean;
+  verCacheUnsafe?: boolean;
 }
 /** Saved state from before parallel reading (one cursor). */
 type OldState = Omit<ZerionState, "wins"> & { url: string | null; topUrl?: string };

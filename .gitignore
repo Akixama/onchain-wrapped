@@ -59,3 +59,4 @@ usage.log
 /out/*.log
 /out/user2.*
 /out/gucci.events.json
+/out/audit/
