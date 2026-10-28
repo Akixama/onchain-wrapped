@@ -146,7 +146,7 @@ export interface AnalyzeInput {
 export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   const { events, resolved, sinceTs, coverageStart, truncated, cap } = a;
   const wallets = resolved.map((w) => w.address);
-  const notes = [...(a.notes ?? [])];
+  const notes = [...new Set(a.notes ?? [])];
   const now = Math.floor(Date.now() / 1000);
   a.onStage?.("pricing", "Looking up prices");
   const pb = await buildPriceBook(events, sinceTs, a.providerPrices ?? {});

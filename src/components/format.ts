@@ -56,9 +56,17 @@ export function monthDay(ts: number): string {
   return new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
+/** "Oct 28", or "Oct 28, 2025" when it's not this year (else last year's date reads like today). */
+function sinceDate(ts: number): string {
+  const d = new Date(ts * 1000);
+  return d.getUTCFullYear() === new Date().getUTCFullYear()
+    ? monthDay(ts)
+    : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
+}
+
 export function periodLabel(s: WrappedStats): string {
   // History cut short (a cap, or today's data limit ran out): say so, or "Since Aug 7" looks like a bug.
-  if (s.meta.truncated) return s.meta.txCap ? `Latest ${num(s.meta.txCap)} txns · since ${monthDay(s.meta.fromTs)}` : `Partial · since ${monthDay(s.meta.fromTs)}`;
+  if (s.meta.truncated) return s.meta.txCap ? `Latest ${num(s.meta.txCap)} txns · since ${sinceDate(s.meta.fromTs)}` : `Partial · since ${sinceDate(s.meta.fromTs)}`;
   return s.meta.timeframe === "all" ? "All time" : "Last 12 months";
 }
 
