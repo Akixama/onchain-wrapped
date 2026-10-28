@@ -53,7 +53,9 @@ export interface PnlOptions {
 
 export function runPnl(events: UnifiedEvent[], pb: PriceBook, opts: PnlOptions = {}): Map<string, Position> {
   const pos = new Map<string, Position>();
-  const lots = new Map<string, Lot[]>();
+  // FIFO lots per token. `h` is the index of the oldest open lot: shift() would copy the whole list on
+  // every sale, which is billions of steps for a token received tens of thousands of times.
+  const lots = new Map<string, { q: Lot[]; h: number }>();
   const sorted = [...events].sort((a, b) => a.timestamp - b.timestamp);
 
   const get = (t: TokenRef, ts: number) => {
@@ -66,34 +68,34 @@ export function runPnl(events: UnifiedEvent[], pb: PriceBook, opts: PnlOptions =
         firstTs: ts, lastTs: ts, peakGain: 0, peakGainTs: ts, peakPrice: 0, partial: false, sentAwayKnown: 0, airdropped: false, timeline: [],
       };
       pos.set(k, p);
-      lots.set(k, []);
+      lots.set(k, { q: [], h: 0 });
     }
     return p;
   };
 
   const acquire = (p: Position, amount: number, cost: number, ts: number, known = true) => {
-    lots.get(p.key)!.push({ amount, cost: known ? cost : 0, ts, known });
+    lots.get(p.key)!.q.push({ amount, cost: known ? cost : 0, ts, known });
     p.holding += amount;
     if (known) { p.holdingKnown += amount; p.openCost += cost; }
   };
   /** Remove `amount` FIFO; returns cost basis removed (null portion if we never saw the buy). */
   /** Remove `amount` FIFO. Returns cost of known lots removed and how much of the amount had a known basis. */
   const dispose = (p: Position, amount: number): { cost: number; knownAmt: number } => {
-    const q = lots.get(p.key)!;
+    const L = lots.get(p.key)!, q = L.q;
     let left = amount, cost = 0, knownAmt = 0;
-    while (left > 1e-12 && q.length) {
-      const lot = q[0];
+    while (left > 1e-12 && L.h < q.length) {
+      const lot = q[L.h];
       const take = Math.min(lot.amount, left);
       const c = (lot.cost * take) / lot.amount;
       if (lot.known) { knownAmt += take; cost += c; p.holdingKnown = Math.max(0, p.holdingKnown - take); }
       lot.cost -= c; lot.amount -= take; left -= take;
       // Rounding dust relative to the lot's size (big token amounts leave ~1e-11 behind) counts as empty.
-      if (lot.amount <= Math.max(1e-12, take * 1e-9)) q.shift();
+      if (lot.amount <= Math.max(1e-12, take * 1e-9)) L.h++;
     }
     p.holding = Math.max(0, p.holding - (amount - left));
     p.openCost = Math.max(0, p.openCost - cost);
     // Every lot sold: nothing is held, whatever floating-point dust the subtraction left.
-    if (!q.length) { p.holding = 0; p.holdingKnown = 0; p.openCost = 0; }
+    if (L.h >= q.length) { p.holding = 0; p.holdingKnown = 0; p.openCost = 0; L.q = []; L.h = 0; }
     return { cost, knownAmt };
   };
   const snap = (p: Position, ts: number) => {

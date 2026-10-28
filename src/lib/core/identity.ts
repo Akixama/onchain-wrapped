@@ -69,7 +69,13 @@ export function mergeIdentity(events: UnifiedEvent[], wallets: string[]): { even
     const oVal = legsUsd(o.out);
     if (oVal < 5) continue;
     const labeledOut = o.type === "bridge_out";
-    const match = ins.find((i) => {
+    // Only arrivals within 3 hours after the departure can match: jump to that window (sorted by
+    // time) instead of scanning every incoming transfer for every outgoing one.
+    let lo = 0, hi = ins.length;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (ins[mid].timestamp < o.timestamp) lo = mid + 1; else hi = mid; }
+    let end = lo;
+    while (end < ins.length && ins[end].timestamp - o.timestamp < 3 * 3600) end++;
+    const match = ins.slice(lo, end).find((i) => {
       if (used.has(i.id) || i.chain === o.chain || i.timestamp < o.timestamp) return false;
       const labeled = labeledOut || i.type === "bridge_in";
       const dt = i.timestamp - o.timestamp;
