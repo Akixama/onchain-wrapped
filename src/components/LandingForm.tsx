@@ -101,7 +101,7 @@ export function LandingForm() {
       </div>
       <div className="flex items-center justify-between gap-3">
         <div className="flex flex-wrap rounded-full bg-white/10 p-1 text-sm font-semibold" role="radiogroup" aria-label="Timeframe">
-          {([["1m", "1M"], ["3m", "3M"], ["6m", "6M"], ["12m", "1Y"], ["all", "All"]] as const).map(([v, l]) => (
+          {([["1m", "1M"], ["3m", "3M"], ["6m", "6M"], ["12m", "1Y"]] as const).map(([v, l]) => (
             <button key={v} type="button" role="radio" aria-checked={timeframe === v} aria-label={TIMEFRAME_LABEL[v]} onClick={() => setTimeframe(v)}
               className={`rounded-full px-3 py-2 transition sm:px-4 ${timeframe === v ? "bg-white text-black" : "text-white/70"}`}>{l}</button>
           ))}
@@ -117,7 +117,7 @@ export function LandingForm() {
         </p>
       )}
       <button disabled={busy} className="w-full rounded-2xl bg-white py-4 font-display text-lg font-bold text-black transition active:scale-[0.98] disabled:opacity-60">
-        {busy ? "Starting…" : timeframe === "12m" ? "Wrap my year" : timeframe === "all" ? "Wrap my whole history" : `Wrap my ${TIMEFRAME_LABEL[timeframe].toLowerCase()}`}
+        {busy ? "Starting…" : timeframe === "12m" ? "Wrap my year" : `Wrap my ${TIMEFRAME_LABEL[timeframe].toLowerCase()}`}
       </button>
       {error && <p role="alert" className="text-center text-sm text-rose-300">{error}</p>}
       <p className="text-center text-xs text-white/50">Got more than one wallet? Add them all. Transfers between your own wallets don&apos;t count as trades.</p>

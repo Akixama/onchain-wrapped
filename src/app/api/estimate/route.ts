@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (n > Number(process.env.ESTIMATES_PER_IP_HOUR ?? 30)) return Response.json({ error: "rate" }, { status: 429 });
   let body: { input?: string | string[]; timeframe?: string };
   try { body = await req.json(); } catch { return Response.json({ error: "bad json" }, { status: 400 }); }
-  const timeframe = isTimeframe(body.timeframe) ? body.timeframe : "12m";
+  const timeframe = isTimeframe(body.timeframe) && body.timeframe !== "all" ? body.timeframe : "12m";
   try {
     const wallets = await resolveWallets(body.input ?? "");
     return Response.json(await estimateSize(wallets.map((w) => w.address), timeframe));

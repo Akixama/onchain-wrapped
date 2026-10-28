@@ -14,7 +14,9 @@ export async function POST(req: Request) {
   } catch {
     return Response.json({ error: "Send JSON: { input, timeframe }" }, { status: 400 });
   }
-  const timeframe = isTimeframe(body.timeframe) ? body.timeframe : "12m";
+  // All time is retired for new lookups (a busy history can take hours and blow the daily data limit);
+  // results made with it still open.
+  const timeframe = isTimeframe(body.timeframe) && body.timeframe !== "all" ? body.timeframe : "12m";
   try {
     await checkRequestRate(ip);
     const { job, reused } = await startJob(body.input ?? "", timeframe, ip);
