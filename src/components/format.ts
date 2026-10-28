@@ -91,7 +91,7 @@ export function shareText(s: WrappedStats, card: CardId): string {
     case "sniper": {
       const n = s.sniper; if (!n) return tail;
       const f = n.fastest;
-      return `I bought ${Math.round((n.within60s / n.checked) * 100)}% of my coins within a minute of launch${f ? `. Fastest: ${f.symbol}, ${f.sec <= 0 ? "the same second it launched" : `${afterLaunch(f.sec)} after launch`}` : ""}. ${tail}`;
+      return `I bought ${Math.round((n.within60s / n.checked) * 100)}% of my coins within a minute of launch${f ? `. Fastest: $${f.symbol}, ${f.sec <= 0 ? "the same second it launched" : `${afterLaunch(f.sec)} after launch`}` : ""}. ${tail}`;
     }
     case "bags": return s.bags ? `Still holding ${s.bags.count} bag${s.bags.count === 1 ? "" : "s"} worth ${usd(s.bags.valueUsd)}. Paid ${usd(s.bags.costUsd)} for them. ${tail}` : tail;
     case "appFees": return s.appFees ? `I paid ${s.appFees.byApp[0]?.app ?? "trading apps"} ${usd(s.appFees.totalUsd)} in fees this year. ${tail}` : tail;

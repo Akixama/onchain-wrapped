@@ -63,7 +63,7 @@ function content(s: WrappedStats, card: CardId): Content {
       const n = s.sniper!;
       const f = n.fastest;
       return { kicker: "Launch sniper", lead: "Coins I bought within a minute of launch", big: `${Math.round((n.within60s / n.checked) * 100)}%`, bigColor: "#7DD3FC",
-        sub: f ? `Fastest: ${f.symbol}, ${f.sec <= 0 ? "the same second it launched" : `${afterLaunch(f.sec)} after launch`}` : undefined };
+        sub: f ? `Fastest: $${f.symbol}, ${f.sec <= 0 ? "the same second it launched" : `${afterLaunch(f.sec)} after launch`}` : undefined };
     }
     case "bags": {
       const b = s.bags!;
