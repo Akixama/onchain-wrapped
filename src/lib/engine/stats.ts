@@ -236,7 +236,10 @@ export function computeStats(input: {
     let bestForP: (typeof paperCands)[number] | undefined;
     for (const s of p.sells) {
       if (!s.price) continue;
-      const later = pts.filter((x) => x.ts > s.ts && x.ts <= s.ts + 90 * DAY);
+      // Bought back in later: from then on they were holding again, so a run after that wasn't
+      // missed by this sell (and their own top-buy price isn't a peak they "left on the table").
+      const rebuy = Math.min(Infinity, ...p.buys.filter((b) => b.ts > s.ts).map((b) => b.ts));
+      const later = pts.filter((x) => x.ts > s.ts && x.ts < rebuy && x.ts <= s.ts + 90 * DAY);
       const peak = Math.max(0, ...later.map((x) => x.price));
       const missed = s.amount * (peak - s.price);
       if (peak > s.price * 1.5 && missed > 25 && missed > (bestForP?.missed ?? 0)) bestForP = { p, s, peak, missed };

@@ -278,21 +278,32 @@ const Gas = ({ s, ctx }: CardProps) => {
   );
 };
 
-const Rugs = ({ s }: CardProps) => (
-  <>
-    <Kicker>Rugs</Kicker>
-    <Body className="space-y-6">
-      <Line className="text-xl opacity-80">Coins you bought that are now dead</Line>
-      <R><div className="grid grid-cols-2 gap-3">
-        <Stat label="Caught in">{s.rugs.count}</Stat>
-        <Stat label="Dodged">{s.rugs.dodged}</Stat>
-      </div></R>
-      {s.rugs.count > 0 && <Line className="text-xl">They cost you <b className="whitespace-nowrap text-[#FB7185]">{money(s.rugs.lostUsd)}</b>.</Line>}
-      {s.rugs.dodged > 0 && <Line className="text-xl">But you got out of {s.rugs.dodged} before they died. Survivor.</Line>}
-      <Line className="flex flex-wrap gap-2">{[...s.rugs.tokens.slice(0, 4), ...s.rugs.dodgedTokens.slice(0, 4)].map((t, i) => <Chip key={t + i}>${t}</Chip>)}</Line>
-    </Body>
-  </>
-);
+const Rugs = ({ s }: CardProps) => {
+  // The dead coins' losses are only part of the story: say how the rest of the trading netted out,
+  // or "-$174k" next to a "-$52k" bottom line reads like a mistake.
+  const rest = s.pnl.totalUsd - s.rugs.lostUsd;
+  return (
+    <>
+      <Kicker>Rugs</Kicker>
+      <Body className="space-y-6">
+        <Line className="text-xl opacity-80">Coins you bought that are now dead</Line>
+        <R><div className="grid grid-cols-2 gap-3">
+          <Stat label="Caught in">{s.rugs.count.toLocaleString()}</Stat>
+          <Stat label="Dodged">{s.rugs.dodged.toLocaleString()}</Stat>
+        </div></R>
+        {s.rugs.count > 0 && (
+          <Line className="text-xl">
+            The ones you lost on cost you <b className="whitespace-nowrap text-[#FB7185]">{money(s.rugs.lostUsd)}</b>.
+            {Math.abs(rest) >= 1 && <> Everything else made <b className="whitespace-nowrap">{money(rest, true)}</b>, so your bottom line is <b className="whitespace-nowrap">{money(s.pnl.totalUsd, true)}</b>.</>}
+          </Line>
+        )}
+        {s.rugs.dodged > 0 && <Line className="text-xl">You got out of {s.rugs.dodged.toLocaleString()} without a loss before they died.</Line>}
+        {s.rugs.tokens.length > 0 && <Line className="flex flex-wrap items-center gap-2"><span className="text-sm opacity-60">Caught:</span>{s.rugs.tokens.slice(0, 4).map((t, i) => <Chip key={t + i}>${t}</Chip>)}</Line>}
+        {s.rugs.dodgedTokens.length > 0 && <Line className="flex flex-wrap items-center gap-2"><span className="text-sm opacity-60">Dodged:</span>{s.rugs.dodgedTokens.slice(0, 4).map((t, i) => <Chip key={t + i}>${t}</Chip>)}</Line>}
+      </Body>
+    </>
+  );
+};
 
 const Airdrops = ({ s }: CardProps) => (
   <>

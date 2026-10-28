@@ -88,11 +88,14 @@ export function TradeChart({ card, marks = [], height }: { card: TradeCard; mark
   const candles = typeof loaded === "object" ? loaded.candles : [];
   const fills = card.fills ?? [];
   const hasCandles = candles.length >= 3;
+  // A candle covers [open time, open time + its length); draw it in the middle of that slot, or
+  // buys and sells (plotted at their exact second) sit to the right of the candle they belong to.
+  const candleSec = hasCandles ? Math.min(...candles.slice(1).map((c, i) => c[0] - candles[i][0]).filter((d) => d > 0)) || 60 : 0;
 
   const geo = useMemo(() => {
     const left = 6, right = 62, top = 12, bottom = 22;
     const pw = width - left - right, ph = h - top - bottom;
-    const times = [...(hasCandles ? candles.map((c) => c[0]) : []), ...fills.map((f) => f.t)];
+    const times = [...(hasCandles ? candles.flatMap((c) => [c[0], c[0] + candleSec]) : []), ...fills.map((f) => f.t)];
     const t0 = Math.min(...times), t1 = Math.max(...times, t0 + 60);
     const fillValues = fills.map((f) => val(f.price)).filter((v) => v > 0);
     // Scale to candle bodies + your fills; extreme one-candle wicks would flatten everything else.
@@ -103,10 +106,10 @@ export function TradeChart({ card, marks = [], height }: { card: TradeCard; mark
     lo = Math.max(0, lo - pad); hi += pad;
     const x = (t: number) => left + ((t - t0) / (t1 - t0)) * pw;
     const y = (v: number) => top + ((hi - Math.min(hi, Math.max(lo, v))) / (hi - lo)) * ph;
-    const step = hasCandles ? pw / candles.length : 0;
+    const step = hasCandles ? (candleSec / (t1 - t0)) * pw : 0;
     return { left, right, top, ph, x, y, lo, hi, t0, t1, step };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, h, hasCandles, candles, fills, supply]);
+  }, [width, h, hasCandles, candles, fills, supply, candleSec]);
 
   if (loaded === "loading") {
     return (
@@ -159,7 +162,7 @@ export function TradeChart({ card, marks = [], height }: { card: TradeCard; mark
           ? candles.map((c, i) => {
               const o = val(c[1]), hh = val(c[2]), l = val(c[3]), cl = val(c[4]);
               const color = cl >= o ? UP : DOWN;
-              const cx = x(c[0]);
+              const cx = x(c[0] + candleSec / 2);
               const yt = y(Math.max(o, cl)), yb = y(Math.min(o, cl));
               return (
                 <motion.g key={c[0]} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 + (i / candles.length) * 0.5 }}>
