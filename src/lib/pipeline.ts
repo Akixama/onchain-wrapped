@@ -45,6 +45,9 @@ export type RunOutput =
   | { partial: FetchSlots; fetched: number }
   | { partial?: undefined; stats: WrappedStats; events: UnifiedEvent[]; usage: ReturnType<typeof usageSnapshot> };
 
+/** Transactions above which the analysis gets a part of its own when time is short. */
+const BIG_HISTORY = Number(process.env.BIG_HISTORY_EVENTS ?? 20_000);
+
 export async function runWrapped(input: RunInput): Promise<RunOutput> {
   input.onProgress?.({ stage: "fetching", message: "Finding your wallets", fetched: 0 });
   const resolved = await resolveWallets(input.addresses);
@@ -57,6 +60,8 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
 
   let fetched = 0;
   const slots: FetchSlots = { ...(input.resume ?? {}) };
+  // This part was handed everything already read: analyse now, whatever the clock says.
+  const startedAllRead = !!input.resume && Object.keys(input.resume).length > 0 && Object.values(input.resume).every((s) => s.done);
 
   await Promise.all(
     wallets.flatMap((w) => {
@@ -89,7 +94,12 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
     }),
   );
   // Out of time with reading left (or no time left to analyse): hand back everything read so far.
-  if (Object.values(slots).some((s) => !s.done) || (input.deadline && Date.now() >= input.deadline)) {
+  // A big history's analysis takes minutes: if reading used most of this part, give it a fresh one
+  // instead of starting it with a minute left and being cut off at the platform's time limit.
+  const readCount = Object.values(slots).reduce((n, s) => n + (s.done ? s.result.events.length : 0), 0);
+  const reserveMs = Number(process.env.ANALYZE_RESERVE_SECONDS ?? 150) * 1000;
+  const tooLateToAnalyse = !!input.deadline && readCount > BIG_HISTORY && Date.now() > input.deadline - reserveMs && !startedAllRead;
+  if (Object.values(slots).some((s) => !s.done) || (input.deadline && Date.now() >= input.deadline) || tooLateToAnalyse) {
     return { partial: slots, fetched };
   }
 

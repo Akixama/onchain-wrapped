@@ -64,6 +64,8 @@ export interface UnifiedEvent {
   ownTransfer?: boolean;
   /** Already re-read from the chain (provider transfer labels double-checked). */
   verified?: boolean;
+  /** The chain showed this "transfer" was really a swap; in/out were replaced from the chain. */
+  onchainFix?: boolean;
   /** Fee paid to a trading app (Axiom, GMGN...) in this swap, in native units. Already inside the trade cost. */
   appFee?: { app: string; native: number; usd?: number | null };
   /** This swap was checked for app fees (the source shows every transfer). */

@@ -106,7 +106,7 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
     const keys = zerionKeys().length;
     // Several readers at once: each range is read newest-first with its own cursor; a free reader
     // takes another range, and a dense range is split in half when someone is free to take a half.
-    const readers = Math.min(8, Math.max(2, keys * 2));
+    const readers = Math.min(12, Math.max(2, keys * 3)); // ~3/s per developer-plan key
     const active = new Set<ZWin>();
     let idle = 0, stop = false, failure: unknown = null;
     const mined = (tx: ZTx) => Math.floor(Date.parse(tx.attributes.mined_at) / 1000);
@@ -224,12 +224,34 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
       }
       opts.onProgress?.({ chain: "solana", fetched: S.seen });
       // Helius batch parser (100 per request) when available; plain RPC one by one otherwise.
-      const verify = process.env.HELIUS_API_KEY ? verifyTransfersHelius : verifySolanaTransfers;
+      const helius = !!process.env.HELIUS_API_KEY;
+      const verify = helius ? verifyTransfersHelius : verifySolanaTransfers;
+      // An earlier lookup of this wallet already checked everything up to `until`: reuse its answers.
+      const verKey = `ver:solana:${wallet}`;
+      if (helius && !S.verCacheApplied) {
+        S.verCacheApplied = true;
+        const saved = await loadBlob<VerifiedCache>(verKey).catch(() => null);
+        if (saved) {
+          for (const e of events) {
+            if (e.verified || e.timestamp > saved.until) continue;
+            const fix = saved.fixes[e.txHash];
+            if (fix) { e.in = fix.in; e.out = fix.out; e.type = "swap"; e.onchainFix = true; S.fixed = (S.fixed ?? 0) + 1; }
+            e.verified = true;
+          }
+        }
+      }
       const v = await verify(events, isMoney, opts.deadline, (done, total) =>
         opts.onProgress?.({ chain: "solana", fetched: S.seen, message: `Double-checking trades on-chain (${done.toLocaleString()}/${total.toLocaleString()})` }),
       );
       S.fixed = (S.fixed ?? 0) + v.fixed;
       if (v.remaining) return partial();
+      if (helius && !S.verCacheSaved) {
+        S.verCacheSaved = true;
+        const fixes: VerifiedCache["fixes"] = {};
+        for (const e of events) if (e.onchainFix) fixes[e.txHash] = { in: e.in, out: e.out };
+        const until = events.reduce((m, e) => Math.max(m, e.timestamp), 0);
+        await saveBlob(verKey, { until, fixes } satisfies VerifiedCache, 30 * 86400).catch(() => {});
+      }
       if (S.fixed) notes.push(`Corrected ${S.fixed} Solana trades the data provider had labeled as plain transfers.`);
     }
     const { truncated, requests, quotaCut } = S;
@@ -240,6 +262,9 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
 
 /** A date range still to read (seconds, both ends included) and its next-page cursor, if started. */
 interface ZWin { from: number; to: number; url: string | null }
+
+/** On-chain double-check results for a wallet, reused by later lookups (trades up to `until`). */
+interface VerifiedCache { until: number; fixes: Record<string, { in: Leg[]; out: Leg[] }> }
 
 /** Where a lookup cut short by the daily limit stopped (saved for the next lookup of the wallet). */
 interface SavedRead { wins?: ZWin[]; url?: string | null; events: UnifiedEvent[]; seen: number; savedAt?: number }
@@ -257,6 +282,8 @@ interface ZerionState {
   notes: string[];
   backfill?: { pending: string[]; added: number };
   fixed?: number;
+  verCacheApplied?: boolean;
+  verCacheSaved?: boolean;
 }
 /** Saved state from before parallel reading (one cursor). */
 type OldState = Omit<ZerionState, "wins"> & { url: string | null; topUrl?: string };

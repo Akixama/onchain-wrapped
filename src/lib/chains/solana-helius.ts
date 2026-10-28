@@ -281,7 +281,8 @@ async function failedFees(
   const size = Number(process.env.HELIUS_BATCH_SIZE ?? 100);
   const batches: (typeof st.pending)[] = [];
   for (let i = 0; i < st.pending.length; i += size) batches.push(st.pending.slice(i, i + size));
-  const left = await drain(batches, 4, deadline, async (batch) => {
+  // Each batch takes seconds to come back; several in flight keep us near the plan's request rate.
+  const left = await drain(batches, Number(process.env.HELIUS_VERIFY_CONCURRENCY ?? 12), deadline, async (batch) => {
     if (stopped()) return;
     const txs = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/transactions?api-key=${process.env.HELIUS_API_KEY}`, {
       method: "POST",
@@ -348,6 +349,7 @@ export async function verifyTransfersHelius(
       e.in = fix(real.in);
       e.out = fix(real.out);
       e.type = "swap";
+      e.onchainFix = true;
       fixed++;
     }
     onProgress?.(done, list.length);
