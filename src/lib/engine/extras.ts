@@ -211,3 +211,65 @@ export function bagStats(positions: Position[]): BagStats {
     })),
   };
 }
+
+// ---------- Revenge trading ----------
+// Busy traders buy every few minutes anyway, so "bought right after a loss" alone means nothing.
+// We compare: how soon the next new coin came after a loss vs after a win, and how trades made
+// right after a loss did vs everything else.
+export interface RevengeStats {
+  losses: number;
+  wins: number;
+  /** Median seconds from closing a coin to buying the next new one. */
+  gapAfterLossSec: number;
+  gapAfterWinSec: number;
+  /** New coins bought within 10 minutes of closing a loss. */
+  revenge: { count: number; winRate: number; pnlUsd: number };
+  /** Every other coin they bought and closed out. */
+  normal: { count: number; winRate: number };
+  /** Most losing closes in a row. */
+  longestLosingStreak: number;
+}
+
+const REVENGE_WINDOW = 600;
+const MIN_RESULT = 5; // $ — smaller results are noise, not wins or losses
+
+export function revengeStats(traded: Position[]): RevengeStats | undefined {
+  const bought = traded.filter((p) => p.buys.length && p.costIn >= 1);
+  const closes = bought
+    .filter((p) => p.sells.length && p.holding === 0 && Math.abs(p.pnl) >= MIN_RESULT)
+    .map((p) => ({ ts: p.sells[p.sells.length - 1].ts, loss: p.pnl < 0 }))
+    .sort((a, b) => a.ts - b.ts);
+  if (closes.length < 10) return undefined;
+  const starts = bought.map((p) => ({ ts: p.buys[0].ts, p })).sort((a, b) => a.ts - b.ts);
+  // First new coin bought after `ts` (binary search).
+  const nextAfter = (ts: number) => {
+    let lo = 0, hi = starts.length;
+    while (lo < hi) { const m = (lo + hi) >> 1; if (starts[m].ts > ts) hi = m; else lo = m + 1; }
+    return starts[lo];
+  };
+  const gaps = { loss: [] as number[], win: [] as number[] };
+  const revengeSet = new Set<Position>();
+  for (const c of closes) {
+    const n = nextAfter(c.ts);
+    if (!n) continue;
+    (c.loss ? gaps.loss : gaps.win).push(n.ts - c.ts);
+    if (c.loss) for (let i = starts.indexOf(n); i < starts.length && starts[i].ts - c.ts <= REVENGE_WINDOW; i++) revengeSet.add(starts[i].p);
+  }
+  if (gaps.loss.length < 5 || gaps.win.length < 5) return undefined;
+  const median = (xs: number[]) => { const s = [...xs].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
+  const decided = (ps: Position[]) => ps.filter((p) => p.holding === 0 && Math.abs(p.pnl) >= MIN_RESULT);
+  const rate = (ps: Position[]) => { const d = decided(ps); return d.length ? Math.round((d.filter((p) => p.pnl > 0).length / d.length) * 100) / 100 : 0; };
+  const revenge = [...revengeSet];
+  const normal = bought.filter((p) => !revengeSet.has(p));
+  let streak = 0, longest = 0;
+  for (const c of closes) { streak = c.loss ? streak + 1 : 0; longest = Math.max(longest, streak); }
+  return {
+    losses: closes.filter((c) => c.loss).length,
+    wins: closes.filter((c) => !c.loss).length,
+    gapAfterLossSec: median(gaps.loss),
+    gapAfterWinSec: median(gaps.win),
+    revenge: { count: decided(revenge).length, winRate: rate(revenge), pnlUsd: r2(revenge.reduce((s, p) => s + p.pnl, 0)) },
+    normal: { count: decided(normal).length, winRate: rate(normal) },
+    longestLosingStreak: longest,
+  };
+}

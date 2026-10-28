@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
 import { getJob } from "@/lib/store";
 import { NARRATIVE_LABEL } from "@/lib/engine/extras";
-import { CARD_THEME, CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel, afterLaunch } from "@/components/format";
+import { CARD_THEME, CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel, afterLaunch, waitLabel } from "@/components/format";
 import { EVM_ENABLED } from "@/lib/site";
 
 // Fonts are the same for every request: read once.
@@ -58,6 +58,11 @@ function content(s: WrappedStats, card: CardId): Content {
       const c = s.counterfactual;
       const held = c.verdict === "should_have_held";
       return { kicker: `If I'd just held ${c.major.replace("+", " & ")}`, big: held ? `${m(c.justHeldDiffUsd)} richer` : `${m(-c.justHeldDiffUsd)} poorer`, bigColor: held ? "#FBBF24" : green, sub: held ? "Should've just held." : "My trading actually won." };
+    }
+    case "revenge": {
+      const r = s.revenge!;
+      return { kicker: "Revenge trading", lead: "After a loss, my next buy came in", big: waitLabel(r.gapAfterLossSec), bigColor: "#FCA5A5",
+        sub: `After a win: ${waitLabel(r.gapAfterWinSec)} · Trades right after a loss won ${Math.round(r.revenge.winRate * 100)}% (normally ${Math.round(r.normal.winRate * 100)}%)` };
     }
     case "sniper": {
       const n = s.sniper!;

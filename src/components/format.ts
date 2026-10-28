@@ -75,6 +75,14 @@ export function afterLaunch(sec: number): string {
   const h = Math.round(sec / 3600); return `${h} hour${h === 1 ? "" : "s"}`;
 }
 
+/** "under a minute" / "4 minutes" / "2 hours" / "3 days" (a wait between trades). */
+export function waitLabel(sec: number): string {
+  if (sec < 60) return "under a minute";
+  if (sec < 3600) { const m = Math.round(sec / 60); return `${m} minute${m === 1 ? "" : "s"}`; }
+  if (sec < 86400 * 2) { const h = Math.round(sec / 3600); return `${h} hour${h === 1 ? "" : "s"}`; }
+  return `${Math.round(sec / 86400)} days`;
+}
+
 /** Card copy used for both the story and the X share text. */
 export function shareText(s: WrappedStats, card: CardId): string {
   const tail = "My onchain Wrapped 👇";
@@ -88,6 +96,10 @@ export function shareText(s: WrappedStats, card: CardId): string {
     case "paperHands": return s.paperHands ? `Sold $${s.paperHands.symbol} right before it ran. Left ${usd(s.paperHands.missedUsd)} on the table. ${tail}` : tail;
     case "diamondHands": return s.diamondHands ? `${s.diamondHands.daysHeld} days of diamond hands on $${s.diamondHands.symbol}. ${tail}` : tail;
     case "counterfactual": return s.counterfactual.verdict === "should_have_held" ? `If I'd just held ${s.counterfactual.major}, I'd have ${usd(s.counterfactual.justHeldDiffUsd)} more. ${tail}` : `My trading beat just holding ${s.counterfactual.major} by ${usd(-s.counterfactual.justHeldDiffUsd)}. ${tail}`;
+    case "revenge": {
+      const r = s.revenge; if (!r) return tail;
+      return `After a loss I bought my next coin in ${waitLabel(r.gapAfterLossSec)}. Trades right after a loss won ${Math.round(r.revenge.winRate * 100)}% of the time (normally ${Math.round(r.normal.winRate * 100)}%). ${tail}`;
+    }
     case "sniper": {
       const n = s.sniper; if (!n) return tail;
       const f = n.fastest;
@@ -127,7 +139,7 @@ export const CARD_TITLE: Record<CardId, string> = {
   archetype: "Your era", overview: "The numbers", pnl: "The bottom line", profitTime: "Profit over time", best: "Best trade", worst: "Worst trade",
   speed: "Speed", narrative: "Favourite narrative",
   roundTrip: "The round trip", paperHands: "Paper hands", diamondHands: "Diamond hands", counterfactual: "What if",
-  sniper: "Launch sniper", bags: "Bags still held", appFees: "App fees", gas: "Gas burned", rugs: "Rugs", airdrops: "Airdrops", sleep: "Sleep schedule", bridges: "Bridge journey",
+  revenge: "Revenge trading", sniper: "Launch sniper", bags: "Bags still held", appFees: "App fees", gas: "Gas burned", rugs: "Rugs", airdrops: "Airdrops", sleep: "Sleep schedule", bridges: "Bridge journey",
   percentile: "Ranking", chains: "Profit by chain", roast: "The roast", summary: "Your Wrapped",
 };
 
@@ -145,6 +157,7 @@ export const CARD_THEME: Record<CardId, { bg: string; a: string; b: string; ink:
   paperHands: { bg: "#1A1033", a: "#F472B6", b: "#A78BFA", ink: "#FFF0FA" },
   diamondHands: { bg: "#071A26", a: "#22D3EE", b: "#A5F3FC", ink: "#ECFEFF" },
   counterfactual: { bg: "#14122B", a: "#818CF8", b: "#F59E0B", ink: "#F1F0FF" },
+  revenge: { bg: "#1A0A0A", a: "#EF4444", b: "#F97316", ink: "#FFF5F5" },
   sniper: { bg: "#0A1020", a: "#38BDF8", b: "#E879F9", ink: "#F0F9FF" },
   bags: { bg: "#0B1A14", a: "#10B981", b: "#A3E635", ink: "#ECFDF5" },
   appFees: { bg: "#1F0A16", a: "#F43F5E", b: "#F59E0B", ink: "#FFF1F4" },

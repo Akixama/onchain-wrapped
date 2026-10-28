@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Children, isValidElement, useCallback, useState, type ReactNode } from "react";
 import { GT_NETWORK } from "@/lib/gecko";
 import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
-import { CHAIN_COLOR, CHAIN_NAME, afterLaunch, capOrPrice, hourLabel, num, pct, periodLabel, usd, whoLabel } from "../format";
+import { CHAIN_COLOR, CHAIN_NAME, afterLaunch, waitLabel, capOrPrice, hourLabel, num, pct, periodLabel, usd, whoLabel } from "../format";
 import { Big, BigNumber, Chip, CountUp, Kicker, Line, Stat, rise } from "./primitives";
 import { TradeChart } from "./TradeChart";
 import { NARRATIVE_EMOJI, NARRATIVE_LABEL } from "@/lib/engine/extras";
@@ -579,6 +579,35 @@ const Narrative = ({ s }: CardProps) => {
   );
 };
 
+/** Do they jump back in after a loss, and does it pay? */
+const Revenge = ({ s }: CardProps) => {
+  const r = s.revenge!;
+  const rw = Math.round(r.revenge.winRate * 100), nw = Math.round(r.normal.winRate * 100);
+  const faster = r.gapAfterLossSec < r.gapAfterWinSec * 0.75;
+  return (
+    <>
+      <Kicker>Revenge trading</Kicker>
+      <Body className="space-y-6">
+        <Line className="text-xl opacity-80">After a loss, you bought your next coin in</Line>
+        <BigNumber className="text-[60px] @3xl:text-[88px]" color="#FCA5A5">{waitLabel(r.gapAfterLossSec)}</BigNumber>
+        <Line className="text-xl opacity-80">
+          After a win you waited {waitLabel(r.gapAfterWinSec)}.{" "}
+          {faster ? "Losses made you faster." : r.gapAfterLossSec > r.gapAfterWinSec * 1.33 ? "Losses slowed you down. Respect." : "Win or lose, same pace."}
+        </Line>
+        <R><motion.div variants={rise} className="grid grid-cols-2 gap-3">
+          <Stat label="Won right after a loss">{rw}%</Stat>
+          <Stat label="Won the rest of the time">{nw}%</Stat>
+        </motion.div></R>
+        <Line className="text-base opacity-75">
+          {rw < nw - 5 ? "Revenge didn't pay." : rw > nw + 5 ? "Somehow, revenge paid." : "Revenge didn't change much."}{" "}
+          Those {num(r.revenge.count)} trades made <b style={{ color: gainColor(r.revenge.pnlUsd) }}>{money(r.revenge.pnlUsd, true)}</b> in total.
+        </Line>
+        {r.longestLosingStreak >= 3 && <Line className="text-base opacity-75">Longest losing streak: <b>{num(r.longestLosingStreak)} in a row</b>.</Line>}
+      </Body>
+    </>
+  );
+};
+
 /** How soon after launch they bought (Solana, checked on-chain). */
 const Sniper = ({ s }: CardProps) => {
   const n = s.sniper!;
@@ -686,7 +715,7 @@ const AppFees = ({ s }: CardProps) => {
 };
 
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
-  appFees: AppFees, bags: Bags, sniper: Sniper,
+  appFees: AppFees, bags: Bags, sniper: Sniper, revenge: Revenge,
   archetype: Archetype, overview: Overview, pnl: Pnl, profitTime: ProfitTime, best: Best, worst: Worst, roundTrip: RoundTrip,
   paperHands: PaperHands, diamondHands: DiamondHands, speed: Speed, narrative: Narrative, counterfactual: Counterfactual, gas: Gas, rugs: Rugs,
   airdrops: Airdrops, sleep: Sleep, bridges: Bridges, percentile: Percentile, chains: Chains, roast: Roast, summary: Summary,
