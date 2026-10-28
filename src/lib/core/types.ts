@@ -112,3 +112,8 @@ export interface ChainAdapter {
 }
 
 export const tokenKey = (t: Pick<TokenRef, "chain" | "address">) => `${t.chain}:${t.address}`;
+
+/** How far back a lookup reads. */
+export type Timeframe = "1m" | "3m" | "6m" | "12m" | "all";
+export const TIMEFRAME_DAYS: Record<Exclude<Timeframe, "all">, number> = { "1m": 30, "3m": 90, "6m": 180, "12m": 365 };
+export const isTimeframe = (v: unknown): v is Timeframe => v === "all" || (typeof v === "string" && v in TIMEFRAME_DAYS);

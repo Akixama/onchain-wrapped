@@ -17,7 +17,7 @@ interface RawTx {
   meta: { err: unknown; fee: number; preBalances: number[]; postBalances: number[]; preTokenBalances?: TokenBal[]; postTokenBalances?: TokenBal[] } | null;
 }
 
-async function rpc<T>(method: string, params: unknown[]): Promise<T> {
+export async function rpc<T>(method: string, params: unknown[]): Promise<T> {
   const r = await fetchJson<{ result: T; error?: { message: string } }>("solana-rpc", rpcUrl(), {
     method: "POST",
     headers: { "content-type": "application/json" },

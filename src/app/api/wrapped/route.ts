@@ -1,3 +1,4 @@
+import { isTimeframe } from "@/lib/core/types";
 import { after } from "next/server";
 import { InputError, LimitError, runJob, startJob } from "@/lib/jobs";
 import { checkRequestRate, ipKey } from "@/lib/limits";
@@ -13,7 +14,7 @@ export async function POST(req: Request) {
   } catch {
     return Response.json({ error: "Send JSON: { input, timeframe }" }, { status: 400 });
   }
-  const timeframe = body.timeframe === "all" ? "all" : "12m";
+  const timeframe = isTimeframe(body.timeframe) ? body.timeframe : "12m";
   try {
     await checkRequestRate(ip);
     const { job, reused } = await startJob(body.input ?? "", timeframe, ip);

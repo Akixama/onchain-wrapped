@@ -34,3 +34,24 @@ export async function markZerionKeySpent(k: string, resetHours: number) {
 }
 
 export const zerionAuth = (k: string) => "Basic " + Buffer.from(`${k}:`).toString("base64");
+
+// Our own count of requests per key per UTC day, so we can tell before a lookup how much is left.
+const DAILY = () => Number(process.env.ZERION_DAILY_LIMIT ?? 300);
+const usedKey = () => `zerion:used:${new Date().toISOString().slice(0, 10)}`;
+
+/** Count one request on this key (fire and forget). */
+export function noteZerionUse(k: string) {
+  kv().hincrby(usedKey(), keyTag(k), 1, 2 * 86400).catch(() => {});
+}
+
+/** Requests left today across keys that aren't marked spent (our count; Zerion's own may differ a bit). */
+export async function zerionRequestsLeft(): Promise<number> {
+  const used = await kv().hgetall(usedKey()).catch(() => ({} as Record<string, string>));
+  let left = 0;
+  for (const k of zerionKeys()) {
+    const until = Number(await kv().get(spentKey(k)).catch(() => null));
+    if (until && until > Date.now()) continue;
+    left += Math.max(0, DAILY() - Number(used[keyTag(k)] ?? 0));
+  }
+  return left;
+}

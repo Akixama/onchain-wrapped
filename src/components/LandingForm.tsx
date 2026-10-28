@@ -1,8 +1,10 @@
 "use client";
 import { motion } from "motion/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EVM_ENABLED } from "@/lib/site";
+import type { Timeframe } from "@/lib/core/types";
+import { TIMEFRAME_LABEL } from "@/components/format";
 
 const MAX = 6;
 const SOLANA_ONLY_MSG = "Only Solana wallets work here. Paste a Solana address or .sol name.";
@@ -15,9 +17,30 @@ export function LandingForm() {
   const router = useRouter();
   const [wallets, setWallets] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
-  const [timeframe, setTimeframe] = useState<"12m" | "all">("12m");
+  const [timeframe, setTimeframe] = useState<Timeframe>("12m");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [size, setSize] = useState<{ key: string; checking?: boolean; needed?: number; capacity?: number; fits?: boolean } | null>(null);
+
+  // Before the lookup: is this a bot-flooded wallet too big for today's free data budget?
+  const candidates = [...new Set([...wallets, ...draft.split(/[\s,;]+/).filter(Boolean)])].filter(looksValid).slice(0, MAX);
+  const sizeKey = `${timeframe}|${candidates.join(",")}`;
+  useEffect(() => {
+    if (!candidates.length) return;
+    let live = true;
+    const t = setTimeout(async () => {
+      setSize({ key: sizeKey, checking: true });
+      try {
+        const r = await fetch("/api/estimate", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ input: candidates, timeframe }) });
+        const j = await r.json();
+        if (live) setSize(typeof j.needed === "number" ? { key: sizeKey, needed: j.needed, capacity: j.capacity, fits: j.fits } : null);
+      } catch {
+        if (live) setSize(null);
+      }
+    }, 700);
+    return () => { live = false; clearTimeout(t); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sizeKey]);
 
   const addFrom = (text: string) => {
     const parts = text.split(/[\s,;]+/).map((x) => x.trim()).filter(Boolean);
@@ -77,16 +100,24 @@ export function LandingForm() {
         />
       </div>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex rounded-full bg-white/10 p-1 text-sm font-semibold" role="radiogroup" aria-label="Timeframe">
-          {([["12m", "Last 12 months"], ["all", "All time"]] as const).map(([v, l]) => (
-            <button key={v} type="button" role="radio" aria-checked={timeframe === v} onClick={() => setTimeframe(v)}
-              className={`rounded-full px-4 py-2 transition ${timeframe === v ? "bg-white text-black" : "text-white/70"}`}>{l}</button>
+        <div className="flex flex-wrap rounded-full bg-white/10 p-1 text-sm font-semibold" role="radiogroup" aria-label="Timeframe">
+          {([["1m", "1M"], ["3m", "3M"], ["6m", "6M"], ["12m", "1Y"], ["all", "All"]] as const).map(([v, l]) => (
+            <button key={v} type="button" role="radio" aria-checked={timeframe === v} aria-label={TIMEFRAME_LABEL[v]} onClick={() => setTimeframe(v)}
+              className={`rounded-full px-3 py-2 transition sm:px-4 ${timeframe === v ? "bg-white text-black" : "text-white/70"}`}>{l}</button>
           ))}
         </div>
         <span className="text-xs text-white/50">{wallets.length}/{MAX} wallets</span>
       </div>
+      {size?.key === sizeKey && size.checking && <p className="text-center text-xs text-white/50">Checking wallet size…</p>}
+      {size?.key === sizeKey && !size.checking && size.fits === false && (
+        <p role="status" className="rounded-2xl bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+          {size.capacity! < 1000
+            ? <>This wallet is flooded with bot transactions and today&apos;s free data is used up. Try again tomorrow for a full result.</>
+            : <>Big wallet: about {Math.round(size.needed! / 1000).toLocaleString()}k transactions in this period, and today&apos;s free data reads about {Math.round(size.capacity! / 1000).toLocaleString()}k. Pick a shorter period to get it all now, or the result will be partial.</>}
+        </p>
+      )}
       <button disabled={busy} className="w-full rounded-2xl bg-white py-4 font-display text-lg font-bold text-black transition active:scale-[0.98] disabled:opacity-60">
-        {busy ? "Starting…" : "Wrap my year"}
+        {busy ? "Starting…" : timeframe === "12m" ? "Wrap my year" : timeframe === "all" ? "Wrap my whole history" : `Wrap my ${TIMEFRAME_LABEL[timeframe].toLowerCase()}`}
       </button>
       {error && <p role="alert" className="text-center text-sm text-rose-300">{error}</p>}
       <p className="text-center text-xs text-white/50">Got more than one wallet? Add them all. Transfers between your own wallets don&apos;t count as trades.</p>

@@ -17,7 +17,8 @@ import { cacheGet, cacheSet } from "./infra/cache";
 import { currentTokenBalances } from "./chains/solana-rpc";
 import type { FetchResult } from "./core/types";
 
-export type Timeframe = "12m" | "all";
+import { TIMEFRAME_DAYS, type Timeframe } from "./core/types";
+export type { Timeframe };
 
 export interface Progress {
   stage: "fetching" | "pricing" | "crunching" | "done";
@@ -50,7 +51,7 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
   // No cap by default: the whole history in the timeframe. MAX_TXS_PER_ADDRESS can still set one.
   const cap = input.maxTxsPerAddress ?? Number(process.env.MAX_TXS_PER_ADDRESS || Infinity);
   const now = Math.floor(Date.now() / 1000);
-  const sinceTs = input.timeframe === "12m" ? now - 365 * 86400 : 0;
+  const sinceTs = input.timeframe === "all" ? 0 : now - TIMEFRAME_DAYS[input.timeframe] * 86400;
   const say = (p: Progress) => input.onProgress?.(p);
 
   let fetched = 0;

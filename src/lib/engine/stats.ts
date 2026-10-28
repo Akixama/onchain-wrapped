@@ -1,3 +1,4 @@
+import type { Timeframe } from "../core/types";
 import type { ChainId, UnifiedEvent, Venue } from "../core/types";
 import { CHAIN_LABEL, counterfactualMajor, isMoney } from "../core/assets";
 import type { BridgeHop } from "../core/identity";
@@ -52,7 +53,7 @@ export interface WrappedStats {
     notes?: string[];
     /** address -> ENS / SNS name the user typed */
     names?: Record<string, string>;
-    timeframe: "12m" | "all";
+    timeframe: Timeframe;
     fromTs: number;
     toTs: number;
     generatedAt: string;
@@ -175,7 +176,7 @@ const card = (p: Position): TradeCard => {
 
 export function computeStats(input: {
   wallets: string[];
-  timeframe: "12m" | "all";
+  timeframe: Timeframe;
   fromTs: number;
   events: UnifiedEvent[];
   positions: Map<string, Position>;

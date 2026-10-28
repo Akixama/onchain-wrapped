@@ -3,7 +3,7 @@ import { NATIVE } from "../core/assets";
 import { fetchJson, QuotaError } from "../infra/http";
 import { fetchRawEvent, signaturesSince, verifySolanaTransfers } from "./solana-rpc";
 import { drain, timeUp } from "../infra/drain";
-import { keyTag, liveZerionKey, markZerionKeySpent, zerionAuth, zerionKeys } from "./zerion-keys";
+import { keyTag, liveZerionKey, markZerionKeySpent, noteZerionUse, zerionAuth, zerionKeys } from "./zerion-keys";
 import { verifyTransfersHelius } from "./solana-helius";
 import { clearBlob, loadBlob, saveBlob } from "../infra/blob";
 import { isMoney } from "../core/assets";
@@ -84,7 +84,8 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
     };
     // A lookup cut short by the daily data limit saves where it stopped, so the next lookup of this
     // wallet carries on from there (after picking up anything new) instead of re-reading everything.
-    const savedKey = `zres:${family}:${wallet}:${opts.sinceTs === 0 ? "all" : "12m"}`;
+    // Keyed by window length in days (rounded), so 1-month and 12-month lookups don't share progress.
+    const savedKey = `zres:${family}:${wallet}:${opts.sinceTs === 0 ? "all" : Math.round((nowS - opts.sinceTs) / 86400) >= 360 ? "12m" : `${Math.round((nowS - opts.sinceTs) / 86400)}d`}`;
     // Everything read so far lives in `st`, so a run that hits its deadline can hand it to the next run.
     let st = opts.resume as ZerionState | undefined;
     if (st && !st.wins) st = upgradeState(st as unknown as OldState, opts.sinceTs, nowS); // from before parallel reading
@@ -131,6 +132,7 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
               throttle: `zerion:${keyTag(key)}`,
             });
             S.requests++;
+            noteZerionUse(key);
             // Safety: if the date filter were ignored, ranges would overlap wholesale. Fall back to
             // one plain newest-first read of everything (de-duplication keeps what we already have).
             if (!S.sequential && w.to < nowS - 120 && page.data.some((tx) => mined(tx) > w.to + 1)) {

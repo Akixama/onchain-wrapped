@@ -1,5 +1,6 @@
 // Shared by the story UI and the OG images (no React, no DOM).
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
+import type { Timeframe } from "@/lib/core/types";
 import { NARRATIVE_LABEL } from "@/lib/engine/extras";
 
 export type Venue = WrappedStats["bridges"]["journey"][number];
@@ -64,10 +65,18 @@ function sinceDate(ts: number): string {
     : d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 }
 
+export const TIMEFRAME_LABEL: Record<Timeframe, string> = {
+  "1m": "Last 30 days", "3m": "Last 3 months", "6m": "Last 6 months", "12m": "Last 12 months", all: "All time",
+};
+/** "this year" / "this month" / "in the last 3 months" / "all time", for share text. */
+export function periodPhrase(t: Timeframe): string {
+  return ({ "1m": "this month", "3m": "in the last 3 months", "6m": "in the last 6 months", "12m": "this year", all: "all time" } as const)[t] ?? "this year";
+}
+
 export function periodLabel(s: WrappedStats): string {
   // History cut short (a cap, or today's data limit ran out): say so, or "Since Aug 7" looks like a bug.
   if (s.meta.truncated) return s.meta.txCap ? `Latest ${num(s.meta.txCap)} txns · since ${sinceDate(s.meta.fromTs)}` : `Partial · since ${sinceDate(s.meta.fromTs)}`;
-  return s.meta.timeframe === "all" ? "All time" : "Last 12 months";
+  return TIMEFRAME_LABEL[s.meta.timeframe] ?? "Last 12 months";
 }
 
 export const hourLabel = (h: number) => {
@@ -114,7 +123,7 @@ export function shareText(s: WrappedStats, card: CardId): string {
       return `I bought ${Math.round((n.within60s / n.checked) * 100)}% of my coins within a minute of launch${f ? `. Fastest: $${f.symbol}, ${f.sec <= 0 ? "the same second it launched" : `${afterLaunch(f.sec)} after launch`}` : ""}. ${tail}`;
     }
     case "bags": return s.bags ? `Still holding ${s.bags.count} bag${s.bags.count === 1 ? "" : "s"} worth ${usd(s.bags.valueUsd)}. Paid ${usd(s.bags.costUsd)} for them. ${tail}` : tail;
-    case "appFees": return s.appFees ? `I paid ${s.appFees.byApp[0]?.app ?? "trading apps"} ${usd(s.appFees.totalUsd)} in fees this year. ${tail}` : tail;
+    case "appFees": return s.appFees ? `I paid ${s.appFees.byApp[0]?.app ?? "trading apps"} ${usd(s.appFees.totalUsd)} in fees ${periodPhrase(s.meta.timeframe)}. ${tail}` : tail;
     case "gas": return `I burned ${usd(s.gas.totalUsd)} on gas. ${tail}`;
     case "rugs": return `Caught in ${s.rugs.count} rugs, dodged ${s.rugs.dodged}. ${tail}`;
     case "airdrops": return `${s.airdrops.count} airdrops claimed, ${usd(s.airdrops.valueUsd)} free money. ${tail}`;
@@ -128,7 +137,7 @@ export function shareText(s: WrappedStats, card: CardId): string {
     case "profitTime": {
       const t = s.profitTimeline;
       const final = t ? (t.points.at(-1)?.[1] ?? 0) + t.openUsd : s.pnl.totalUsd;
-      return `My year in profit: ${usd(final, { sign: true })}${t?.bestDay ? `, best day ${usd(t.bestDay.usd, { sign: true })}` : ""}. ${tail}`;
+      return `${s.meta.timeframe === "12m" ? "My year" : s.meta.timeframe === "all" ? "My all-time" : TIMEFRAME_LABEL[s.meta.timeframe]} in profit: ${usd(final, { sign: true })}${t?.bestDay ? `, best day ${usd(t.bestDay.usd, { sign: true })}` : ""}. ${tail}`;
     }
     case "speed": {
       const f = s.speed?.fastestFlip;
