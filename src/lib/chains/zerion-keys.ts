@@ -50,6 +50,8 @@ export function zerionHeaders(k: string) {
     const reset = Number(h.get("ratelimit-org-day-reset"));
     const limit = Number(h.get("ratelimit-org-day-limit"));
     if (left != null && reset > 0) kv().set(leftKey(k), left, Math.ceil(reset)).catch(() => {});
+    // Requests left again (plan upgraded, or the day reset early): stop skipping this key.
+    if (Number(left) > 0) kv().set(spentKey(k), "0", 60).catch(() => {});
     if (limit > 0) kv().set(limitKey(k), String(limit), 30 * 86400).catch(() => {});
   };
 }
