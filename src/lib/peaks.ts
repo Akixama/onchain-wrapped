@@ -41,7 +41,7 @@ function withExtra(pb: PriceBook, extra: Map<string, PricePoint[]>): PriceBook {
   };
 }
 
-export async function refinePeaks(positions: Map<string, Position>, pb: PriceBook, now: number): Promise<PriceBook> {
+export async function refinePeaks(positions: Map<string, Position>, pb: PriceBook, now: number, stopAt?: number): Promise<PriceBook> {
   const cands = peakCandidates(positions, now);
   if (!cands.length) return pb;
   const extra = new Map<string, PricePoint[]>();
@@ -50,7 +50,7 @@ export async function refinePeaks(positions: Map<string, Position>, pb: PriceBoo
   const pools = await dexPools(cands.map((p) => p.key)).catch(() => ({} as Record<string, string>));
   const queue = [...cands];
   await Promise.all(Array.from({ length: 3 }, async () => {
-    for (let p = queue.shift(); p; p = queue.shift()) {
+    for (let p = queue.shift(); p && !(stopAt && Date.now() > stopAt); p = queue.shift()) {
       try {
         const end = heldUntil(p, now);
         let pool: string | null = pools[p.key] ?? null;

@@ -135,6 +135,8 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
   const stats = await analyze({
     events, resolved, timeframe: input.timeframe, sinceTs, coverageStart, truncated, cap: Number.isFinite(cap) ? cap : 0, providerPrices, notes,
     onStage: (stage, message) => say({ stage, message, fetched }),
+    // The platform stops a run ~100s after the reading deadline: the optional extras must end before.
+    finishBy: input.deadline ? input.deadline + Number(process.env.ANALYZE_TAIL_SECONDS ?? 75) * 1000 : undefined,
   });
   if (quotaCut) stats.meta.quotaCut = true;
   say({ stage: "done", message: "Done", fetched });
@@ -152,6 +154,8 @@ export interface AnalyzeInput {
   providerPrices?: Record<string, number>;
   notes?: string[];
   onStage?: (stage: Progress["stage"], message: string) => void;
+  /** Hard stop (ms): optional extras (price peaks, charts, sniper) are skipped or cut short past it. */
+  finishBy?: number;
 }
 
 /** Everything after fetching: prices, spam, identity, PnL, stats. Re-runnable on saved events (no provider calls). */
@@ -171,7 +175,8 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   const positions = runPnl(events, pb, { actualBalances });
   // Real price peaks for positions held long enough to round-trip (DefiLlama often has no memecoin history).
   a.onStage?.("crunching", "Checking price peaks");
-  const pbx = await refinePeaks(positions, pb, now).catch(() => pb);
+  const left = (ms: number) => !a.finishBy || Date.now() < a.finishBy - ms;
+  const pbx = left(90_000) ? await refinePeaks(positions, pb, now, a.finishBy ? a.finishBy - 75_000 : undefined).catch(() => pb) : pb;
   const fromTs = truncated ? coverageStart : sinceTs || (events[0]?.timestamp ?? now);
   const stats = computeStats({ wallets, timeframe: a.timeframe, fromTs, events, positions, bridges, pb: pbx, truncated, txCap: cap, spamFiltered });
 
@@ -179,12 +184,13 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   if (untraced) notes.push(`${untraced} tokens left your wallets by routes we can't trace (bots, other wallets). We count them as moved, not sold.`);
   stats.meta.notes = notes;
   a.onStage?.("crunching", "Drawing your charts");
-  await addTradeCharts(stats, positions, pbx, (n) => notes.push(n)).catch(() => {});
+  // Skipped when short on time: the story then loads these charts in the viewer's browser.
+  if (left(50_000)) await addTradeCharts(stats, positions, pbx, (n) => notes.push(n)).catch(() => {});
   stats.meta.notes = notes;
   // Bags still held: only when we saw the real balances, so coins that left by other routes don't show up.
   if (actualBalances) stats.bags = bagStats([...positions.values()].filter((p) => p.chain === "solana"));
   a.onStage?.("crunching", "Checking how early you bought");
-  stats.sniper = await sniperStats([...positions.values()], Date.now() + 30_000).catch(() => undefined);
+  stats.sniper = left(15_000) ? await sniperStats([...positions.values()], Math.min(Date.now() + 30_000, a.finishBy ?? Infinity) - (a.finishBy ? 5_000 : 0)).catch(() => undefined) : undefined;
   stats.cards = storyCards(stats);
   stats.meta.names = Object.fromEntries(resolved.filter((w) => w.name).map((w) => [w.address, w.name!]));
   return stats;
