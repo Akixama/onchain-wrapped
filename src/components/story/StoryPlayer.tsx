@@ -15,7 +15,7 @@ import { ChartJobContext } from "./TradeChart";
 const CARD_MS = 7000;
 const noopSubscribe = () => () => {};
 
-type PublicJob = Pick<PublicJobT, "id" | "status" | "progress" | "error" | "stats">;
+type PublicJob = Pick<PublicJobT, "id" | "status" | "progress" | "error" | "stats"> & { createdAt?: number };
 
 export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl }: { job: PublicJob; startCard?: string; ngnRate: number | null; siteUrl: string }) {
   const [job, setJob] = useState(initial);
@@ -32,7 +32,7 @@ export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl }: { job
   }, [job.id, job.status]);
 
   if (job.status === "error") return <ErrorScreen message={job.error ?? "Something went wrong."} />;
-  if (job.status !== "done" || !job.stats) return <Loading progress={job.progress} />;
+  if (job.status !== "done" || !job.stats) return <Loading progress={job.progress} startedAt={job.createdAt} />;
   return <Story id={job.id} s={job.stats} startCard={startCard} ngnRate={ngnRate} siteUrl={siteUrl} />;
 }
 

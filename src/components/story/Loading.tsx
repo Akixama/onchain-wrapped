@@ -22,7 +22,21 @@ const STAGE: Record<Progress["stage"], string> = {
   done: "Wrapping it up",
 };
 
-export function Loading({ progress }: { progress?: Progress }) {
+/** "0:42", "12:05", "1:02:09" */
+const clock = (sec: number) => {
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return (h ? `${h}:${String(m).padStart(2, "0")}` : `${m}`) + `:${String(s).padStart(2, "0")}`;
+};
+
+export function Loading({ progress, startedAt }: { progress?: Progress; startedAt?: number }) {
+  // How long this lookup has been running (from when it was created, so a reload doesn't reset it).
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    if (!startedAt) return;
+    const t = setInterval(() => setNowMs(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [startedAt]);
+  const elapsed = startedAt ? Math.max(0, Math.floor((nowMs - startedAt) / 1000)) : null;
   const [q, setQ] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setQ((x) => (x + 1) % QUIPS.length), 2200);
@@ -67,8 +81,14 @@ export function Loading({ progress }: { progress?: Progress }) {
             </li>
           ))}
         </ol>
+        {elapsed != null && (
+          <p className="font-display text-3xl font-bold tabular-nums" aria-label="Time so far">
+            {clock(elapsed)}
+            <span className="ml-2 align-middle font-sans text-xs font-normal opacity-60">so far</span>
+          </p>
+        )}
         <p className="text-xs opacity-60">
-          {part ? `Big wallet — reading in parts (part ${part}). Keep this tab open; it picks up where it left off.` : "Busy wallets take a minute. Keep this tab open."}
+          {part ? `Big wallet — reading in parts (part ${part}). Keep this tab open; it picks up where it left off.` : "Most wallets take 1–3 minutes. Very busy ones can take 10 or more. Keep this tab open."}
         </p>
       </div>
     </div>
