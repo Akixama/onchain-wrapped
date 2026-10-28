@@ -106,18 +106,28 @@ function mergeSeries(daily: PricePoint[], hourly: PricePoint[]): PricePoint[] {
   return [...daily.filter((p) => p.ts < lo || p.ts > hi), ...hourly].sort((a, b) => a.ts - b.ts);
 }
 
+/** Run `fn` over items with up to `n` in flight (the provider's throttle still sets the pace). */
+async function pool<T>(items: T[], n: number, fn: (x: T) => Promise<void>) {
+  let i = 0;
+  await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
+    while (i < items.length) await fn(items[i++]);
+  }));
+}
+const chunks = <T,>(xs: T[], size: number) => Array.from({ length: Math.ceil(xs.length / size) }, (_, i) => xs.slice(i * size, (i + 1) * size));
+
 async function llamaCurrent(ids: string[]): Promise<Record<string, number>> {
   const out: Record<string, number> = {};
-  for (let i = 0; i < ids.length; i += 60) {
+  // Thousands of coins = 100+ requests: one at a time took minutes.
+  await pool(chunks(ids, 60), 8, async (batch) => {
     try {
       const r = await fetchJson<{ coins: Record<string, { price: number }> }>(
         "defillama",
-        `https://coins.llama.fi/prices/current/${ids.slice(i, i + 60).join(",")}`,
+        `https://coins.llama.fi/prices/current/${batch.join(",")}`,
         { endpoint: "prices/current" },
       );
       for (const [id, v] of Object.entries(r.coins ?? {})) out[id] = v.price;
     } catch {}
-  }
+  });
   return out;
 }
 
@@ -126,14 +136,15 @@ async function dexscreener(keys: string[]): Promise<Record<string, { price: numb
   const byChain = new Map<ChainId, string[]>();
   for (const k of keys) {
     const [c, a] = k.split(":") as [ChainId, string];
-    byChain.set(c, [...(byChain.get(c) ?? []), a]);
+    const list = byChain.get(c);
+    if (list) list.push(a); else byChain.set(c, [a]);
   }
   for (const [chain, addrs] of byChain) {
-    for (let i = 0; i < addrs.length; i += 30) {
+    await pool(chunks(addrs, 30), 4, async (batch) => {
       try {
         const pairs = await fetchJson<
           { baseToken: { address: string }; priceUsd?: string; liquidity?: { usd?: number } }[]
-        >("dexscreener", `https://api.dexscreener.com/tokens/v1/${DEXSCREENER_CHAIN[chain]}/${addrs.slice(i, i + 30).join(",")}`, {
+        >("dexscreener", `https://api.dexscreener.com/tokens/v1/${DEXSCREENER_CHAIN[chain]}/${batch.join(",")}`, {
           endpoint: "tokens",
         });
         for (const p of pairs ?? []) {
@@ -143,7 +154,7 @@ async function dexscreener(keys: string[]): Promise<Record<string, { price: numb
           if (!out[k] || liq > out[k].liq) out[k] = { price: Number(p.priceUsd ?? 0), liq };
         }
       } catch {}
-    }
+    });
   }
   return out;
 }
@@ -213,7 +224,8 @@ export async function dexPools(keys: string[]): Promise<Record<string, string>> 
   const byChain = new Map<ChainId, string[]>();
   for (const k of keys) {
     const [c, a] = k.split(":") as [ChainId, string];
-    byChain.set(c, [...(byChain.get(c) ?? []), a]);
+    const list = byChain.get(c);
+    if (list) list.push(a); else byChain.set(c, [a]);
   }
   for (const [chain, addrs] of byChain) {
     for (let i = 0; i < addrs.length; i += 30) {
