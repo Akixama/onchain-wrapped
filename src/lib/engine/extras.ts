@@ -1,4 +1,5 @@
 // Extra story stats: profit over time, speed, and narratives. Pure functions of the PnL positions.
+import { minOf } from "../core/num";
 import type { ChainId, UnifiedEvent } from "../core/types";
 import type { Position } from "./pnl";
 import { isMoney } from "../core/assets";
@@ -25,7 +26,7 @@ export function profitTimeline(traded: Position[], fromTs: number): ProfitTimeli
   const days = [...byDay.entries()].sort((a, b) => a[0] - b[0]);
   let run = 0;
   // Start where trading started (a day before the first buy), not at the edge of the period.
-  const firstBuy = Math.min(...traded.flatMap((p) => p.buys.map((b) => b.ts)), days[0]?.[0] ?? fromTs);
+  const firstBuy = minOf(traded.flatMap((p) => p.buys.map((b) => b.ts)), days[0]?.[0] ?? fromTs);
   const start = Math.max(Math.floor(fromTs / DAY) * DAY, Math.floor(firstBuy / DAY) * DAY - DAY);
   const points: [number, number][] = [[start, 0]];
   for (const [d, v] of days) { run += v; points.push([d, r2(run)]); }

@@ -1,3 +1,4 @@
+import { minOf, pushAll } from "./core/num";
 import type { UnifiedEvent } from "./core/types";
 import { tokenKey } from "./core/types";
 import { adaptersFor } from "./chains/registry";
@@ -107,11 +108,11 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
     truncated ||= res.truncated;
     quotaCut ||= !!res.quotaCut;
     if (res.truncated && res.events.length) {
-      coverageStart = Math.max(coverageStart, Math.min(...res.events.map((e) => e.timestamp)));
+      coverageStart = Math.max(coverageStart, minOf(res.events.map((e) => e.timestamp)));
     }
     Object.assign(providerPrices, res.currentPrices);
     notes.push(...(res.notes ?? []));
-    all.push(...res.events);
+    pushAll(all, res.events);
   }
   fetched = all.length;
 

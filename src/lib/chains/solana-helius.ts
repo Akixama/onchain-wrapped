@@ -1,3 +1,4 @@
+import { minOf, pushAll } from "../core/num";
 import type { ChainAdapter, EventType, FetchOptions, FetchResult, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { fetchJson } from "../infra/http";
 import { drain, timeUp } from "../infra/drain";
@@ -113,10 +114,10 @@ export const heliusAdapter: ChainAdapter = {
 
     const events = st.events;
     // Failed fees only inside the history we read (it stops early only when a cap is set).
-    const oldest = events.length ? Math.min(...events.map((e) => e.timestamp)) : opts.sinceTs;
+    const oldest = events.length ? minOf(events.map((e) => e.timestamp)) : opts.sinceTs;
     const cutoff = truncated ? oldest : opts.sinceTs;
     const known = new Set(events.map((e) => e.txHash));
-    events.push(...st.failed.events.filter((e) => !known.has(e.txHash) && e.timestamp >= cutoff));
+    pushAll(events, st.failed.events.filter((e) => !known.has(e.txHash) && e.timestamp >= cutoff));
     const meta = await fetchTokenMeta(events);
     const currentPrices: Record<string, number> = {};
     for (const e of events) for (const l of [...e.in, ...e.out]) enrichToken(l.token, meta.byMint, currentPrices);

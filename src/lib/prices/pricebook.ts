@@ -1,3 +1,4 @@
+import { maxOf, minOf } from "../core/num";
 import type { ChainId, UnifiedEvent } from "../core/types";
 import { tokenKey } from "../core/types";
 import { MAJOR_LLAMA_ID, NATIVE, type Major, isMoney, majorOf } from "../core/assets";
@@ -159,7 +160,7 @@ export async function buildPriceBook(
   providerCurrent: Record<string, number>,
   maxSeriesTokens = 25,
 ): Promise<PriceBook> {
-  const start = Math.min(sinceTs || Infinity, ...events.map((e) => e.timestamp)) - 86400;
+  const start = minOf(events.map((e) => e.timestamp), sinceTs || Infinity) - 86400;
   const majors = Object.entries(MAJOR_LLAMA_ID) as [Exclude<Major, "USD">, string][];
   // Majors (the money side of every trade) get HOURLY prices over the period the user actually traded,
   // falling back to the daily series. Hourly keeps USD conversions within a fraction of a percent.
@@ -186,7 +187,7 @@ export async function buildPriceBook(
   const tsList = events.map((e) => e.timestamp);
   const majorCharts: Record<string, PricePoint[]> = { ...daily };
   if (tsList.length) {
-    const lo = Math.min(...tsList) - 3600, hi = Math.min(Math.max(...tsList) + 3600, Math.floor(Date.now() / 1000));
+    const lo = minOf(tsList) - 3600, hi = Math.min(maxOf(tsList) + 3600, Math.floor(Date.now() / 1000));
     await Promise.all(majors.filter(([m]) => usedMajors.has(m)).map(async ([, id]) => {
       const hourly = await llamaHourly(id, lo, hi, tsList);
       if (hourly.length) majorCharts[id] = mergeSeries(daily[id] ?? [], hourly);

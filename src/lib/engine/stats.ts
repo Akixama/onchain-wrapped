@@ -1,3 +1,4 @@
+import { maxOf, minOf } from "../core/num";
 import type { Timeframe } from "../core/types";
 import type { ChainId, UnifiedEvent, Venue } from "../core/types";
 import { CHAIN_LABEL, counterfactualMajor, isMoney } from "../core/assets";
@@ -238,9 +239,9 @@ export function computeStats(input: {
       if (!s.price) continue;
       // Bought back in later: from then on they were holding again, so a run after that wasn't
       // missed by this sell (and their own top-buy price isn't a peak they "left on the table").
-      const rebuy = Math.min(Infinity, ...p.buys.filter((b) => b.ts > s.ts).map((b) => b.ts));
+      const rebuy = minOf(p.buys.filter((b) => b.ts > s.ts).map((b) => b.ts));
       const later = pts.filter((x) => x.ts > s.ts && x.ts < rebuy && x.ts <= s.ts + 90 * DAY);
-      const peak = Math.max(0, ...later.map((x) => x.price));
+      const peak = maxOf(later.map((x) => x.price), 0);
       const missed = s.amount * (peak - s.price);
       if (peak > s.price * 1.5 && missed > 25 && missed > (bestForP?.missed ?? 0)) bestForP = { p, s, peak, missed };
     }
@@ -402,7 +403,7 @@ function archetype(
 ): WrappedStats["archetype"] {
   // Pace over the time you were actually trading (a wallet that started last month isn't a
   // once-a-month trader because the window is a year).
-  const firstTrade = Math.min(...positions.map((p) => p.firstTs), now);
+  const firstTrade = minOf(positions.map((p) => p.firstTs), now);
   const months = Math.max(1, (now - Math.max(fromTs, firstTrade)) / (30 * DAY));
   const perMonth = o.totalTrades / months;
   const holds = positions.filter((p) => p.sells.length).map((p) => p.sells[0].ts - p.firstTs);
