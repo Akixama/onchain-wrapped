@@ -30,13 +30,16 @@ const clock = (sec: number) => {
 
 export function Loading({ progress, startedAt }: { progress?: Progress; startedAt?: number }) {
   // How long this lookup has been running (from when it was created, so a reload doesn't reset it).
-  const [nowMs, setNowMs] = useState(() => Date.now());
+  // The clock starts in the browser (0 until then): the page is also pre-rendered, where "now" isn't allowed.
+  const [nowMs, setNowMs] = useState(0);
   useEffect(() => {
     if (!startedAt) return;
-    const t = setInterval(() => setNowMs(Date.now()), 1000);
-    return () => clearInterval(t);
+    const tick = () => setNowMs(Date.now());
+    const first = setTimeout(tick, 0);
+    const t = setInterval(tick, 1000);
+    return () => { clearTimeout(first); clearInterval(t); };
   }, [startedAt]);
-  const elapsed = startedAt ? Math.max(0, Math.floor((nowMs - startedAt) / 1000)) : null;
+  const elapsed = startedAt && nowMs ? Math.max(0, Math.floor((nowMs - startedAt) / 1000)) : null;
   const [q, setQ] = useState(0);
   useEffect(() => {
     const t = setInterval(() => setQ((x) => (x + 1) % QUIPS.length), 2200);
