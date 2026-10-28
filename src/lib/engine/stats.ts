@@ -4,6 +4,7 @@ import type { BridgeHop } from "../core/identity";
 import type { PriceBook } from "../prices/pricebook";
 import { type Position, pricePoints } from "./pnl";
 import { appFeeStats, type BagStats, narrativeStats, profitTimeline, speedStats, type AppFeeStats, type NarrativeStats, type ProfitTimeline, type SpeedStats } from "./extras";
+import type { SniperStats } from "../launch";
 
 // Everything the cards need, as plain JSON. The UI never recomputes anything.
 
@@ -108,12 +109,13 @@ export interface WrappedStats {
   appFees?: AppFeeStats;
   /** Only set when holdings were checked against the real wallet balance. */
   bags?: BagStats;
+  sniper?: SniperStats;
   /** Story order, only cards with something worth saying. The UI renders exactly these. */
   cards: CardId[];
 }
 
 export type CardId =
-  | "archetype" | "overview" | "pnl" | "profitTime" | "best" | "worst" | "roundTrip" | "paperHands" | "diamondHands" | "bags" | "speed" | "narrative"
+  | "archetype" | "overview" | "pnl" | "profitTime" | "best" | "worst" | "roundTrip" | "paperHands" | "diamondHands" | "bags" | "speed" | "sniper" | "narrative"
   | "counterfactual" | "appFees" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "roast" | "summary";
 
 export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
@@ -129,6 +131,7 @@ export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
     ["paperHands", !!s.paperHands],
     ["diamondHands", !!s.diamondHands],
     ["bags", (s.bags?.count ?? 0) > 0 && (s.bags?.costUsd ?? 0) >= 10],
+    ["sniper", (s.sniper?.checked ?? 0) >= 10 && (s.sniper?.within60s ?? 0) >= 3],
     ["speed", (s.speed?.closedCount ?? 0) >= 3 && !!s.speed?.fastestFlip],
     ["narrative", !!s.narratives?.top.length && s.narratives.top[0].id !== "other" && s.narratives.coverage >= 0.15],
     ["counterfactual", Math.abs(s.counterfactual.justHeldDiffUsd) >= 50],

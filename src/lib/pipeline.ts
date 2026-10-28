@@ -8,6 +8,7 @@ import { filterSpam } from "./core/spam";
 import { buildPriceBook } from "./prices/pricebook";
 import { runPnl } from "./engine/pnl";
 import { bagStats } from "./engine/extras";
+import { sniperStats } from "./launch";
 import { computeStats, storyCards, type WrappedStats } from "./engine/stats";
 import { addTradeCharts } from "./charts";
 import { refinePeaks } from "./peaks";
@@ -170,6 +171,8 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   stats.meta.notes = notes;
   // Bags still held: only when we saw the real balances, so coins that left by other routes don't show up.
   if (actualBalances) stats.bags = bagStats([...positions.values()].filter((p) => p.chain === "solana"));
+  a.onStage?.("crunching", "Checking how early you bought");
+  stats.sniper = await sniperStats([...positions.values()], Date.now() + 30_000).catch(() => undefined);
   stats.cards = storyCards(stats);
   stats.meta.names = Object.fromEntries(resolved.filter((w) => w.name).map((w) => [w.address, w.name!]));
   return stats;

@@ -3,7 +3,7 @@ import { motion } from "motion/react";
 import { Children, isValidElement, useCallback, useState, type ReactNode } from "react";
 import { GT_NETWORK } from "@/lib/gecko";
 import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
-import { CHAIN_COLOR, CHAIN_NAME, capOrPrice, hourLabel, num, pct, periodLabel, usd, whoLabel } from "../format";
+import { CHAIN_COLOR, CHAIN_NAME, afterLaunch, capOrPrice, hourLabel, num, pct, periodLabel, usd, whoLabel } from "../format";
 import { Big, BigNumber, Chip, CountUp, Kicker, Line, Stat, rise } from "./primitives";
 import { TradeChart } from "./TradeChart";
 import { NARRATIVE_EMOJI, NARRATIVE_LABEL } from "@/lib/engine/extras";
@@ -579,6 +579,43 @@ const Narrative = ({ s }: CardProps) => {
   );
 };
 
+/** How soon after launch they bought (Solana, checked on-chain). */
+const Sniper = ({ s }: CardProps) => {
+  const n = s.sniper!;
+  const pctOf = (x: number) => Math.round((x / n.checked) * 100);
+  const f = n.fastest;
+  const showPnl = n.snipes.count >= 3 && n.rest.count >= 3;
+  // Averages, not totals: big wallets are only sampled.
+  const avgSnipe = n.snipes.count ? n.snipes.pnlUsd / n.snipes.count : 0;
+  const avgRest = n.rest.count ? n.rest.pnlUsd / n.rest.count : 0;
+  return (
+    <>
+      <Kicker>Launch sniper</Kicker>
+      <Body className="space-y-6">
+        <Line className="text-xl opacity-80">You bought this many of your coins within a minute of launch</Line>
+        <BigNumber className="text-[76px] @3xl:text-[106px]" color="#7DD3FC"><CountUp value={pctOf(n.within60s)} format={(x) => `${Math.round(x)}%`} /></BigNumber>
+        {f && (
+          <Line className="text-xl opacity-80">
+            Fastest: <b>${f.symbol}</b>, {f.sec <= 0 ? <>bought <b>the same second</b> it launched</> : <><b>{afterLaunch(f.sec)}</b> after launch</>}. You were transaction #{num(f.txNumber)}.
+          </Line>
+        )}
+        <R><motion.div variants={rise} className="grid grid-cols-3 gap-3">
+          <Stat label="Within 10s">{pctOf(n.within10s)}%</Stat>
+          <Stat label="Within 1 min">{pctOf(n.within60s)}%</Stat>
+          <Stat label="Within 5 min">{pctOf(n.within5m)}%</Stat>
+        </motion.div></R>
+        {showPnl && (
+          <Line className="text-base opacity-75">
+            On average a launch snipe made you <b style={{ color: gainColor(avgSnipe) }}>{money(avgSnipe, true)}</b>, and a coin bought later <b style={{ color: gainColor(avgRest) }}>{money(avgRest, true)}</b>.
+          </Line>
+        )}
+        {(n.launched ?? 0) > 0 && <Line className="text-base opacity-75">Plus {num(n.launched)} coin{n.launched === 1 ? "" : "s"} you launched yourself.</Line>}
+        <Line className="text-xs opacity-50">{n.sampled ? `Checked on-chain for ${num(n.checked)} of your ${num(n.bought)} coins.` : `Checked on-chain for ${num(n.checked)} coins.`}</Line>
+      </Body>
+    </>
+  );
+};
+
 /** Coins they bought and still hold, at today's prices. */
 const Bags = ({ s }: CardProps) => {
   const b = s.bags!;
@@ -649,7 +686,7 @@ const AppFees = ({ s }: CardProps) => {
 };
 
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
-  appFees: AppFees, bags: Bags,
+  appFees: AppFees, bags: Bags, sniper: Sniper,
   archetype: Archetype, overview: Overview, pnl: Pnl, profitTime: ProfitTime, best: Best, worst: Worst, roundTrip: RoundTrip,
   paperHands: PaperHands, diamondHands: DiamondHands, speed: Speed, narrative: Narrative, counterfactual: Counterfactual, gas: Gas, rugs: Rugs,
   airdrops: Airdrops, sleep: Sleep, bridges: Bridges, percentile: Percentile, chains: Chains, roast: Roast, summary: Summary,

@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
 import { getJob } from "@/lib/store";
 import { NARRATIVE_LABEL } from "@/lib/engine/extras";
-import { CARD_THEME, CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel } from "@/components/format";
+import { CARD_THEME, CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel, afterLaunch } from "@/components/format";
 import { EVM_ENABLED } from "@/lib/site";
 
 // Fonts are the same for every request: read once.
@@ -58,6 +58,12 @@ function content(s: WrappedStats, card: CardId): Content {
       const c = s.counterfactual;
       const held = c.verdict === "should_have_held";
       return { kicker: `If I'd just held ${c.major.replace("+", " & ")}`, big: held ? `${m(c.justHeldDiffUsd)} richer` : `${m(-c.justHeldDiffUsd)} poorer`, bigColor: held ? "#FBBF24" : green, sub: held ? "Should've just held." : "My trading actually won." };
+    }
+    case "sniper": {
+      const n = s.sniper!;
+      const f = n.fastest;
+      return { kicker: "Launch sniper", lead: "Coins I bought within a minute of launch", big: `${Math.round((n.within60s / n.checked) * 100)}%`, bigColor: "#7DD3FC",
+        sub: f ? `Fastest: ${f.symbol}, ${f.sec <= 0 ? "the same second it launched" : `${afterLaunch(f.sec)} after launch`}` : undefined };
     }
     case "bags": {
       const b = s.bags!;
