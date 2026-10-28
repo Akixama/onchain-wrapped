@@ -81,7 +81,8 @@ export async function fetchJson<T>(
       throw new QuotaError(provider, resetH);
     }
     if ((res.status === 429 || res.status >= 500) && attempt < retries) {
-      const retryAfter = Number(res.headers.get("retry-after")) * 1000;
+      // Capped: a server asking for a long wait would otherwise stall a whole lookup.
+      const retryAfter = Math.min(30_000, Number(res.headers.get("retry-after")) * 1000 || 0);
       // Helius RPC limits reset each second: a short wait is enough; others get the long backoff.
       await sleep(retryAfter || Math.min(8000, (provider === "helius-rpc" || provider === "solana-rpc" ? 400 : 1500) * 2 ** attempt));
       continue;
