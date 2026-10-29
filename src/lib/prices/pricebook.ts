@@ -198,7 +198,8 @@ export async function buildPriceBook(
     for (const l of e.out) if (!isMoney(l.token)) sold.set(tokenKey(l.token), (sold.get(tokenKey(l.token)) ?? 0) + (l.usd ?? 0) + 1e-9);
   }
   const soldTop = [...sold.entries()].sort((a, b) => b[1] - a[1]).slice(0, Number(process.env.SERIES_SOLD_MAX ?? 120)).map(([k]) => k);
-  const seriesKeys = [...new Set([...tokens.slice(0, maxSeriesTokens), ...soldTop])];
+  // Round trips and peaks need history for coins they bought too: cover the top SERIES_MAX by volume.
+  const seriesKeys = [...new Set([...tokens.slice(0, Math.max(maxSeriesTokens, Number(process.env.SERIES_MAX ?? 150))), ...soldTop])];
   const seriesP = llamaChart(seriesKeys.map(llamaId), start);
   // Coins looked up earlier aren't asked again; their answers (found or not) are filled in.
   const curLlamaP = llamaCurrent(tokens.filter((k) => known[k]?.l === undefined).map(llamaId)).then((cur) => {
@@ -208,8 +209,9 @@ export async function buildPriceBook(
   const majorCurP = llamaCurrent(majors.map(([, id]) => id));
   const dexP = curLlamaP.then(async (cur) => {
     const needDex = tokens.filter((k) => providerCurrent[k] === undefined && cur[llamaId(k)] === undefined);
-    // Liquidity is useful for rug detection on everything, but only query DexScreener for what we need + top tokens.
-    const want = [...new Set([...needDex, ...tokens.slice(0, maxSeriesTokens)])];
+    // Pool size decides whether a coin is dead (rugs), so ask for every coin up to LIQUIDITY_MAX
+    // (30 per request): a top-25 cut made the rug count depend on the period chosen.
+    const want = [...new Set([...needDex, ...tokens.slice(0, Math.max(maxSeriesTokens, Number(process.env.LIQUIDITY_MAX ?? 900)))])];
     const dex = await dexscreener(want.filter((k) => known[k]?.d === undefined));
     for (const k of want) { const d = known[k]?.d; if (d) dex[k] = { price: d[0], liq: d[1] }; }
     return dex;
@@ -251,14 +253,22 @@ export type KnownPrices = Record<string, { l?: number | null; d?: [number, numbe
  */
 export async function prefetchCurrent(events: UnifiedEvent[], known: KnownPrices, stopAt: number): Promise<number> {
   const keys = new Set<string>();
-  for (const e of events) for (const l of [...e.in, ...e.out]) if (!isMoney(l.token)) keys.add(tokenKey(l.token));
+  const vol = new Map<string, number>();
+  for (const e of events) for (const l of [...e.in, ...e.out]) {
+    if (isMoney(l.token)) continue;
+    const k = tokenKey(l.token);
+    keys.add(k);
+    vol.set(k, (vol.get(k) ?? 0) + (l.usd ?? 0) + 1e-9);
+  }
+  // Same top coins buildPriceBook asks DexScreener about for pool size (rugs).
+  const top = new Set([...vol.entries()].sort((a, b) => b[1] - a[1]).slice(0, Number(process.env.LIQUIDITY_MAX ?? 900)).map(([k]) => k));
   const entry = (k: string) => (known[k] ??= {});
   const askL = [...keys].filter((k) => known[k]?.l === undefined);
   const askedL = new Set<string>();
   const cur = await llamaCurrent(askL.map(llamaId), stopAt, askedL);
   for (const k of askL) if (askedL.has(llamaId(k))) entry(k).l = cur[llamaId(k)] ?? null;
-  // DexScreener only for coins DefiLlama has no price for, as buildPriceBook does (it adds the top coins itself).
-  const askD = [...keys].filter((k) => known[k]?.l === null && known[k]?.d === undefined);
+  // DexScreener: coins DefiLlama has no price for, plus the top coins (pool size), as buildPriceBook does.
+  const askD = [...keys].filter((k) => (known[k]?.l === null || top.has(k)) && known[k]?.l !== undefined && known[k]?.d === undefined);
   const askedD = new Set<string>();
   const dex = await dexscreener(askD, stopAt, askedD);
   for (const k of askD) if (askedD.has(k)) entry(k).d = dex[k] ? [dex[k].price, dex[k].liq] : null;

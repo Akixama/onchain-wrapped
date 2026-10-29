@@ -37,20 +37,25 @@ const sigsBefore = (mint: string, before: string) =>
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "getSignaturesForAddress", params: [mint, { before, limit: 1000 }] }),
   }).then((r) => { if (r.error || !r.result) throw new Error(r.error?.message ?? "no result"); return r.result; });
 
-/** Seconds from launch to `sig`, and how many transactions came before it. null = couldn't tell. */
-async function launchDelay(mint: string, sig: string, ts: number): Promise<{ sec: number; before: number } | null> {
+/**
+ * Seconds from launch to `sig`, and how many transactions came before it. `atLeast`: we stopped
+ * before reaching the launch, so the real delay is longer (still enough to say "not a snipe" when
+ * it's past a minute). null = couldn't tell at all.
+ */
+async function launchDelay(mint: string, sig: string, ts: number): Promise<{ sec: number; before: number; atLeast?: boolean } | null> {
   let cursor = sig, count = 0;
   let oldest: number | null = ts; // nothing before the buy = the buy is the first transaction
-  for (let page = 0; page < 3; page++) {
+  // Busy launches see thousands of transactions in the first minutes: look back up to 10,000.
+  for (let page = 0; page < 10; page++) {
     const s = await sigsBefore(mint, cursor);
     count += s.length;
-    if (s.length) oldest = s[s.length - 1].blockTime;
+    if (s.length) oldest = s[s.length - 1].blockTime ?? oldest;
     if (s.length < 1000) return oldest == null ? null : { sec: Math.max(0, ts - oldest), before: count };
     // Already more than 5 minutes in with 1,000+ trades before: not a snipe, and we know enough.
-    if (oldest != null && ts - oldest > 300) return { sec: ts - oldest, before: count };
+    if (oldest != null && ts - oldest > 300) return { sec: ts - oldest, before: count, atLeast: true };
     cursor = s[999].signature;
   }
-  return null;
+  return oldest != null ? { sec: Math.max(0, ts - oldest), before: count, atLeast: true } : null;
 }
 
 /** Stable pseudo-random order, so the same wallet always samples the same coins. */
@@ -60,15 +65,20 @@ export async function sniperStats(positions: Position[], deadline?: number): Pro
   const bought = positions.filter((p) => p.chain === "solana" && p.buys.length && p.buys[0].sig && p.token.address !== "native");
   if (!bought.length) return undefined;
   const pick = [...bought].sort((a, b) => hash(a.key) - hash(b.key)).slice(0, maxCoins());
-  const all: { p: Position; sec: number; before: number }[] = [];
+  const all: { p: Position; sec: number; before: number; atLeast?: boolean }[] = [];
   await drain(pick, 4, deadline, async (p) => {
-    const d = await launchDelay(p.token.address, p.buys[0].sig!, p.buys[0].ts);
-    if (d) all.push({ p, ...d });
+    // One retry: a failed lookup would silently drop the coin (and make counts differ run to run).
+    const d = await launchDelay(p.token.address, p.buys[0].sig!, p.buys[0].ts)
+      .catch(() => launchDelay(p.token.address, p.buys[0].sig!, p.buys[0].ts)).catch(() => null);
+    // Unfinished and still under a minute: we can't place it in any bucket, so leave it out.
+    if (d && !(d.atLeast && d.sec <= 60)) all.push({ p, ...d });
   });
   // Their buy was the coin's first transaction: they created it (a dev buy), not sniped it.
   const found = all.filter((f) => f.before > 0);
   if (!found.length) return undefined;
-  const secs = found.map((f) => f.sec).sort((a, b) => a - b);
+  // "At least" delays are lower bounds: fine for "over a minute", not for a median or the 5-minute count.
+  const exact = found.filter((f) => !f.atLeast);
+  const secs = (exact.length ? exact : found).map((f) => f.sec).sort((a, b) => a - b);
   const fast = [...found].sort((a, b) => a.sec - b.sec || a.before - b.before)[0];
   const snipes = found.filter((f) => f.sec <= 60), rest = found.filter((f) => f.sec > 60);
   const sum = (xs: typeof found) => r2(xs.reduce((s, f) => s + f.p.pnl, 0));
@@ -79,7 +89,7 @@ export async function sniperStats(positions: Position[], deadline?: number): Pro
     sampled: pick.length < bought.length,
     within10s: found.filter((f) => f.sec <= 10).length,
     within60s: snipes.length,
-    within5m: found.filter((f) => f.sec <= 300).length,
+    within5m: exact.filter((f) => f.sec <= 300).length,
     medianSec: secs[Math.floor(secs.length / 2)],
     fastest: { symbol: fast.p.token.symbol, address: fast.p.token.address, icon: fast.p.token.icon, sec: fast.sec, txNumber: fast.before + 1 },
     snipes: { count: snipes.length, pnlUsd: sum(snipes) },

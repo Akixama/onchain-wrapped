@@ -17,7 +17,9 @@ export async function addTradeCharts(s: WrappedStats, positions: Map<string, Pos
   const now = Math.floor(Date.now() / 1000);
   const cards: { card: TradeCard; to: number }[] = [];
   for (const c of [s.bestTrade, s.worstTrade, s.roundTrip, s.diamondHands]) if (c) cards.push({ card: c, to: c.holdingValueUsd > 0 ? now : c.lastTs });
-  if (s.paperHands) cards.push({ card: s.paperHands, to: Math.min(now, s.paperHands.soldTs + 90 * DAY) });
+  const paperTries = [s.paperHands, ...(s.paperHandsAlts ?? [])].filter((x): x is NonNullable<typeof x> => !!x);
+  delete s.paperHandsAlts;
+  for (const ph of paperTries) cards.push({ card: ph, to: Math.min(now, ph.soldTs + 90 * DAY) });
 
   const supplies = new Map<string, Promise<number | null>>();
   await Promise.all(cards.map(async ({ card: c, to }) => {
@@ -37,27 +39,30 @@ export async function addTradeCharts(s: WrappedStats, positions: Map<string, Pos
     if (fillMax > c.peakPrice) c.peakPrice = fillMax;
   }));
 
-  // Paper hands: confirm the run-up with real candles, or don't show the card.
-  const ph = s.paperHands;
-  if (ph && GT_NETWORK[ph.chain] && ph.address !== "native") {
+  // Paper hands: check the top few candidates against real candles and keep the biggest confirmed
+  // one (checking only the first made the card depend on which coin happened to rank first).
+  if (!paperTries.length) return;
+  let unchecked = false;
+  const results = await Promise.all(paperTries.map(async (ph) => {
+    if (!GT_NETWORK[ph.chain] || ph.address === "native") return ph; // can't check: keep the estimate
     try {
       const pool = await topPool(gt, ph.chain, ph.address);
-      if (pool && ph.window) {
-        const { candles, interval } = await fetchCandles(gt, ph.chain, pool, ph.address, ph.window.start, ph.window.end);
-        if (candles.length >= 3) {
-          ph.chart = { candles, interval, supply: ph.supply ?? null };
-          const later = Math.max(0, ...candles.filter((c) => c[0] > ph.soldTs && c[0] <= ph.soldTs + 90 * DAY).map((c) => c[4]));
-          if (later > ph.soldAt * 1.5) {
-            const soldAmount = ph.missedUsd / Math.max(1e-18, ph.laterPeak - ph.soldAt);
-            ph.laterPeak = later;
-            ph.missedUsd = Math.round(soldAmount * (later - ph.soldAt) * 100) / 100;
-          } else {
-            s.paperHands = null; // real candles show no meaningful run after the sale
-          }
-        }
-      }
+      if (!pool || !ph.window) return ph;
+      const { candles, interval } = await fetchCandles(gt, ph.chain, pool, ph.address, ph.window.start, ph.window.end);
+      if (candles.length < 3) return ph;
+      ph.chart = { candles, interval, supply: ph.supply ?? null };
+      const later = Math.max(0, ...candles.filter((c) => c[0] > ph.soldTs && c[0] <= ph.soldTs + 90 * DAY).map((c) => c[4]));
+      if (later <= ph.soldAt * 1.5) return null; // real candles show no meaningful run after the sale
+      const soldAmount = ph.missedUsd / Math.max(1e-18, ph.laterPeak - ph.soldAt);
+      ph.laterPeak = later;
+      ph.missedUsd = Math.round(soldAmount * (later - ph.soldAt) * 100) / 100;
+      return ph;
     } catch {
-      onNote?.("Paper hands is estimated from DefiLlama prices (chart data was unavailable).");
+      unchecked = true;
+      return ph;
     }
-  }
+  }));
+  const kept = results.filter((x): x is NonNullable<typeof x> => !!x).sort((a, b) => b.missedUsd - a.missedUsd);
+  s.paperHands = kept[0] ?? null;
+  if (unchecked && s.paperHands && !s.paperHands.chart) onNote?.("Paper hands is estimated from DefiLlama prices (chart data was unavailable).");
 }

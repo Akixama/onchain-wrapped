@@ -218,11 +218,12 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   a.onStage?.("crunching", "Drawing your charts");
   // Skipped when short on time: the story then loads these charts in the viewer's browser.
   if (left(50_000)) await addTradeCharts(stats, positions, pbx, (n) => notes.push(n)).catch(() => {});
+  delete stats.paperHandsAlts; // only for the chart check above
   stats.meta.notes = notes;
   // Bags still held: only when we saw the real balances, so coins that left by other routes don't show up.
   if (actualBalances) stats.bags = bagStats([...positions.values()].filter((p) => p.chain === "solana"));
   a.onStage?.("crunching", "Checking how early you bought");
-  stats.sniper = left(15_000) ? await sniperStats([...positions.values()], Math.min(Date.now() + 30_000, a.finishBy ?? Infinity) - (a.finishBy ? 5_000 : 0)).catch(() => undefined) : undefined;
+  stats.sniper = left(15_000) ? await sniperStats([...positions.values()], Math.min(Date.now() + 75_000, a.finishBy ?? Infinity) - (a.finishBy ? 5_000 : 0)).catch(() => undefined) : undefined;
   // Last: the personality uses every stat, including the sniper and bags ones computed above.
   stats.archetype = personality(stats);
   stats.cards = storyCards(stats);

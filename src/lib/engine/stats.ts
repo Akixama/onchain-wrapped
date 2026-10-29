@@ -94,6 +94,8 @@ export interface WrappedStats {
   worstTrade: TradeCard | null;
   roundTrip: (TradeCard & { peakGainUsd: number; peakTs: number; endedWithUsd: number }) | null;
   paperHands: (TradeCard & { soldAt: number; soldTs: number; laterPeak: number; missedUsd: number }) | null;
+  /** Internal: other paper-hands candidates for the chart check; removed before the result is saved. */
+  paperHandsAlts?: NonNullable<WrappedStats["paperHands"]>[];
   diamondHands: (TradeCard & { daysHeld: number; stillHolding: boolean }) | null;
   counterfactual: {
     major: "SOL" | "ETH" | "SOL+ETH";
@@ -147,7 +149,7 @@ export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
     ["revenge", (s.revenge?.revenge.count ?? 0) >= 5],
     ["speed", (s.speed?.closedCount ?? 0) >= 3 && !!s.speed?.fastestFlip],
     ["narrative", !!s.narratives?.top.length && s.narratives.top[0].id !== "other" && s.narratives.coverage >= 0.15],
-    ["counterfactual", Math.abs(s.counterfactual.justHeldDiffUsd) >= 50],
+    ["counterfactual", s.overview.totalTrades > 0 && Math.abs(s.counterfactual.justHeldDiffUsd) >= 5],
     ["appFees", (s.appFees?.totalUsd ?? 0) >= 1 && (s.appFees?.coverage ?? 0) >= 0.8],
     ["gas", s.gas.totalUsd >= 1],
     ["rugs", s.rugs.count + s.rugs.dodged > 0],
@@ -260,10 +262,13 @@ export function computeStats(input: {
     }
     if (bestForP) paperCands.push(bestForP);
   }
-  const pp = pick(paperCands.sort((a, b) => b.missed - a.missed));
-  const paper: WrappedStats["paperHands"] = pp
-    ? { ...card(pp.p), soldAt: pp.s.price, soldTs: pp.s.ts, laterPeak: pp.peak, missedUsd: r2(pp.missed) }
-    : null;
+  paperCands.sort((a, b) => b.missed - a.missed);
+  const usedBefore = new Set(used);
+  const pp = pick(paperCands);
+  const paperCard = (c: (typeof paperCands)[number]) => ({ ...card(c.p), soldAt: c.s.price, soldTs: c.s.ts, laterPeak: c.peak, missedUsd: r2(c.missed) });
+  const paper: WrappedStats["paperHands"] = pp ? paperCard(pp) : null;
+  // Runners-up, checked against real charts too (the top one can turn out smaller than its estimate).
+  const paperAlts = paperCands.filter((c) => c !== pp && !usedBefore.has(c.p.key)).slice(0, 3).map(paperCard);
 
   // Round trip: biggest gap between peak gain and where they ended up.
   const rt = pick(
@@ -360,6 +365,7 @@ export function computeStats(input: {
     worstTrade: worst ? card(worst) : null,
     roundTrip: rt ? { ...card(rt), peakGainUsd: r2(rt.peakGain), peakTs: rt.peakGainTs, endedWithUsd: r2(rt.pnl) } : null,
     paperHands: paper,
+    paperHandsAlts: paperAlts,
     diamondHands: dh ? { ...card(dh.p), daysHeld: Math.round(dh.held / DAY), stillHolding: dh.p.holding > 0 } : null,
     counterfactual: {
       major: usedMajors.length === 2 ? "SOL+ETH" : usedMajors[0] ?? "ETH",
