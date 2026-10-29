@@ -95,7 +95,6 @@ export function ChartGame({ id, who, rounds, siteUrl }: { id: string; who: strin
                   </div>
                   <div className="flex flex-wrap justify-center gap-4 text-sm">
                     <button onClick={() => { setScore(0); setGuess(null); setI(0); }} className="underline-offset-4 opacity-75 hover:underline">Play again</button>
-                    <Link href={`/q/${id}`} className="underline-offset-4 opacity-75 hover:underline">Try the wallet quiz</Link>
                     <Link href={`/ask/${id}`} className="underline-offset-4 opacity-75 hover:underline">Ask this wallet</Link>
                   </div>
                 </div>

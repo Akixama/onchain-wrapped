@@ -29,7 +29,7 @@ async function View({ params }: { params: Promise<{ id: string }> }) {
   if (job.status !== "done" || !job.stats) redirect(`/w/${id}`);
   const s = job.stats;
   const rounds = chartRounds([s.bestTrade, s.worstTrade, s.roundTrip, s.paperHands, s.diamondHands], id);
-  if (rounds.length < 2) redirect(`/q/${id}`); // not enough trades with a clear result
+  if (rounds.length < 2) redirect(`/w/${id}`); // not enough trades with a clear result
   return <ChartGame id={id} who={whoLabel(s)} rounds={rounds} siteUrl={siteUrl()} />;
 }
 

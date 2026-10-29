@@ -175,8 +175,7 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
                 <button onClick={() => setCompare(true)} className="w-full rounded-2xl border border-white/40 bg-white/10 py-3 text-sm font-semibold @3xl:py-3.5">Compare with a friend</button>
                 <Link href="/" className="block w-full rounded-2xl border border-white/25 py-3 text-center text-sm font-semibold @3xl:py-3.5">Check another wallet</Link>
               </div>
-              <div className="grid grid-cols-3 gap-2 text-center text-xs font-semibold @3xl:text-sm">
-                <Link href={`/q/${id}`} className="rounded-2xl border border-amber-300/50 bg-amber-300/10 px-1 py-2.5 text-amber-100">Wallet quiz</Link>
+              <div className="grid grid-cols-2 gap-2 text-center text-xs font-semibold @3xl:text-sm">
                 <Link href={`/g/${id}`} className="rounded-2xl border border-cyan-300/50 bg-cyan-300/10 px-1 py-2.5 text-cyan-100">Win or lose?</Link>
                 <Link href={`/ask/${id}`} className="rounded-2xl border border-fuchsia-300/50 bg-fuchsia-300/10 px-1 py-2.5 text-fuchsia-100">Ask this wallet</Link>
               </div>

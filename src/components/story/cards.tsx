@@ -509,11 +509,22 @@ const ProfitTime = ({ s }: CardProps) => {
   const spanDays = (t1 - t0) / 86400;
   const ticks = spanDays <= 60
     ? Array.from({ length: 3 }, (_, i) => t0 + ((t1 - t0) * i) / 2).map((ts) => ({ ts, label: dayLabel(ts) }))
-    : Array.from(new Set(pts.map((p) => new Date(p[0] * 1000).toISOString().slice(0, 7))))
-        .map((m) => Date.parse(`${m}-01T00:00:00Z`) / 1000)
-        .filter((ts) => ts >= t0 && ts <= t1)
-        .filter((_, i, all) => i % Math.max(1, Math.ceil(all.length / 4)) === 0)
-        .map((ts) => ({ ts, label: new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" }) }));
+    : (() => {
+        // Every month across the range (not just months with trades), thinned to ~5, plus the start date.
+        const months: number[] = [];
+        const d = new Date(t0 * 1000);
+        for (let m = Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 1) / 1000; m <= t1; ) {
+          months.push(m);
+          const md = new Date(m * 1000);
+          m = Date.UTC(md.getUTCFullYear(), md.getUTCMonth() + 1, 1) / 1000;
+        }
+        const step = Math.max(1, Math.ceil(months.length / 5));
+        const label = (ts: number) => new Date(ts * 1000).toLocaleDateString("en-US", { month: "short", timeZone: "UTC" });
+        // Keep month labels clear of the start label (and of the right edge).
+        const gap = (t1 - t0) * 0.12;
+        return [{ ts: t0, label: dayLabel(t0) }, ...months.filter((_, i) => i % step === step - 1 || step === 1)
+          .filter((ts) => ts - t0 > gap && t1 - ts > gap * 0.4).map((ts) => ({ ts, label: label(ts) }))];
+      })();
   const markDay = (d: { ts: number; usd: number } | null, color: string) => {
     if (!d) return null;
     const p = pts.find((q) => q[0] === d.ts);

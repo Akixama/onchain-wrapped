@@ -26,7 +26,7 @@ export function TipJar({ className = "" }: { className?: string }) {
 }
 
 /**
- * Floating tip button, fixed to the bottom-right corner. Placed on the home, compare, quiz and chart
+ * Floating tip button, fixed to the bottom-right corner. Placed on the home, compare and chart
  * game pages (not the story or chat: their own buttons sit in that corner).
  */
 export function TipFab() {
