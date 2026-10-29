@@ -67,7 +67,8 @@ export function LandingForm() {
     if (!all.length) return setError(EVM_ENABLED ? "Paste a wallet address, ENS or .sol name." : "Paste a Solana wallet address or .sol name.");
     const bad = all.find((w) => !looksValid(w));
     if (bad) return setError(!EVM_ENABLED && (/^0x/i.test(bad) || /\.eth$/i.test(bad)) ? SOLANA_ONLY_MSG : `"${bad}" doesn't look like a wallet.`);
-    if (timeframe === "custom" && (!range || range.from >= range.to)) return setError("Pick a start date before the end date.");
+    if (timeframe === "custom" && (!range || range.from > range.to)) return setError("Pick a start date on or before the end date.");
+    if (timeframe === "custom" && range && (range.from < range.min || range.to > range.max)) return setError("Pick dates within the last 12 months.");
     setBusy(true);
     setError(null);
     try {

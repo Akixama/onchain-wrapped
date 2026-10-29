@@ -133,6 +133,8 @@ export function parseRange(from: unknown, to: unknown, nowS = Math.floor(Date.no
   const f = ts(from), t0 = ts(to);
   if (!Number.isFinite(f) || !Number.isFinite(t0)) return null;
   const t = Math.min(nowS, typeof to === "string" ? t0 + 86400 - 1 : t0);
-  if (f >= t || f < nowS - 366 * 86400) return null;
+  // Within the last 12 months: the start may be any day from 365 days ago (that whole day counts).
+  const earliest = Math.floor((nowS - 365 * 86400) / 86400) * 86400;
+  if (f >= t || f < earliest) return null;
   return { from: Math.floor(f), to: Math.floor(t) };
 }
