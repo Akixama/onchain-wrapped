@@ -124,7 +124,7 @@ function content(s: WrappedStats, card: CardId): Content {
     }
     default:
       return {
-        kicker: "My onchain Wrapped", big: s.archetype.title,
+        kicker: "My Wrapped Onchain", big: s.archetype.title,
         sub: [`${num(s.overview.totalTrades)} trades`, m(s.pnl.totalUsd, true) + " PnL", s.bestTrade && `best: $${s.bestTrade.symbol}`].filter(Boolean).join(" · "),
       };
   }
@@ -136,7 +136,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/og/[id]/[card]"
   const s = job?.stats;
   const card = (rawCard.replace(/\.png$/, "") as CardId) || "summary";
   const valid = s && (s.cards.includes(card) || card === "summary");
-  const c: Content = valid ? content(s, card) : { kicker: "Onchain Wrapped", big: "Your onchain year, wrapped.", sub: "Paste any Solana wallet." };
+  const c: Content = valid ? content(s, card) : { kicker: "Wrapped Onchain", big: "Your onchain year, wrapped.", sub: "Paste any Solana wallet." };
   const t = CARD_THEME[valid ? card : "summary"];
   const bigSize = c.big.length > 120 ? 40 : c.big.length > 60 ? 48 : c.big.length > 28 ? 64 : c.big.length > 18 ? 84 : 112;
 
@@ -150,7 +150,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/og/[id]/[card]"
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: 4, textTransform: "uppercase", opacity: 0.75 }}>{c.kicker}</div>
             <div style={{ display: "flex", fontFamily: "SpaceGrotesk", fontSize: 28 }}>
-              onchain<span style={{ opacity: 0.6 }}>wrapped</span>
+              Wrapped&nbsp;<span style={{ opacity: 0.6 }}>Onchain</span>
             </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>

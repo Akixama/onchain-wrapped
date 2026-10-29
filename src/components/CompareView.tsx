@@ -50,14 +50,14 @@ export function CompareView({ a: a0, b: b0, siteUrl }: { a: J; b: J; siteUrl: st
   const nameA = whoLabel(sa), nameB = whoLabel(sb);
   const verdict = score.a === score.b ? "Dead even." : `${score.a > score.b ? nameA : nameB} takes it.`;
   const url = `${siteUrl}/vs/${a.id}/${b.id}`;
-  const text = `${nameA} vs ${nameB} on Onchain Wrapped: ${score.a}–${score.b}. ${verdict}`;
+  const text = `${nameA} vs ${nameB} on Wrapped Onchain: ${score.a}–${score.b}. ${verdict}`;
 
   return (
     <div className="min-h-[100dvh] bg-[#0B0820] px-4 pb-24 pt-8 text-white sm:px-6">
       <TipFab />
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex items-center justify-between text-sm">
-          <Link href="/" className="font-display font-bold">onchain<span className="opacity-60">wrapped</span></Link>
+          <Link href="/" className="font-display font-bold">Wrapped <span className="opacity-60">Onchain</span></Link>
           <Link href={`/w/${a.id}`} className="rounded-full bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">← Back</Link>
         </div>
 

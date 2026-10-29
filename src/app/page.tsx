@@ -22,7 +22,7 @@ export default function Home() {
       </div>
       <div className="relative mx-auto flex min-h-[100dvh] max-w-xl flex-col px-4 py-6 sm:px-6">
         <header className="flex items-center justify-between">
-          <span className="font-display text-lg font-bold tracking-tight">onchain<span className="opacity-60">wrapped</span></span>
+          <span className="font-display text-lg font-bold tracking-tight">Wrapped <span className="opacity-60">Onchain</span></span>
           <span className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/70">Free · no sign-up</span>
         </header>
 

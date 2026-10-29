@@ -8,7 +8,7 @@ const display = Space_Grotesk({ variable: "--font-display", subsets: ["latin"], 
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
-  title: "Onchain Wrapped — your trading year, wrapped",
+  title: "Wrapped Onchain — your trading year, wrapped",
   description: "Paste any Solana wallet and get a swipeable story of your onchain trading life. Best trade, worst trade, round trips, gas burned and more.",
   openGraph: { images: [{ url: "/api/og/home/summary", width: 1200, height: 630 }] },
   twitter: { card: "summary_large_image" },

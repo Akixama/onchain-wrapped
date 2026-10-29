@@ -19,9 +19,9 @@ export async function wrappedMetadata(params: Promise<{ id: string; card?: strin
   const { id, card } = await params;
   const job = await getJob(id);
   const s = job?.stats;
-  if (!s) return { title: "Onchain Wrapped", robots: { index: false } };
+  if (!s) return { title: "Wrapped Onchain", robots: { index: false } };
   const c = (s.cards.includes(card as CardId) ? card : "summary") as CardId;
-  const title = `Onchain Wrapped: ${whoLabel(s)} · ${CARD_TITLE[c]}`;
+  const title = `Wrapped Onchain: ${whoLabel(s)} · ${CARD_TITLE[c]}`;
   const description = shareText(s, c);
   const image = { url: `/api/og/${id}/${c}`, width: 1200, height: 630, alt: description };
   return {

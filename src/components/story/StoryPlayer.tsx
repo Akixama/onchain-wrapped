@@ -121,7 +121,7 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
           ))}
         </div>
         <div className="absolute inset-x-0 top-6 z-20 flex items-center justify-between px-4 pt-2">
-          <Link href="/" className="font-display text-sm font-bold tracking-tight opacity-90">onchain<span className="opacity-60">wrapped</span></Link>
+          <Link href="/" className="font-display text-sm font-bold tracking-tight opacity-90">Wrapped <span className="opacity-60">Onchain</span></Link>
           <div className="flex items-center gap-2">
             <button aria-label="Share this card" onClick={() => setSheet(true)} className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold backdrop-blur hover:bg-white/25">Share</button>
             <Link href="/" aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-sm backdrop-blur hover:bg-white/25">✕</Link>

@@ -31,7 +31,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/og-vs/[a]/[b]">
         <div style={{ position: "absolute", left: 600, top: 0, width: 600, height: 630, display: "flex", backgroundImage: "radial-gradient(circle at 90% 80%, rgba(20,241,149,0.35) 0%, rgba(20,241,149,0) 60%)" }} />
         <div style={{ display: "flex", justifyContent: "space-between", fontSize: 22, letterSpacing: 4, opacity: 0.75 }}>
           <div style={{ display: "flex" }}>HEAD TO HEAD</div>
-          <div style={{ display: "flex", fontFamily: "SpaceGrotesk", letterSpacing: 0, fontSize: 28 }}>onchain<span style={{ opacity: 0.6 }}>wrapped</span></div>
+          <div style={{ display: "flex", fontFamily: "SpaceGrotesk", letterSpacing: 0, fontSize: 28 }}>Wrapped&nbsp;<span style={{ opacity: 0.6 }}>Onchain</span></div>
         </div>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 30 }}>
           <div style={{ display: "flex", fontFamily: "SpaceGrotesk", fontSize: 48, width: 420, color: score.a > score.b ? "#6EE7B7" : "#F6F2FF" }}>{nameA}</div>

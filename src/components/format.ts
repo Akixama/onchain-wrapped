@@ -103,7 +103,7 @@ export function waitLabel(sec: number): string {
 
 /** Card copy used for both the story and the X share text. */
 export function shareText(s: WrappedStats, card: CardId): string {
-  const tail = "My onchain Wrapped 👇";
+  const tail = "My Wrapped Onchain 👇";
   switch (card) {
     case "archetype": return `I'm a "${s.archetype.title}". ${tail}`;
     case "overview": return `${num(s.overview.totalTrades)} trades, ${usd(s.overview.volumeUsd)} volume${s.overview.chainsUsed.length > 1 ? ` across ${s.overview.chainsUsed.length} chains` : ""}. ${tail}`;

@@ -35,7 +35,7 @@ export function AskView({ id, who, suggested }: { id: string; who: string; sugge
     <div className="min-h-[100dvh] bg-[radial-gradient(ellipse_at_top,#3b1d4a,#0d0a18_60%)] px-4 py-6 text-white sm:px-6">
       <div className="mx-auto flex min-h-[calc(100dvh-3rem)] max-w-2xl flex-col gap-4">
         <div className="flex items-center justify-between text-sm">
-          <Link href="/" className="font-display font-bold">onchain<span className="opacity-60">wrapped</span></Link>
+          <Link href="/" className="font-display font-bold">Wrapped <span className="opacity-60">Onchain</span></Link>
           <Link href={`/w/${id}`} className="rounded-full bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">See the Wrapped</Link>
         </div>
         <h1 className="font-display text-3xl font-bold">Ask <span className="text-fuchsia-300">{who}</span></h1>

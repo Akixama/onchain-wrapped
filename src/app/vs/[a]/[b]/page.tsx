@@ -11,9 +11,9 @@ import { siteUrl } from "@/lib/site";
 export async function generateMetadata(props: PageProps<"/vs/[a]/[b]">): Promise<Metadata> {
   const { a, b } = await props.params;
   const [ja, jb] = await Promise.all([getJob(a), getJob(b)]);
-  if (!ja?.stats || !jb?.stats) return { title: "Onchain Wrapped: head to head", robots: { index: false } };
+  if (!ja?.stats || !jb?.stats) return { title: "Wrapped Onchain: head to head", robots: { index: false } };
   const s = compareScore(compareRows(ja.stats, jb.stats));
-  const title = `${whoLabel(ja.stats)} vs ${whoLabel(jb.stats)} · ${s.a}–${s.b} · Onchain Wrapped`;
+  const title = `${whoLabel(ja.stats)} vs ${whoLabel(jb.stats)} · ${s.a}–${s.b} · Wrapped Onchain`;
   const image = { url: `/api/og-vs/${a}/${b}`, width: 1200, height: 630, alt: title };
   return {
     title,

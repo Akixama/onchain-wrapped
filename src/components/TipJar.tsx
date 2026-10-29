@@ -8,7 +8,7 @@ import { TIP_ADDRESS } from "@/lib/site";
 
 /** Solana Pay transfer link: wallet apps open it with the address (and amount, if given) filled in. */
 const payLink = (amount: string) => {
-  const q = new URLSearchParams({ label: "Onchain Wrapped", message: "Thanks for the tip!" });
+  const q = new URLSearchParams({ label: "Wrapped Onchain", message: "Thanks for the tip!" });
   if (amount) q.set("amount", amount);
   return `solana:${TIP_ADDRESS}?${q}`;
 };
@@ -71,7 +71,7 @@ function TipBox({ onClose }: { onClose: () => void }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2 font-display text-xl font-bold"><CupIcon className="h-5 w-5" />Tip the dev</div>
-            <p className="mt-1 text-sm text-white/65">Onchain Wrapped is free. If it made you laugh (or cry), send any amount of SOL.</p>
+            <p className="mt-1 text-sm text-white/65">Wrapped Onchain is free. If it made you laugh (or cry), send any amount of SOL.</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="rounded-full bg-white/10 px-2.5 py-1 text-sm hover:bg-white/20">✕</button>
         </div>

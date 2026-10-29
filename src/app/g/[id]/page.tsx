@@ -11,8 +11,8 @@ import { siteUrl } from "@/lib/site";
 export async function generateMetadata(props: PageProps<"/g/[id]">): Promise<Metadata> {
   const { id } = await props.params;
   const s = (await getJob(id))?.stats;
-  if (!s) return { title: "Onchain Wrapped: chart game", robots: { index: false } };
-  const title = `Win or lose? Guess ${whoLabel(s)}'s trades · Onchain Wrapped`;
+  if (!s) return { title: "Wrapped Onchain: chart game", robots: { index: false } };
+  const title = `Win or lose? Guess ${whoLabel(s)}'s trades · Wrapped Onchain`;
   const description = "See the chart up to their buy. Did they make money or lose it?";
   const image = { url: `/api/og/${id}/best`, width: 1200, height: 630, alt: title };
   return {

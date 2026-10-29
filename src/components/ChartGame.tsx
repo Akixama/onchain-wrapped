@@ -33,7 +33,7 @@ export function ChartGame({ id, who, rounds, siteUrl }: { id: string; who: strin
       <TipFab />
         <div className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-2xl flex-col gap-6">
           <div className="flex items-center justify-between text-sm">
-            <Link href="/" className="font-display font-bold">onchain<span className="opacity-60">wrapped</span></Link>
+            <Link href="/" className="font-display font-bold">Wrapped <span className="opacity-60">Onchain</span></Link>
             <Link href={`/w/${id}`} className="rounded-full bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">See the Wrapped</Link>
           </div>
           {r && (

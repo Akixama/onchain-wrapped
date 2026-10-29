@@ -10,8 +10,8 @@ import { getJob } from "@/lib/store";
 export async function generateMetadata(props: PageProps<"/ask/[id]">): Promise<Metadata> {
   const { id } = await props.params;
   const s = (await getJob(id))?.stats;
-  if (!s) return { title: "Onchain Wrapped: ask a wallet", robots: { index: false } };
-  const title = `Ask ${whoLabel(s)} · Onchain Wrapped`;
+  if (!s) return { title: "Wrapped Onchain: ask a wallet", robots: { index: false } };
+  const title = `Ask ${whoLabel(s)} · Wrapped Onchain`;
   const description = "Ask a wallet about its own trades: best, worst, rugs, fees, timing.";
   const image = { url: `/api/og/${id}/summary`, width: 1200, height: 630, alt: title };
   return { title, description, openGraph: { title, description, images: [image], url: `/ask/${id}` }, twitter: { card: "summary_large_image", title, description, images: [image.url] } };
