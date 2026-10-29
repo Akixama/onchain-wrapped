@@ -2,6 +2,7 @@
 // "How well do you know this wallet?" One question at a time, answer revealed straight away, score at the end.
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
+import { TipFab } from "./TipJar";
 import { useEffect, useState } from "react";
 import { scoreLine, type QuizQuestion } from "./quiz";
 
@@ -42,6 +43,7 @@ export function QuizView({ id, who, period, questions, siteUrl }: { id: string; 
 
   return (
     <div className="min-h-[100dvh] bg-[radial-gradient(ellipse_at_top,#2a1460,#0B0820_60%)] px-4 pb-24 pt-8 text-white sm:px-6">
+      <TipFab />
       <div className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-xl flex-col gap-6">
         <div className="flex items-center justify-between text-sm">
           <Link href="/" className="font-display font-bold">onchain<span className="opacity-60">wrapped</span></Link>

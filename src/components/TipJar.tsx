@@ -3,7 +3,6 @@
 // The site never touches funds: it shows the address, a QR code and a payment link the wallet app opens.
 import QRCode from "qrcode";
 import { AnimatePresence, motion } from "motion/react";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TIP_ADDRESS } from "@/lib/site";
 
@@ -27,13 +26,11 @@ export function TipJar({ className = "" }: { className?: string }) {
 }
 
 /**
- * Floating tip button, fixed to the bottom-right corner on every page except the story (its own
- * corner buttons live there; its last card has a tip link) and the chat (its Ask button is there).
+ * Floating tip button, fixed to the bottom-right corner. Placed on the home, compare, quiz and chart
+ * game pages (not the story or chat: their own buttons sit in that corner).
  */
 export function TipFab() {
-  const path = usePathname() ?? "/";
   const [open, setOpen] = useState(false);
-  if (path.startsWith("/w/") || path.startsWith("/ask/")) return null;
   return (
     <>
       <button onClick={() => setOpen(true)} aria-label="Tip the dev"

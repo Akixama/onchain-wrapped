@@ -2,6 +2,7 @@
 // "Win or lose?" — a coin's chart up to the moment they first bought, the rest hidden. Guess, then see it all.
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
+import { TipFab } from "./TipJar";
 import { useState } from "react";
 import type { TradeCard } from "@/lib/engine/stats";
 import { usd } from "./format";
@@ -29,6 +30,7 @@ export function ChartGame({ id, who, rounds, siteUrl }: { id: string; who: strin
   return (
     <ChartJobContext.Provider value={id}>
       <div className="min-h-[100dvh] bg-[radial-gradient(ellipse_at_top,#0f3b46,#07141c_60%)] px-4 pb-24 pt-8 text-white sm:px-6">
+      <TipFab />
         <div className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-2xl flex-col gap-6">
           <div className="flex items-center justify-between text-sm">
             <Link href="/" className="font-display font-bold">onchain<span className="opacity-60">wrapped</span></Link>

@@ -1,8 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Inter, Space_Grotesk } from "next/font/google";
 import { siteUrl } from "@/lib/site";
-import { Suspense } from "react";
-import { TipFab } from "@/components/TipJar";
 import "./globals.css";
 
 const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
@@ -21,7 +19,7 @@ export const viewport: Viewport = { themeColor: "#000000", width: "device-width"
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} ${display.variable} h-full antialiased`}>
-      <body className="min-h-full bg-black font-sans text-white">{children}<Suspense fallback={null}><TipFab /></Suspense></body>
+      <body className="min-h-full bg-black font-sans text-white">{children}</body>
     </html>
   );
 }

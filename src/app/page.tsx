@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { LandingForm } from "@/components/LandingForm";
+import { TipFab } from "@/components/TipJar";
 import { CHAIN_COLOR, CHAIN_NAME } from "@/components/format";
 import { EVM_ENABLED } from "@/lib/site";
 
@@ -57,6 +58,7 @@ export default function Home() {
           <p className="pr-16 text-[11px] text-white/40 sm:pr-40">Read-only public data. Numbers are estimates, not financial or tax advice.</p>
         </footer>
       </div>
+      <TipFab />
     </main>
   );
 }

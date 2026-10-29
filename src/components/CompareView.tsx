@@ -2,6 +2,7 @@
 // Two Wrapped results side by side. Waits for either lookup that's still running.
 import { motion } from "motion/react";
 import Link from "next/link";
+import { TipFab } from "./TipJar";
 import { useEffect, useState } from "react";
 import type { PublicJob } from "@/lib/store";
 import { compareRows, compareScore, type Tone } from "./compare";
@@ -53,6 +54,7 @@ export function CompareView({ a: a0, b: b0, siteUrl }: { a: J; b: J; siteUrl: st
 
   return (
     <div className="min-h-[100dvh] bg-[#0B0820] px-4 pb-24 pt-8 text-white sm:px-6">
+      <TipFab />
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex items-center justify-between text-sm">
           <Link href="/" className="font-display font-bold">onchain<span className="opacity-60">wrapped</span></Link>
