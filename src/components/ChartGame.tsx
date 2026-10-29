@@ -28,7 +28,7 @@ export function ChartGame({ id, who, rounds, siteUrl }: { id: string; who: strin
 
   return (
     <ChartJobContext.Provider value={id}>
-      <div className="min-h-[100dvh] bg-[radial-gradient(ellipse_at_top,#0f3b46,#07141c_60%)] px-4 py-8 text-white sm:px-6">
+      <div className="min-h-[100dvh] bg-[radial-gradient(ellipse_at_top,#0f3b46,#07141c_60%)] px-4 pb-24 pt-8 text-white sm:px-6">
         <div className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-2xl flex-col gap-6">
           <div className="flex items-center justify-between text-sm">
             <Link href="/" className="font-display font-bold">onchain<span className="opacity-60">wrapped</span></Link>

@@ -52,7 +52,7 @@ export function CompareView({ a: a0, b: b0, siteUrl }: { a: J; b: J; siteUrl: st
   const text = `${nameA} vs ${nameB} on Onchain Wrapped: ${score.a}–${score.b}. ${verdict}`;
 
   return (
-    <div className="min-h-[100dvh] bg-[#0B0820] px-4 py-8 text-white sm:px-6">
+    <div className="min-h-[100dvh] bg-[#0B0820] px-4 pb-24 pt-8 text-white sm:px-6">
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex items-center justify-between text-sm">
           <Link href="/" className="font-display font-bold">onchain<span className="opacity-60">wrapped</span></Link>

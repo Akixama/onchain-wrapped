@@ -3,6 +3,7 @@
 // The site never touches funds: it shows the address, a QR code and a payment link the wallet app opens.
 import QRCode from "qrcode";
 import { AnimatePresence, motion } from "motion/react";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TIP_ADDRESS } from "@/lib/site";
 
@@ -18,7 +19,27 @@ export function TipJar({ className = "" }: { className?: string }) {
   return (
     <>
       <button onClick={() => setOpen(true)} className={`text-xs text-white/55 underline-offset-4 hover:text-white hover:underline ${className}`}>
-        ☕ Enjoying this? Tip the dev
+        <CupIcon className="mr-1 inline h-4 w-4 align-[-3px]" />Enjoying this? Tip the dev
+      </button>
+      <AnimatePresence>{open && <TipBox onClose={() => setOpen(false)} />}</AnimatePresence>
+    </>
+  );
+}
+
+/**
+ * Floating tip button, fixed to the bottom-right corner on every page except the story (its own
+ * corner buttons live there; its last card has a tip link) and the chat (its Ask button is there).
+ */
+export function TipFab() {
+  const path = usePathname() ?? "/";
+  const [open, setOpen] = useState(false);
+  if (path.startsWith("/w/") || path.startsWith("/ask/")) return null;
+  return (
+    <>
+      <button onClick={() => setOpen(true)} aria-label="Tip the dev"
+        className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-gradient-to-br from-[#14F195] to-[#9945FF] p-3.5 font-semibold text-black shadow-[0_8px_30px_rgba(20,241,149,0.35)] transition hover:scale-105 active:scale-95 sm:bottom-6 sm:right-6 sm:px-5">
+        <CupIcon />
+        <span className="hidden text-sm sm:inline">Tip the dev</span>
       </button>
       <AnimatePresence>{open && <TipBox onClose={() => setOpen(false)} />}</AnimatePresence>
     </>
@@ -52,7 +73,7 @@ function TipBox({ onClose }: { onClose: () => void }) {
         role="dialog" aria-label="Tip the dev" className="w-full max-w-sm space-y-4 rounded-3xl border border-white/10 bg-[#141028] p-5 text-white shadow-2xl">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="font-display text-xl font-bold">Tip the dev ☕</div>
+            <div className="flex items-center gap-2 font-display text-xl font-bold"><CupIcon className="h-5 w-5" />Tip the dev</div>
             <p className="mt-1 text-sm text-white/65">Onchain Wrapped is free. If it made you laugh (or cry), send any amount of SOL.</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="rounded-full bg-white/10 px-2.5 py-1 text-sm hover:bg-white/20">✕</button>
@@ -83,5 +104,15 @@ function TipBox({ onClose }: { onClose: () => void }) {
         </div>
       </motion.div>
     </motion.div>
+  );
+}
+
+/** Coffee cup (emoji ☕ renders as a grey blob on some Windows fonts). */
+function CupIcon({ className = "h-6 w-6" }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
+      <path d="M17 8h1a4 4 0 0 1 0 8h-1" /><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
+      <path d="M6 2v2" /><path d="M10 2v2" /><path d="M14 2v2" />
+    </svg>
   );
 }
