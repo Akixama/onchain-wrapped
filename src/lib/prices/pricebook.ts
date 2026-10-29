@@ -189,7 +189,17 @@ export async function buildPriceBook(
       vol.set(k, (vol.get(k) ?? 0) + (l.usd ?? 0) + 1e-9);
     }
   const tokens = [...vol.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
-  const seriesP = llamaChart(tokens.slice(0, maxSeriesTokens).map(llamaId), start);
+  // Price history: the top coins by volume, plus every coin they SOLD (most sold first, up to
+  // SERIES_SOLD_MAX). Paper hands asks "did it run after you sold?", which needs history for the
+  // coins sold; picking by overall volume alone made the answer depend on the period chosen.
+  const sold = new Map<string, number>();
+  for (const e of events) {
+    if (e.type !== "swap") continue;
+    for (const l of e.out) if (!isMoney(l.token)) sold.set(tokenKey(l.token), (sold.get(tokenKey(l.token)) ?? 0) + (l.usd ?? 0) + 1e-9);
+  }
+  const soldTop = [...sold.entries()].sort((a, b) => b[1] - a[1]).slice(0, Number(process.env.SERIES_SOLD_MAX ?? 120)).map(([k]) => k);
+  const seriesKeys = [...new Set([...tokens.slice(0, maxSeriesTokens), ...soldTop])];
+  const seriesP = llamaChart(seriesKeys.map(llamaId), start);
   // Coins looked up earlier aren't asked again; their answers (found or not) are filled in.
   const curLlamaP = llamaCurrent(tokens.filter((k) => known[k]?.l === undefined).map(llamaId)).then((cur) => {
     for (const k of tokens) { const l = known[k]?.l; if (l != null) cur[llamaId(k)] = l; }
