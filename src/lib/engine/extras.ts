@@ -30,8 +30,11 @@ export function profitTimeline(traded: Position[], fromTs: number): ProfitTimeli
   const start = Math.max(Math.floor(fromTs / DAY) * DAY, Math.floor(firstBuy / DAY) * DAY - DAY);
   const points: [number, number][] = [[start, 0]];
   for (const [d, v] of days) { run += v; points.push([d, r2(run)]); }
-  const best = days.reduce<[number, number] | null>((m, x) => (x[1] > 0 && (!m || x[1] > m[1]) ? x : m), null);
-  const worst = days.reduce<[number, number] | null>((m, x) => (x[1] < 0 && (!m || x[1] < m[1]) ? x : m), null);
+  // With two or more trading days, the best day is simply the highest (even if every day lost money)
+  // and the worst the lowest. With one day, it's best if it made money, worst if it lost.
+  const many = days.length >= 2;
+  const best = days.reduce<[number, number] | null>((m, x) => ((many || x[1] > 0) && (!m || x[1] > m[1]) ? x : m), null);
+  const worst = days.reduce<[number, number] | null>((m, x) => ((many || x[1] < 0) && (!m || x[1] < m[1]) ? x : m), null);
   return {
     points,
     bestDay: best ? { ts: best[0], usd: r2(best[1]) } : null,

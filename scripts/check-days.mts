@@ -20,7 +20,7 @@ for (const p of runPnl(r.events, pb, {}).values()) for (const f0 of p.sells) {
   byDay.set(day(f.ts), d);
 }
 const days = [...byDay.entries()].sort((a, b) => b[1].usd - a[1].usd);
-console.log(`site: total ${s.pnl.totalUsd} (closed ${s.pnl.realizedUsd}, still held ${s.pnl.unrealizedUsd}) | best day ${day(tl.bestDay!.ts)} ${tl.bestDay!.usd} | worst day ${day(tl.worstDay!.ts)} ${tl.worstDay!.usd}`);
+console.log(`site: total ${s.pnl.totalUsd} (closed ${s.pnl.realizedUsd}, still held ${s.pnl.unrealizedUsd}) | best day ${tl.bestDay ? `${day(tl.bestDay.ts)} ${tl.bestDay.usd}` : "none"} | worst day ${tl.worstDay ? `${day(tl.worstDay.ts)} ${tl.worstDay.usd}` : "none"}`);
 console.log(`check: closed ${realized.toFixed(2)} | best day ${days[0][0]} ${days[0][1].usd.toFixed(2)} | worst day ${days.at(-1)![0]} ${days.at(-1)![1].usd.toFixed(2)}`);
 console.log("top 3 days:", days.slice(0, 3).map(([d, v]) => `${d} ${v.usd.toFixed(2)}`).join(" | "));
 console.log("bottom 3 days:", days.slice(-3).map(([d, v]) => `${d} ${v.usd.toFixed(2)}`).join(" | "));

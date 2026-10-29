@@ -552,8 +552,8 @@ const ProfitTime = ({ s }: CardProps) => {
             </svg>
           </motion.div>
           <div className="mt-3 grid grid-cols-2 gap-3">
-            <Stat label={t.bestDay ? `Best day · ${dayLabel(t.bestDay.ts)}` : "Best day"}>{t.bestDay ? <span style={{ color: "#4ADE80" }}>{money(t.bestDay.usd, true)}</span> : "—"}</Stat>
-            <Stat label={t.worstDay ? `Worst day · ${dayLabel(t.worstDay.ts)}` : "Worst day"}>{t.worstDay ? <span style={{ color: "#F87171" }}>{money(t.worstDay.usd, true)}</span> : "—"}</Stat>
+            <Stat label={t.bestDay ? `Best day · ${dayLabel(t.bestDay.ts)}` : "Best day"}>{t.bestDay ? <span style={{ color: gainColor(t.bestDay.usd) }}>{money(t.bestDay.usd, true)}</span> : "—"}</Stat>
+            <Stat label={t.worstDay ? `Worst day · ${dayLabel(t.worstDay.ts)}` : "Worst day"}>{t.worstDay ? <span style={{ color: gainColor(t.worstDay.usd) }}>{money(t.worstDay.usd, true)}</span> : "—"}</Stat>
           </div>
         </R>
         {Math.abs(t.openUsd) >= 1 && <Line className="text-sm opacity-70">Includes {money(t.openUsd, true)} in coins you still hold, at today&apos;s prices.</Line>}

@@ -138,7 +138,7 @@ export function shareText(s: WrappedStats, card: CardId): string {
     case "profitTime": {
       const t = s.profitTimeline;
       const final = t ? (t.points.at(-1)?.[1] ?? 0) + t.openUsd : s.pnl.totalUsd;
-      return `${s.meta.timeframe === "12m" ? "My year" : s.meta.timeframe === "all" ? "My all-time" : TIMEFRAME_LABEL[s.meta.timeframe]} in profit: ${usd(final, { sign: true })}${t?.bestDay ? `, best day ${usd(t.bestDay.usd, { sign: true })}` : ""}. ${tail}`;
+      return `${s.meta.timeframe === "12m" ? "My year" : s.meta.timeframe === "all" ? "My all-time" : TIMEFRAME_LABEL[s.meta.timeframe]} in profit: ${usd(final, { sign: true })}${t?.bestDay && t.bestDay.usd > 0 ? `, best day ${usd(t.bestDay.usd, { sign: true })}` : ""}. ${tail}`;
     }
     case "speed": {
       const f = s.speed?.fastestFlip;
