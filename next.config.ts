@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: process.cwd(),
   // Share images read these font files at runtime; make sure they ship with the function.
   outputFileTracingIncludes: { "/api/og/[id]/[card]": ["./assets/fonts/**"] },
+  // The wallet quiz was removed: old quiz links open the Wrapped itself.
+  async redirects() {
+    return [{ source: "/q/:id", destination: "/w/:id", permanent: false }];
+  },
   turbopack: {
     root: process.cwd(),
     rules: {
