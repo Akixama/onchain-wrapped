@@ -1,5 +1,5 @@
 // Shared by the story UI and the OG images (no React, no DOM).
-import type { CardId, WrappedStats } from "@/lib/engine/stats";
+import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
 import type { Timeframe } from "@/lib/core/types";
 import { NARRATIVE_LABEL } from "@/lib/engine/extras";
 
@@ -189,3 +189,21 @@ export const CARD_THEME: Record<CardId, { bg: string; a: string; b: string; ink:
   chains: { bg: "#06141F", a: "#14F195", b: "#3D7BFF", ink: "#EEFBFF" },
   summary: { bg: "#0D0A1F", a: "#7C3AED", b: "#F472B6", ink: "#F6F2FF" },
 };
+
+/**
+ * "Put in / got back" for a trade card, in pieces that add up to its result. Sales of coins bought
+ * before the period (and coins moved to another wallet) are named separately: they aren't counted.
+ */
+export function tradeMath(t: TradeCard, fmt: (n: number) => string = (n) => usd(n)): { main: string; notes: string[] } {
+  if (t.knownProceedsUsd == null) {
+    // Results made before the split was recorded: the totals would mix in uncounted sales.
+    return t.partialHistory
+      ? { main: `Put in ${fmt(t.costUsd)}.`, notes: ["Some of this coin was bought before the period shown; only what was bought in it counts."] }
+      : { main: `Put in ${fmt(t.costUsd)}, took out ${fmt(t.proceedsUsd)}${t.holdingValueUsd >= 1 ? `, still holding ${fmt(t.holdingValueUsd)}` : ""}.`, notes: [] };
+  }
+  const held = t.knownHoldingUsd ?? 0;
+  const notes: string[] = [];
+  if ((t.outsideProceedsUsd ?? 0) >= 1) notes.push(`Also sold ${fmt(t.outsideProceedsUsd!)} of $${t.symbol} bought before this period, not counted here.`);
+  if ((t.movedCostUsd ?? 0) >= 1) notes.push(`${fmt(t.movedCostUsd!)} worth was moved to another wallet, not counted as a loss.`);
+  return { main: `Put in ${fmt(t.costUsd)}, got back ${fmt(t.knownProceedsUsd)}${held >= 1 ? `, still holding ${fmt(held)}` : ""}.`, notes };
+}

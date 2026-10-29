@@ -27,7 +27,10 @@ export const ChartJobContext = createContext<string | null>(null);
 // Fewer candles than this in the trade's window means the chart site barely indexed the token.
 const ENOUGH_CANDLES = 8;
 
-function useCandles(card: TradeCard): Loaded {
+/** One load per chart per page, however many components ask for it (the chart and its level boxes). */
+const inflight = new Map<string, Promise<Loaded>>();
+
+export function useCandles(card: TradeCard): Loaded {
   const jobId = useContext(ChartJobContext);
   const tooOld = !!card.window?.tooOld; // set by the server: past the free 180-day candle history
   const canRebuild = !!jobId && card.chain === "solana" && !!card.fills?.length;
@@ -39,10 +42,10 @@ function useCandles(card: TradeCard): Loaded {
     if (state !== "loading" || !card.window) return;
     const key = `wrapped-candles2:${card.chain}:${card.address}:${card.window.start}:${card.window.end}`;
     let alive = true;
-    (async () => {
+    const run = inflight.get(key) ?? (async (): Promise<Loaded> => {
       try {
         const cached = sessionStorage.getItem(key);
-        if (cached) { if (alive) setState(JSON.parse(cached)); return; }
+        if (cached) return JSON.parse(cached) as Loaded;
       } catch {}
       let best: Loaded = tooOld ? "too-old" : "none";
       if (!tooOld) {
@@ -62,8 +65,10 @@ function useCandles(card: TradeCard): Loaded {
         } catch {}
       }
       try { sessionStorage.setItem(key, JSON.stringify(best)); } catch {}
-      if (alive) setState(best);
+      return best;
     })();
+    inflight.set(key, run);
+    run.then((best) => { if (alive) setState(best); }, () => { if (alive) setState("none"); });
     return () => { alive = false; };
   }, [state, card.chain, card.address, card.window, tooOld, canRebuild, jobId]);
   return state;
@@ -224,4 +229,35 @@ export function TradeChart({ card, marks = [], height, cutoff }: { card: TradeCa
 
 function smallPrice(p: number) {
   return "$" + new Intl.NumberFormat("en-US", { maximumSignificantDigits: 2, maximumFractionDigits: 12 }).format(p);
+}
+
+/**
+ * Highest price on the chart while they actually held the coin (candle bodies, not one-off wicks).
+ * Holdings come from their fills; coins from before the period count as held from the start.
+ * null until candles are loaded (or when there are none).
+ */
+export function heldPeak(card: TradeCard, candles: Candle[]): number | null {
+  const fills = card.fills ?? [];
+  if (candles.length < 3 || !fills.length) return null;
+  const amt = (f: (typeof fills)[number]) => (f.price > 0 ? f.usd / f.price : 0);
+  let net = 0, minNet = 0, maxNet = 0;
+  const steps = fills.map((f) => {
+    net += f.side === "buy" ? amt(f) : -amt(f);
+    minNet = Math.min(minNet, net); maxNet = Math.max(maxNet, net);
+    return { t: f.t, net };
+  });
+  const before = -minNet; // the least they must have held before the first fill shown
+  const most = before + maxNet;
+  const stillHolding = card.holdingValueUsd >= 1;
+  // Only the newest 60 fills are kept: with that many, assume held from the first fill to the last (or now).
+  const capped = fills.length >= 60;
+  const held = (t: number) => {
+    if (capped) return t >= fills[0].t && (stillHolding || t <= fills[fills.length - 1].t);
+    let h = before;
+    for (const st of steps) { if (st.t > t) break; h = before + st.net; }
+    return h > most * 0.01;
+  };
+  let peak = 0;
+  for (const c of candles) if (held(c[0])) peak = Math.max(peak, c[1], c[4]);
+  return peak > 0 ? peak : null;
 }

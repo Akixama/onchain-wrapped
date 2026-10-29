@@ -4,7 +4,7 @@ import { join } from "node:path";
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
 import { getJob } from "@/lib/store";
 import { NARRATIVE_LABEL } from "@/lib/engine/extras";
-import { CARD_THEME, CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel, afterLaunch, waitLabel } from "@/components/format";
+import { CARD_THEME, CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel, afterLaunch, waitLabel, tradeMath } from "@/components/format";
 import { EVM_ENABLED } from "@/lib/site";
 
 // Fonts are the same for every request: read once.
@@ -40,7 +40,7 @@ function content(s: WrappedStats, card: CardId): Content {
     }
     case "worst": {
       const t = s.worstTrade!;
-      return { kicker: "Worst trade", lead: `$${t.symbol}`, big: m(t.pnlUsd), bigColor: red, sub: `Put in ${m(t.costUsd)}, took out ${m(t.proceedsUsd)}` };
+      return { kicker: "Worst trade", lead: `$${t.symbol}`, big: m(t.pnlUsd), bigColor: red, sub: tradeMath(t, m).main };
     }
     case "roundTrip": {
       const r = s.roundTrip!;

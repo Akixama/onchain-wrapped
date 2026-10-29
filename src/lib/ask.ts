@@ -6,7 +6,7 @@ import type { WrappedStats } from "./engine/stats";
 import { NARRATIVE_LABEL } from "./engine/extras";
 import { factSheet } from "./roast";
 import { logUsage } from "./infra/usage";
-import { pct, usd } from "@/components/format";
+import { pct, tradeMath, usd } from "@/components/format";
 
 export interface AskAnswer { text: string; source: "ai" | "numbers" }
 
@@ -38,10 +38,10 @@ const TOPICS: { id: string; words: RegExp; answer: (s: WrappedStats) => string |
         : "Nothing stands out: no coin ran much higher after you sold it.";
     } },
   { id: "best", words: /\b(best|biggest win|top trade|most money|winner|greatest)\b/i, answer: (s) => s.bestTrade && s.bestTrade.pnlUsd > 0
-      ? `$${s.bestTrade.symbol}: ${m(s.bestTrade.pnlUsd)} (put in ${usd(s.bestTrade.costUsd)}, took out ${usd(s.bestTrade.proceedsUsd)}${s.bestTrade.holdingValueUsd >= 1 ? `, still holding ${usd(s.bestTrade.holdingValueUsd)}` : ""}).`
+      ? `$${s.bestTrade.symbol}: ${m(s.bestTrade.pnlUsd)} ${[tradeMath(s.bestTrade).main, ...tradeMath(s.bestTrade).notes].join(" ")}`
       : "No coin made money in this period, so there's no best trade to brag about." },
   { id: "worst", words: /\b(worst|biggest loss|lost the most|loser|hurt|pain)\b/i, answer: (s) => s.worstTrade && s.worstTrade.pnlUsd < 0
-      ? `$${s.worstTrade.symbol}: ${m(s.worstTrade.pnlUsd)} (put in ${usd(s.worstTrade.costUsd)}, got back ${usd(s.worstTrade.proceedsUsd + s.worstTrade.holdingValueUsd)}).`
+      ? `$${s.worstTrade.symbol}: ${m(s.worstTrade.pnlUsd)} ${[tradeMath(s.worstTrade).main, ...tradeMath(s.worstTrade).notes].join(" ")}`
       : "No coin lost money in this period. Rare." },
   { id: "rugs", words: /\b(rug|rugs|rugged|dead coins?|died|scam)\b/i, answer: (s) => s.rugs.count
       ? `${s.rugs.count.toLocaleString()} coins died while you held them at a loss, costing ${usd(Math.abs(s.rugs.lostUsd))}${s.rugs.tokens.length ? ` (including $${s.rugs.tokens.slice(0, 3).join(", $")})` : ""}.${s.rugs.dodged ? ` You got out of ${s.rugs.dodged.toLocaleString()} others before they died.` : ""}`

@@ -20,6 +20,10 @@ export interface Position {
   sells: Fill[];
   costIn: number; // USD spent buying
   proceeds: number; // USD received selling
+  /** Part of `proceeds` from coins we saw them buy (the rest: coins from before the period, booked break-even). */
+  proceedsKnown: number;
+  /** Cost of coins bought here and then moved to a wallet we can't see (drops out of PnL, not a loss). */
+  costMoved: number;
   realized: number;
   holding: number; // amount still held (all lots)
   holdingKnown: number; // part of holding with a known cost basis (counts toward PnL)
@@ -63,7 +67,7 @@ export function runPnl(events: UnifiedEvent[], pb: PriceBook, opts: PnlOptions =
     let p = pos.get(k);
     if (!p) {
       p = {
-        key: k, token: t, chain: t.chain, buys: [], sells: [], costIn: 0, proceeds: 0, realized: 0,
+        key: k, token: t, chain: t.chain, buys: [], sells: [], costIn: 0, proceeds: 0, proceedsKnown: 0, costMoved: 0, realized: 0,
         holding: 0, holdingKnown: 0, openCost: 0, currentPrice: 0, currentValue: 0, unrealized: 0, pnl: 0,
         firstTs: ts, lastTs: ts, peakGain: 0, peakGainTs: ts, peakPrice: 0, partial: false, sentAwayKnown: 0, airdropped: false, timeline: [],
       };
@@ -118,9 +122,11 @@ export function runPnl(events: UnifiedEvent[], pb: PriceBook, opts: PnlOptions =
         const gain = usd * knownShare - cost;
         p.realized += gain;
         p.proceeds += usd;
+        p.proceedsKnown += usd * knownShare;
         p.sells.push({ ts: e.timestamp, amount: l.amount, usd, price: l.amount ? usd / l.amount : 0, sig: e.txHash, realized: gain });
       } else {
         p.sentAwayKnown += knownAmt; // bought here, then moved to a wallet we can't see
+        p.costMoved += cost;
       }
       snap(p, e.timestamp);
     }
@@ -151,8 +157,9 @@ export function runPnl(events: UnifiedEvent[], pb: PriceBook, opts: PnlOptions =
       const actual = opts.actualBalances.get(p.key) ?? 0;
       const excess = p.holding - actual;
       if (excess > Math.max(1e-9, p.holding * 0.01)) {
-        const { knownAmt } = dispose(p, excess);
+        const { knownAmt, cost } = dispose(p, excess);
         p.sentAwayKnown += knownAmt;
+        p.costMoved += cost;
         p.untracedExit = excess;
         snap(p, now);
       }

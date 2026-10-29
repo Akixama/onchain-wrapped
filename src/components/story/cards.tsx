@@ -3,9 +3,9 @@ import { motion } from "motion/react";
 import { Children, isValidElement, useCallback, useState, type ReactNode } from "react";
 import { GT_NETWORK } from "@/lib/gecko";
 import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
-import { CHAIN_COLOR, CHAIN_NAME, afterLaunch, waitLabel, capOrPrice, hourLabel, num, pct, periodLabel, usd, whoLabel } from "../format";
+import { CHAIN_COLOR, CHAIN_NAME, afterLaunch, waitLabel, capOrPrice, hourLabel, num, pct, periodLabel, tradeMath, usd, whoLabel } from "../format";
 import { Big, BigNumber, Chip, CountUp, Kicker, Line, Stat, rise } from "./primitives";
-import { TradeChart } from "./TradeChart";
+import { TradeChart, heldPeak, useCandles } from "./TradeChart";
 import { NARRATIVE_EMOJI, NARRATIVE_LABEL } from "@/lib/engine/extras";
 
 export interface CardCtx {
@@ -78,8 +78,13 @@ function TokenTitle({ t }: { t: TradeCard }) {
 function Levels({ t }: { t: TradeCard }) {
   const sup = (t.supply ?? t.chart?.supply);
   const tag = sup ? " MC" : "";
+  // Peak while they held it: the real chart when it's loaded (small coins have no price history,
+  // so the server only knows the prices of their own fills).
+  const loaded = useCandles(t);
+  const chartPeak = typeof loaded === "object" ? heldPeak(t, loaded.candles) : null;
+  const peak = Math.max(t.peakPrice, t.avgEntry, chartPeak ?? 0);
   const cells: [string, string][] = [[`Entry${tag}`, capOrPrice(t.avgEntry, sup)]];
-  if (t.peakPrice > 0) cells.push([`Peak${tag}`, capOrPrice(Math.max(t.peakPrice, t.avgEntry), sup)]);
+  if (t.peakPrice > 0 || chartPeak) cells.push([`Peak${tag}`, capOrPrice(peak, sup)]);
   cells.push(t.avgExit ? [`Exit${tag}`, capOrPrice(t.avgExit, sup)] : ["Now", t.holdingValueUsd > 0 ? "holding" : "—"]);
   return (
     <motion.div variants={rise} className="grid grid-cols-3 gap-2">
@@ -101,8 +106,7 @@ const TradeStory = ({ t }: { t: TradeCard }) => (
     </BigNumber>
     <R><Line><TradeChart card={t} /></Line><Levels t={t} /></R>
     <Line className="text-[15px] opacity-80">
-      Put in {money(t.costUsd)}, took out {money(t.proceedsUsd)}{t.holdingValueUsd >= 1 ? `, still holding ${money(t.holdingValueUsd)}` : ""}.
-      {t.partialHistory ? " Part of this position was bought before the period shown." : ""}
+      {(() => { const m = tradeMath(t, (n) => money(n)); return [m.main, ...m.notes].join(" "); })()}
     </Line>
   </Body>
 );

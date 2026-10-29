@@ -29,6 +29,15 @@ export interface TradeCard {
   firstTs: number;
   lastTs: number;
   partialHistory: boolean;
+  /**
+   * The pieces that add up to pnlUsd: got back on coins bought in the period + their value still held
+   * - costUsd + cost of coins moved to another wallet. Sales of coins from before the period are
+   * outsideProceedsUsd (booked break-even). Missing on results made before these were added.
+   */
+  knownProceedsUsd?: number;
+  knownHoldingUsd?: number;
+  outsideProceedsUsd?: number;
+  movedCostUsd?: number;
   /** The user's own buys/sells of this token (for chart markers). */
   fills?: { t: number; side: "buy" | "sell"; price: number; usd: number; sig?: string }[];
   /** SOL price (USD) around the trade, for charts rebuilt from on-chain swaps. */
@@ -172,6 +181,10 @@ const card = (p: Position): TradeCard => {
     firstTs: p.firstTs,
     lastTs: p.lastTs,
     partialHistory: p.partial,
+    knownProceedsUsd: r2(p.proceedsKnown),
+    knownHoldingUsd: r2(p.holdingKnown * p.currentPrice),
+    outsideProceedsUsd: r2(p.proceeds - p.proceedsKnown),
+    movedCostUsd: r2(p.costMoved),
   };
 };
 
