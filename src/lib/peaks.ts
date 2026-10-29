@@ -11,7 +11,7 @@ import { dexPools } from "./prices/pricebook";
 
 const HOUR = 3600, DAY = 86400;
 // Free candle history covers ~180 days; GeckoTerminal allows ~30 requests/min.
-const MAX_CANDIDATES = Number(process.env.PEAK_CANDIDATES ?? 16);
+const MAX_CANDIDATES = Number(process.env.PEAK_CANDIDATES ?? 8);
 // A few retries: GeckoTerminal's per-minute limit is shared with the charts, so a 429 usually clears quickly.
 const gt: JsonFetcher = (url) => fetchJson("geckoterminal", url, { endpoint: url.includes("/ohlcv/") ? "ohlcv" : "token-pools" }, 4);
 

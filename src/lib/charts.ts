@@ -13,7 +13,12 @@ const DAY = 86400;
 // Server-side GeckoTerminal calls: one quick retry at most, never the long backoff.
 const gt: JsonFetcher = (url) => fetchJson("geckoterminal", url, { endpoint: url.includes("/ohlcv/") ? "ohlcv" : "token-pools" }, 1);
 
-export async function addTradeCharts(s: WrappedStats, positions: Map<string, Position>, pb: PriceBook, onNote?: (n: string) => void) {
+/**
+ * `stopAt` (ms): don't start a wait-and-retry that would run past it. The paper-hands check waits out
+ * GeckoTerminal's per-minute limit (shared by everything on this server's IP) rather than giving up,
+ * because a failed check falls back to a rougher, smaller estimate.
+ */
+export async function addTradeCharts(s: WrappedStats, positions: Map<string, Position>, pb: PriceBook, onNote?: (n: string) => void, stopAt?: number) {
   const now = Math.floor(Date.now() / 1000);
   const cards: { card: TradeCard; to: number }[] = [];
   for (const c of [s.bestTrade, s.worstTrade, s.roundTrip, s.diamondHands]) if (c) cards.push({ card: c, to: c.holdingValueUsd > 0 ? now : c.lastTs });
@@ -43,12 +48,23 @@ export async function addTradeCharts(s: WrappedStats, positions: Map<string, Pos
   // one (checking only the first made the card depend on which coin happened to rank first).
   if (!paperTries.length) return;
   let unchecked = false;
-  const results = await Promise.all(paperTries.map(async (ph) => {
+  const patient = async <T,>(f: () => Promise<T>): Promise<T> => {
+    for (let wait = 0; ; wait++) {
+      try { return await f(); } catch (e) {
+        const limited = String(e).includes("HTTP 429");
+        if (!limited || wait >= 3 || (stopAt && Date.now() + 25_000 > stopAt)) throw e;
+        await new Promise((r) => setTimeout(r, 20_000));
+      }
+    }
+  };
+  // One at a time, so the checks don't trip the per-minute limit themselves.
+  const results: (NonNullable<WrappedStats["paperHands"]> | null)[] = [];
+  for (const ph of paperTries) results.push(await (async () => {
     if (!GT_NETWORK[ph.chain] || ph.address === "native") return ph; // can't check: keep the estimate
     try {
-      const pool = await topPool(gt, ph.chain, ph.address);
+      const pool = await patient(() => topPool(gt, ph.chain, ph.address));
       if (!pool || !ph.window) return ph;
-      const { candles, interval } = await fetchCandles(gt, ph.chain, pool, ph.address, ph.window.start, ph.window.end);
+      const { candles, interval } = await patient(() => fetchCandles(gt, ph.chain, pool, ph.address, ph.window!.start, ph.window!.end));
       if (candles.length < 3) return ph;
       ph.chart = { candles, interval, supply: ph.supply ?? null };
       const later = Math.max(0, ...candles.filter((c) => c[0] > ph.soldTs && c[0] <= ph.soldTs + 90 * DAY).map((c) => c[4]));
@@ -57,11 +73,13 @@ export async function addTradeCharts(s: WrappedStats, positions: Map<string, Pos
       ph.laterPeak = later;
       ph.missedUsd = Math.round(soldAmount * (later - ph.soldAt) * 100) / 100;
       return ph;
-    } catch {
+    } catch (e) {
+      if (process.env.DEBUG_PAPER) console.log("[paper] check failed", ph.symbol, String(e).slice(0, 160));
       unchecked = true;
       return ph;
     }
-  }));
+  })());
+  if (process.env.DEBUG_PAPER) console.log("[paper]", paperTries.map((p, i) => `${p.symbol}: ${results[i] ? `${results[i]!.missedUsd} chart=${!!results[i]!.chart}` : "rejected"}`).join(" | "));
   const kept = results.filter((x): x is NonNullable<typeof x> => !!x).sort((a, b) => b.missedUsd - a.missedUsd);
   s.paperHands = kept[0] ?? null;
   if (unchecked && s.paperHands && !s.paperHands.chart) onNote?.("Paper hands is estimated from DefiLlama prices (chart data was unavailable).");

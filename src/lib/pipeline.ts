@@ -217,7 +217,7 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   if (a.untilTs) stats.meta.toTs = a.untilTs;
   a.onStage?.("crunching", "Drawing your charts");
   // Skipped when short on time: the story then loads these charts in the viewer's browser.
-  if (left(50_000)) await addTradeCharts(stats, positions, pbx, (n) => notes.push(n)).catch(() => {});
+  if (left(50_000)) await addTradeCharts(stats, positions, pbx, (n) => notes.push(n), a.finishBy ? a.finishBy - 5_000 : undefined).catch(() => {});
   delete stats.paperHandsAlts; // only for the chart check above
   stats.meta.notes = notes;
   // Bags still held: only when we saw the real balances, so coins that left by other routes don't show up.
