@@ -3,7 +3,10 @@ import type { WrappedStats } from "@/lib/engine/stats";
 import { NARRATIVE_LABEL } from "@/lib/engine/extras";
 import { num, pct, usd } from "./format";
 
-export interface CompareRow { label: string; a: string; b: string; winner: "a" | "b" | null }
+/** `tone`: a money result shown green (gain) or red (loss) whoever wins the row. */
+export interface CompareRow { label: string; a: string; b: string; winner: "a" | "b" | null; toneA?: Tone; toneB?: Tone }
+export type Tone = "gain" | "loss";
+const tone = (n: number | null | undefined): Tone | undefined => (n == null || n === 0 ? undefined : n > 0 ? "gain" : "loss");
 
 const m = (n: number, sign = false) => usd(n, { sign });
 const secs = (s: number) => (s < 90 ? `${s}s` : s < 5400 ? `${Math.round(s / 60)} min` : `${Math.round(s / 360) / 10} h`);
@@ -15,7 +18,7 @@ const win = (a: number | null | undefined, b: number | null | undefined, higher 
 
 export function compareRows(a: WrappedStats, b: WrappedStats): CompareRow[] {
   const rows: CompareRow[] = [
-    { label: "Profit", a: m(a.pnl.totalUsd, true), b: m(b.pnl.totalUsd, true), winner: win(a.pnl.totalUsd, b.pnl.totalUsd) },
+    { label: "Profit", a: m(a.pnl.totalUsd, true), b: m(b.pnl.totalUsd, true), winner: win(a.pnl.totalUsd, b.pnl.totalUsd), toneA: tone(a.pnl.totalUsd), toneB: tone(b.pnl.totalUsd) },
     { label: "Win rate", a: pct(a.pnl.winRate), b: pct(b.pnl.winRate), winner: win(a.pnl.winRate, b.pnl.winRate) },
     { label: "Trades", a: num(a.overview.totalTrades), b: num(b.overview.totalTrades), winner: win(a.overview.totalTrades, b.overview.totalTrades) },
     { label: "Volume", a: m(a.overview.volumeUsd), b: m(b.overview.volumeUsd), winner: win(a.overview.volumeUsd, b.overview.volumeUsd) },
@@ -23,13 +26,14 @@ export function compareRows(a: WrappedStats, b: WrappedStats): CompareRow[] {
       label: "Best trade",
       a: a.bestTrade ? `$${a.bestTrade.symbol} ${m(a.bestTrade.pnlUsd, true)}` : "—",
       b: b.bestTrade ? `$${b.bestTrade.symbol} ${m(b.bestTrade.pnlUsd, true)}` : "—",
-      winner: win(a.bestTrade?.pnlUsd, b.bestTrade?.pnlUsd),
+      winner: win(a.bestTrade?.pnlUsd, b.bestTrade?.pnlUsd), toneA: tone(a.bestTrade?.pnlUsd), toneB: tone(b.bestTrade?.pnlUsd),
     },
     {
       label: "Worst trade",
       a: a.worstTrade ? `$${a.worstTrade.symbol} ${m(a.worstTrade.pnlUsd, true)}` : "—",
       b: b.worstTrade ? `$${b.worstTrade.symbol} ${m(b.worstTrade.pnlUsd, true)}` : "—",
       winner: win(a.worstTrade?.pnlUsd ?? 0, b.worstTrade?.pnlUsd ?? 0), // smaller loss wins
+      toneA: tone(a.worstTrade?.pnlUsd), toneB: tone(b.worstTrade?.pnlUsd),
     },
     {
       label: "Fastest flip",

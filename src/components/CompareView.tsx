@@ -4,7 +4,7 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { PublicJob } from "@/lib/store";
-import { compareRows, compareScore } from "./compare";
+import { compareRows, compareScore, type Tone } from "./compare";
 import { whoLabel } from "./format";
 import { Loading } from "./story/Loading";
 
@@ -70,12 +70,14 @@ export function CompareView({ a: a0, b: b0, siteUrl }: { a: J; b: J; siteUrl: st
           {rows.map((r, i) => (
             <motion.div key={r.label} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 + i * 0.05 }}
               className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-white/5 px-3 py-3 last:border-0 sm:px-5">
-              <Cell v={r.a} on={r.winner === "a"} align="right" />
+              <Cell v={r.a} on={r.winner === "a"} tone={r.toneA} align="right" />
               <div className="w-24 text-center text-[11px] font-semibold uppercase tracking-wider opacity-60 sm:w-32">{r.label}</div>
-              <Cell v={r.b} on={r.winner === "b"} align="left" />
+              <Cell v={r.b} on={r.winner === "b"} tone={r.toneB} align="left" />
             </motion.div>
           ))}
         </div>
+
+        <p className="-mt-3 text-center text-xs opacity-60"><span className="text-amber-300">◂ ▸</span> points to who wins each row · <span className="text-emerald-300">green</span> = made money, <span className="text-red-400">red</span> = lost money</p>
 
         <div className="grid gap-2 sm:grid-cols-2">
           <a href={`https://x.com/intent/post?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer"
@@ -99,10 +101,13 @@ function Side({ name, title, href, lead }: { name: string; title: string; href: 
   );
 }
 
-function Cell({ v, on, align }: { v: string; on: boolean; align: "left" | "right" }) {
+/** Colour says gain or loss (money rows only); the arrow and brightness say who won the row. */
+function Cell({ v, on, tone, align }: { v: string; on: boolean; tone?: Tone; align: "left" | "right" }) {
+  const color = tone === "gain" ? "text-emerald-300" : tone === "loss" ? "text-red-400" : "";
+  const arrow = <span className="text-amber-300">{align === "left" ? "▸ " : " ◂"}</span>;
   return (
-    <div className={`min-w-0 truncate font-display text-sm font-bold tabular-nums sm:text-lg ${align === "right" ? "text-right" : "text-left"} ${on ? "text-emerald-300" : "opacity-80"}`}>
-      {on && align === "left" && "▸ "}{v}{on && align === "right" && " ◂"}
+    <div className={`min-w-0 truncate font-display text-sm font-bold tabular-nums sm:text-lg ${align === "right" ? "text-right" : "text-left"} ${color} ${on ? "" : "opacity-60"}`}>
+      {on && align === "left" && arrow}{v}{on && align === "right" && arrow}
     </div>
   );
 }

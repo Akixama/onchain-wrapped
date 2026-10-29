@@ -4,6 +4,9 @@ import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { getJob } from "@/lib/store";
 import { compareRows, compareScore } from "@/components/compare";
+
+/** Money rows: green for a gain, red for a loss (same as the compare page). */
+const toneColor = (t?: "gain" | "loss") => (t === "gain" ? "#6EE7B7" : t === "loss" ? "#F87171" : "#F6F2FF");
 import { whoLabel } from "@/components/format";
 
 const fontDir = join(process.cwd(), "assets", "fonts");
@@ -38,9 +41,9 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/og-vs/[a]/[b]">
         <div style={{ display: "flex", flexDirection: "column", marginTop: 26, gap: 10 }}>
           {rows.map((r) => (
             <div key={r.label} style={{ display: "flex", alignItems: "center", fontSize: 28, borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 10 }}>
-              <div style={{ display: "flex", width: 430, justifyContent: "flex-end", fontWeight: 600, color: r.winner === "a" ? "#6EE7B7" : "rgba(246,242,255,0.8)" }}>{r.a}</div>
+              <div style={{ display: "flex", width: 430, justifyContent: "flex-end", fontWeight: 600, color: toneColor(r.toneA), opacity: r.winner === "a" ? 1 : 0.6 }}>{r.a}{r.winner === "a" && <span style={{ color: "#FCD34D" }}>&nbsp;◂</span>}</div>
               <div style={{ display: "flex", width: 212, justifyContent: "center", fontSize: 18, letterSpacing: 2, opacity: 0.6 }}>{r.label.toUpperCase()}</div>
-              <div style={{ display: "flex", width: 430, fontWeight: 600, color: r.winner === "b" ? "#6EE7B7" : "rgba(246,242,255,0.8)" }}>{r.b}</div>
+              <div style={{ display: "flex", width: 430, fontWeight: 600, color: toneColor(r.toneB), opacity: r.winner === "b" ? 1 : 0.6 }}>{r.winner === "b" && <span style={{ color: "#FCD34D" }}>▸&nbsp;</span>}{r.b}</div>
             </div>
           ))}
         </div>

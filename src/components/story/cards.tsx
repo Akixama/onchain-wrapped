@@ -142,7 +142,14 @@ const Overview = ({ s }: CardProps) => {
         <Line className="text-lg opacity-80">You made</Line>
         <BigNumber className="text-[76px] @3xl:text-[106px]"><CountUp value={s.overview.totalTrades} format={(n) => num(Math.round(n))} /></BigNumber>
         <Line className="text-lg opacity-80">trades, moving <b className="font-display text-2xl">{money(s.overview.volumeUsd)}</b>{s.overview.chainsUsed.length > 1 && ` across ${s.overview.chainsUsed.length} chains`}.</Line>
-        <R><motion.div variants={rise} className="space-y-2 pt-2 @3xl:space-y-3">
+        {bars.length <= 1 ? (
+          // One chain: a single full bar says nothing. Show the shape of the year instead.
+          <R><div className="grid grid-cols-3 gap-3 pt-2">
+            <Stat label="Active days">{num(s.overview.activeDays)}</Stat>
+            <Stat label="Coins">{num(s.overview.tokensTraded)}</Stat>
+            <Stat label="Avg trade">{money(s.overview.volumeUsd / total)}</Stat>
+          </div></R>
+        ) : <R><motion.div variants={rise} className="space-y-2 pt-2 @3xl:space-y-3">
           {bars.map(([c, n]) => (
             <div key={c} className="flex items-center gap-3 text-sm">
               <span className="w-20 opacity-80">{CHAIN_NAME[c]}</span>
@@ -153,8 +160,8 @@ const Overview = ({ s }: CardProps) => {
               <span className="w-10 text-right tabular-nums opacity-80">{n}</span>
             </div>
           ))}
-        </motion.div></R>
-        {top && <Line className="text-sm opacity-70">Home chain: <b>{CHAIN_NAME[top]}</b> · {s.overview.activeDays} active days</Line>}
+        </motion.div></R>}
+        {top && bars.length > 1 && <Line className="text-sm opacity-70">Home chain: <b>{CHAIN_NAME[top]}</b> · {s.overview.activeDays} active days</Line>}
       </Body>
     </>
   );
