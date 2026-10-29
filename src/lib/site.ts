@@ -10,3 +10,6 @@ export const siteUrl = () =>
 
 /** EVM chains are built but hidden. Set NEXT_PUBLIC_ENABLE_EVM=1 to show them again. */
 export const EVM_ENABLED = process.env.NEXT_PUBLIC_ENABLE_EVM === "1";
+
+/** Where tips go (the "Tip the dev" link). */
+export const TIP_ADDRESS = process.env.NEXT_PUBLIC_TIP_ADDRESS ?? "G9opRn3ocUMEtqvTFfbsfwzuCgQCqix7EhawBqW1oS3x";

@@ -1,6 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
+import { TipJar } from "../TipJar";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
@@ -168,6 +169,7 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
                 <Link href={`/ask/${id}`} className="rounded-2xl border border-fuchsia-300/50 bg-fuchsia-300/10 px-1 py-2.5 text-fuchsia-100">Ask this wallet</Link>
               </div>
               <Notes s={s} />
+              <div className="text-center"><TipJar /></div>
             </div>
           ) : (
             <div className="flex items-center justify-between text-xs">
