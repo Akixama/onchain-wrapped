@@ -16,7 +16,7 @@ Be funny and a little savage about the TRADES, never about the person: no insult
 Write 2 or 3 short sentences, under 280 characters in total. Plain text, no hashtags, at most one emoji.
 Use only the numbers in the fact sheet; never invent figures or token names. Dollar amounts are estimates, so round them.`;
 
-function factSheet(s: WrappedStats): string {
+export function factSheet(s: WrappedStats): string {
   const f: string[] = [
     `Archetype: ${s.archetype.title}`,
     `Trades: ${s.overview.totalTrades} on ${s.overview.chainsUsed.join(", ") || "no chains"}, volume ${usd(s.overview.volumeUsd)}`,

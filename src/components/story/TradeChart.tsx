@@ -69,7 +69,8 @@ function useCandles(card: TradeCard): Loaded {
   return state;
 }
 
-export function TradeChart({ card, marks = [], height }: { card: TradeCard; marks?: Mark[]; height?: number }) {
+/** `cutoff` (unix s): hide everything after it — the time axis still spans the whole trade (chart game). */
+export function TradeChart({ card, marks = [], height, cutoff }: { card: TradeCard; marks?: Mark[]; height?: number; cutoff?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(320);
   useEffect(() => {
@@ -85,21 +86,24 @@ export function TradeChart({ card, marks = [], height }: { card: TradeCard; mark
   const supply = card.supply ?? card.chart?.supply ?? null;
   const val = (p: number) => (supply ? p * supply : p); // plot market cap when we know the supply
   const fmt = (v: number) => (supply ? usd(v) : smallPrice(v));
-  const candles = typeof loaded === "object" ? loaded.candles : [];
-  const fills = card.fills ?? [];
-  const hasCandles = candles.length >= 3;
+  const allCandles = typeof loaded === "object" ? loaded.candles : [];
+  const allFills = card.fills ?? [];
+  const hasCandles = allCandles.length >= 3;
+  const candles = cutoff ? allCandles.filter((c) => c[0] <= cutoff) : allCandles;
+  const fills = cutoff ? allFills.filter((f) => f.t <= cutoff) : allFills;
   // A candle covers [open time, open time + its length); draw it in the middle of that slot, or
   // buys and sells (plotted at their exact second) sit to the right of the candle they belong to.
-  const candleSec = hasCandles ? Math.min(...candles.slice(1).map((c, i) => c[0] - candles[i][0]).filter((d) => d > 0)) || 60 : 0;
+  const candleSec = hasCandles ? Math.min(...allCandles.slice(1).map((c, i) => c[0] - allCandles[i][0]).filter((d) => d > 0)) || 60 : 0;
 
   const geo = useMemo(() => {
     const left = 6, right = 62, top = 12, bottom = 22;
     const pw = width - left - right, ph = h - top - bottom;
-    const times = [...(hasCandles ? candles.flatMap((c) => [c[0], c[0] + candleSec]) : []), ...fills.map((f) => f.t)];
+    // Time axis: the whole trade even when the end is hidden; price axis: only what's visible (no spoilers).
+    const times = [...(hasCandles ? allCandles.flatMap((c) => [c[0], c[0] + candleSec]) : []), ...allFills.map((f) => f.t)];
     const t0 = Math.min(...times), t1 = Math.max(...times, t0 + 60);
     const fillValues = fills.map((f) => val(f.price)).filter((v) => v > 0);
     // Scale to candle bodies + your fills; extreme one-candle wicks would flatten everything else.
-    const bodies = hasCandles ? candles.flatMap((c) => [val(c[1]), val(c[4])]) : fillValues;
+    const bodies = candles.length ? candles.flatMap((c) => [val(c[1]), val(c[4])]) : fillValues;
     let lo = Math.min(...bodies, ...fillValues), hi = Math.max(...bodies, ...fillValues);
     if (!(hi > lo)) { hi = hi * 1.1 || 1; lo = lo * 0.9; }
     const pad = (hi - lo) * 0.12;
@@ -109,7 +113,7 @@ export function TradeChart({ card, marks = [], height }: { card: TradeCard; mark
     const step = hasCandles ? (candleSec / (t1 - t0)) * pw : 0;
     return { left, right, top, ph, x, y, lo, hi, t0, t1, step };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [width, h, hasCandles, candles, fills, supply, candleSec]);
+  }, [width, h, hasCandles, candles, fills, allCandles, allFills, supply, candleSec]);
 
   if (loaded === "loading") {
     return (
@@ -119,10 +123,10 @@ export function TradeChart({ card, marks = [], height }: { card: TradeCard; mark
       </div>
     );
   }
-  if (!hasCandles && fills.length < 2) return <div ref={ref} />;
+  if (!hasCandles && fills.length < (cutoff ? 1 : 2)) return <div ref={ref} />;
 
   const { left, right, top, ph, x, y, lo, hi, t0, t1, step } = geo;
-  const last = hasCandles ? val(candles[candles.length - 1][4]) : val(fills[fills.length - 1].price);
+  const last = candles.length ? val(candles[candles.length - 1][4]) : val(fills[fills.length - 1].price);
   const ticks = [0, 1, 2, 3].map((i) => lo + ((hi - lo) * i) / 3);
   const span = t1 - t0;
   const timeFmt = (t: number) =>
@@ -158,6 +162,10 @@ export function TradeChart({ card, marks = [], height }: { card: TradeCard; mark
         {[t0, (t0 + t1) / 2, t1].map((t, i) => (
           <text key={i} x={x(t)} y={h - 6} textAnchor={i === 0 ? "start" : i === 2 ? "end" : "middle"} fill={AXIS} fontSize="10">{timeFmt(t)}</text>
         ))}
+        {cutoff && (
+          <rect x={x(cutoff)} y={top} width={Math.max(0, width - right - x(cutoff))} height={ph} fill="rgba(255,255,255,0.04)" />
+        )}
+        {cutoff && <text x={(x(cutoff) + width - right) / 2} y={top + ph / 2} textAnchor="middle" fill="rgba(255,255,255,0.45)" fontSize="13" fontWeight="700">?</text>}
         {hasCandles
           ? candles.map((c, i) => {
               const o = val(c[1]), hh = val(c[2]), l = val(c[3]), cl = val(c[4]);

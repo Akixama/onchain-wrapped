@@ -2,7 +2,7 @@
 // "How well do you know this wallet?" One question at a time, answer revealed straight away, score at the end.
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { scoreLine, type QuizQuestion } from "./quiz";
 
 export function QuizView({ id, who, period, questions, siteUrl }: { id: string; who: string; period: string; questions: QuizQuestion[]; siteUrl: string }) {
@@ -13,6 +13,24 @@ export function QuizView({ id, who, period, questions, siteUrl }: { id: string; 
   const total = questions.length;
   const url = `${siteUrl}/q/${id}`;
   const q = i >= 0 && i < total ? questions[i] : null;
+  const [board, setBoard] = useState<Entry[]>([]);
+  const [name, setName] = useState("");
+  const [saved, setSaved] = useState<{ rank: number } | null>(null);
+  const [saveErr, setSaveErr] = useState<string | null>(null);
+  useEffect(() => {
+    fetch(`/api/quiz/${id}/scores`).then((r) => r.json()).then((j) => setBoard(j.entries ?? [])).catch(() => {});
+  }, [id]);
+  const submitScore = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaveErr(null);
+    try {
+      const r = await fetch(`/api/quiz/${id}/scores`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, score }) });
+      const j = await r.json();
+      if (!r.ok) return setSaveErr(j.error ?? "Couldn't save that.");
+      setBoard(j.entries ?? []);
+      setSaved({ rank: j.rank });
+    } catch { setSaveErr("Couldn't save that."); }
+  };
 
   const pick = (k: number) => {
     if (picked != null || !q) return;
@@ -20,7 +38,7 @@ export function QuizView({ id, who, period, questions, siteUrl }: { id: string; 
     if (k === q.answer) setScore((s) => s + 1);
   };
   const next = () => { setPicked(null); setI((x) => x + 1); };
-  const restart = () => { setScore(0); setPicked(null); setI(0); };
+  const restart = () => { setScore(0); setPicked(null); setSaved(null); setI(0); };
 
   return (
     <div className="min-h-[100dvh] bg-[radial-gradient(ellipse_at_top,#2a1460,#0B0820_60%)] px-4 py-8 text-white sm:px-6">
@@ -45,6 +63,7 @@ export function QuizView({ id, who, period, questions, siteUrl }: { id: string; 
                 <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">How well do you know <span className="text-amber-300">{who}</span>?</h1>
                 <p className="opacity-75">{total} questions about their {period}. Every answer comes from their real onchain trades.</p>
                 <button onClick={() => setI(0)} className="w-full rounded-2xl bg-white py-4 font-display text-lg font-bold text-black active:scale-[0.98]">Start</button>
+                {board.length > 0 && <Board entries={board.slice(0, 3)} title="Score to beat" />}
               </div>
             )}
 
@@ -92,7 +111,20 @@ export function QuizView({ id, who, period, questions, siteUrl }: { id: string; 
                   <button onClick={async () => { await navigator.clipboard.writeText(url); setCopied(true); }}
                     className="rounded-2xl border border-white/25 py-3.5 font-semibold">{copied ? "Link copied" : "Send to a friend"}</button>
                 </div>
+                {saved ? (
+                  <p className="text-sm text-amber-200">You&apos;re #{saved.rank} on the board.</p>
+                ) : (
+                  <form onSubmit={submitScore} className="flex gap-2">
+                    <input value={name} onChange={(e) => setName(e.target.value)} maxLength={20} placeholder="Your name for the board"
+                      className="min-w-0 flex-1 rounded-2xl border border-white/20 bg-white/[0.06] px-4 py-3 outline-none placeholder:text-white/40 focus:border-white/50" />
+                    <button disabled={!name.trim()} className="rounded-2xl bg-amber-300 px-5 font-bold text-black disabled:opacity-40">Add</button>
+                  </form>
+                )}
+                {saveErr && <p className="text-sm text-red-300">{saveErr}</p>}
+                {board.length > 0 && <Board entries={board} title="Scoreboard" highlight={saved ? saved.rank - 1 : -1} />}
                 <div className="flex flex-wrap justify-center gap-4 text-sm">
+                  <Link href={`/g/${id}`} className="underline-offset-4 opacity-75 hover:underline">Chart game</Link>
+                  <Link href={`/ask/${id}`} className="underline-offset-4 opacity-75 hover:underline">Ask this wallet</Link>
                   <button onClick={restart} className="underline-offset-4 opacity-75 hover:underline">Play again</button>
                   <Link href={`/w/${id}`} className="underline-offset-4 opacity-75 hover:underline">See the full Wrapped</Link>
                   <Link href="/" className="underline-offset-4 opacity-75 hover:underline">Make a quiz for your wallet</Link>
@@ -102,6 +134,25 @@ export function QuizView({ id, who, period, questions, siteUrl }: { id: string; 
           </motion.div>
         </AnimatePresence>
       </div>
+    </div>
+  );
+}
+
+interface Entry { name: string; score: number; total: number }
+
+function Board({ entries, title, highlight = -1 }: { entries: Entry[]; title: string; highlight?: number }) {
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 text-left">
+      <div className="mb-2 text-xs font-semibold uppercase tracking-[0.18em] opacity-60">{title}</div>
+      <ol className="space-y-1.5">
+        {entries.map((e, k) => (
+          <li key={e.name + k} className={`flex items-center gap-3 rounded-lg px-2 py-1 ${k === highlight ? "bg-amber-300/15 text-amber-100" : ""}`}>
+            <span className="w-5 text-right tabular-nums opacity-50">{k + 1}</span>
+            <span className="min-w-0 flex-1 truncate font-semibold">{e.name}</span>
+            <span className="font-display font-bold tabular-nums">{e.score}/{e.total}</span>
+          </li>
+        ))}
+      </ol>
     </div>
   );
 }
