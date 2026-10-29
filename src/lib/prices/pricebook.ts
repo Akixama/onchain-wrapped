@@ -107,15 +107,16 @@ function mergeSeries(daily: PricePoint[], hourly: PricePoint[]): PricePoint[] {
 }
 
 /** Run `fn` over items with up to `n` in flight (the provider's throttle still sets the pace). */
-async function pool<T>(items: T[], n: number, fn: (x: T) => Promise<void>) {
+async function pool<T>(items: T[], n: number, fn: (x: T) => Promise<void>, stopAt?: number) {
   let i = 0;
   await Promise.all(Array.from({ length: Math.min(n, items.length) }, async () => {
-    while (i < items.length) await fn(items[i++]);
+    while (i < items.length && !(stopAt && Date.now() >= stopAt)) await fn(items[i++]);
   }));
 }
 const chunks = <T,>(xs: T[], size: number) => Array.from({ length: Math.ceil(xs.length / size) }, (_, i) => xs.slice(i * size, (i + 1) * size));
 
-async function llamaCurrent(ids: string[]): Promise<Record<string, number>> {
+/** `asked` collects every id a request answered for (found or not), so a saved result can say "no price". */
+async function llamaCurrent(ids: string[], stopAt?: number, asked?: Set<string>): Promise<Record<string, number>> {
   const out: Record<string, number> = {};
   // Thousands of coins = 100+ requests: one at a time took minutes.
   await pool(chunks(ids, 60), 8, async (batch) => {
@@ -126,12 +127,13 @@ async function llamaCurrent(ids: string[]): Promise<Record<string, number>> {
         { endpoint: "prices/current" },
       );
       for (const [id, v] of Object.entries(r.coins ?? {})) out[id] = v.price;
+      for (const id of batch) asked?.add(id);
     } catch {}
-  });
+  }, stopAt);
   return out;
 }
 
-async function dexscreener(keys: string[]): Promise<Record<string, { price: number; liq: number }>> {
+async function dexscreener(keys: string[], stopAt?: number, asked?: Set<string>): Promise<Record<string, { price: number; liq: number }>> {
   const out: Record<string, { price: number; liq: number }> = {};
   const byChain = new Map<ChainId, string[]>();
   for (const k of keys) {
@@ -153,8 +155,9 @@ async function dexscreener(keys: string[]): Promise<Record<string, { price: numb
           const liq = p.liquidity?.usd ?? 0;
           if (!out[k] || liq > out[k].liq) out[k] = { price: Number(p.priceUsd ?? 0), liq };
         }
+        for (const a of batch) asked?.add(`${chain}:${a}`);
       } catch {}
-    });
+    }, stopAt);
   }
   return out;
 }
@@ -170,6 +173,8 @@ export async function buildPriceBook(
   sinceTs: number,
   providerCurrent: Record<string, number>,
   maxSeriesTokens = 25,
+  /** Current prices looked up earlier in this lookup (see prefetchCurrent): those coins aren't asked again. */
+  known: KnownPrices = {},
 ): Promise<PriceBook> {
   const start = minOf(events.map((e) => e.timestamp), sinceTs || Infinity) - 86400;
   const majors = Object.entries(MAJOR_LLAMA_ID) as [Exclude<Major, "USD">, string][];
@@ -185,12 +190,19 @@ export async function buildPriceBook(
     }
   const tokens = [...vol.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => k);
   const seriesP = llamaChart(tokens.slice(0, maxSeriesTokens).map(llamaId), start);
-  const curLlamaP = llamaCurrent(tokens.map(llamaId));
+  // Coins looked up earlier aren't asked again; their answers (found or not) are filled in.
+  const curLlamaP = llamaCurrent(tokens.filter((k) => known[k]?.l === undefined).map(llamaId)).then((cur) => {
+    for (const k of tokens) { const l = known[k]?.l; if (l != null) cur[llamaId(k)] = l; }
+    return cur;
+  });
   const majorCurP = llamaCurrent(majors.map(([, id]) => id));
-  const dexP = curLlamaP.then((cur) => {
+  const dexP = curLlamaP.then(async (cur) => {
     const needDex = tokens.filter((k) => providerCurrent[k] === undefined && cur[llamaId(k)] === undefined);
     // Liquidity is useful for rug detection on everything, but only query DexScreener for what we need + top tokens.
-    return dexscreener([...new Set([...needDex, ...tokens.slice(0, maxSeriesTokens)])]);
+    const want = [...new Set([...needDex, ...tokens.slice(0, maxSeriesTokens)])];
+    const dex = await dexscreener(want.filter((k) => known[k]?.d === undefined));
+    for (const k of want) { const d = known[k]?.d; if (d) dex[k] = { price: d[0], liq: d[1] }; }
+    return dex;
   });
 
   const daily = await llamaChart(majors.map(([, id]) => id), start);
@@ -216,6 +228,32 @@ export async function buildPriceBook(
 }
 
 export const priceAt = interp;
+
+/**
+ * Per coin: DefiLlama's current price (null = it has none) and DexScreener's best pool
+ * ([price, liquidity], null = no pool). A missing field = not asked yet.
+ */
+export type KnownPrices = Record<string, { l?: number | null; d?: [number, number] | null }>;
+
+/**
+ * The same current-price lookups buildPriceBook makes, done early (while the slow on-chain check runs)
+ * and stopped at `stopAt`. Merged into `known`; anything not reached is asked again later.
+ */
+export async function prefetchCurrent(events: UnifiedEvent[], known: KnownPrices, stopAt: number): Promise<number> {
+  const keys = new Set<string>();
+  for (const e of events) for (const l of [...e.in, ...e.out]) if (!isMoney(l.token)) keys.add(tokenKey(l.token));
+  const entry = (k: string) => (known[k] ??= {});
+  const askL = [...keys].filter((k) => known[k]?.l === undefined);
+  const askedL = new Set<string>();
+  const cur = await llamaCurrent(askL.map(llamaId), stopAt, askedL);
+  for (const k of askL) if (askedL.has(llamaId(k))) entry(k).l = cur[llamaId(k)] ?? null;
+  // DexScreener only for coins DefiLlama has no price for, as buildPriceBook does (it adds the top coins itself).
+  const askD = [...keys].filter((k) => known[k]?.l === null && known[k]?.d === undefined);
+  const askedD = new Set<string>();
+  const dex = await dexscreener(askD, stopAt, askedD);
+  for (const k of askD) if (askedD.has(k)) entry(k).d = dex[k] ? [dex[k].price, dex[k].liq] : null;
+  return askedL.size + askedD.size;
+}
 
 /** Most liquid pool per token, from DexScreener (30 tokens per request). Keys are `chain:address`. */
 export async function dexPools(keys: string[]): Promise<Record<string, string>> {

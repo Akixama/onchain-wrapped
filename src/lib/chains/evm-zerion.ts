@@ -244,6 +244,7 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
           }
         }
       }
+      if (events.some((e) => !e.verified)) opts.onSlowCheck?.(events);
       const v = await verify(events, isMoney, opts.deadline, (done, total) =>
         opts.onProgress?.({ chain: "solana", fetched: S.seen, message: `Double-checking trades on-chain (${done.toLocaleString()}/${total.toLocaleString()})` }),
       );

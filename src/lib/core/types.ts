@@ -87,6 +87,8 @@ export interface FetchOptions {
   resume?: unknown;
   /** The address is known to be flooded with bot transactions (skip work that only reads that noise). */
   junkFlooded?: boolean;
+  /** Reading is done and a slow on-chain check starts: the caller can do other lookups meanwhile. */
+  onSlowCheck?: (events: UnifiedEvent[]) => void;
 }
 
 export interface FetchResult {

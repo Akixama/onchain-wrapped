@@ -6,7 +6,9 @@ import { mergeIdentity } from "./core/identity";
 import { resolveWallets } from "./core/resolve";
 import { enrichEvents } from "./core/enrich";
 import { filterSpam } from "./core/spam";
-import { buildPriceBook } from "./prices/pricebook";
+import { buildPriceBook, prefetchCurrent, type KnownPrices } from "./prices/pricebook";
+import { loadBlob, saveBlob } from "./infra/blob";
+import { createHash } from "node:crypto";
 import { runPnl } from "./engine/pnl";
 import { bagStats } from "./engine/extras";
 import { sniperStats } from "./launch";
@@ -51,6 +53,9 @@ export type RunOutput =
 /** Transactions above which the analysis gets a part of its own when time is short. */
 const BIG_HISTORY = Number(process.env.BIG_HISTORY_EVENTS ?? 20_000);
 
+/** Current coin prices looked up during this lookup's on-chain check, kept for the final analysis. */
+const pricesKey = (wallets: string[]) => `pxc:${createHash("sha1").update([...wallets].sort().join(",")).digest("hex")}`;
+
 export async function runWrapped(input: RunInput): Promise<RunOutput> {
   input.onProgress?.({ stage: "fetching", message: "Finding your wallets", fetched: 0 });
   const resolved = await resolveWallets(input.addresses);
@@ -67,6 +72,17 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
   let fetched = 0;
   const slots: FetchSlots = { ...(input.resume ?? {}) };
   // This part was handed everything already read: analyse now, whatever the clock says.
+  // The on-chain check takes minutes and uses other providers: look up current coin prices meanwhile,
+  // so the analysis doesn't spend minutes on them afterwards (a wallet can have 20,000+ coins).
+  const pxKey = pricesKey(wallets);
+  let prefetch: Promise<void> = Promise.resolve();
+  const onSlowCheck = (evs: UnifiedEvent[]) => {
+    const stopAt = input.deadline ? input.deadline - 5_000 : Date.now() + 600_000;
+    prefetch = prefetch.then(async () => {
+      const known = (await loadBlob<KnownPrices>(pxKey).catch(() => null)) ?? {};
+      if (await prefetchCurrent(evs, known, stopAt)) await saveBlob(pxKey, known, 3600);
+    }).catch(() => {});
+  };
   const startedAllRead = !!input.resume && Object.keys(input.resume).length > 0 && Object.values(input.resume).every((s) => s.done);
 
   await Promise.all(
@@ -88,6 +104,7 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
           maxTxs: cap,
           deadline: input.deadline,
           resume: prev?.state,
+          onSlowCheck,
           onProgress: ({ chain, fetched: n, message }) => {
             fetched += n - last;
             last = n;
@@ -106,6 +123,7 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
   const readCount = Object.values(slots).reduce((n, s) => n + (s.done ? s.result.events.length : 0), 0);
   const reserveMs = Number(process.env.ANALYZE_RESERVE_SECONDS ?? 150) * 1000;
   const tooLateToAnalyse = !!input.deadline && readCount > BIG_HISTORY && Date.now() > input.deadline - reserveMs && !startedAllRead;
+  await prefetch;
   if (Object.values(slots).some((s) => !s.done) || (input.deadline && Date.now() >= input.deadline) || tooLateToAnalyse) {
     return { partial: slots, fetched };
   }
@@ -139,8 +157,9 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
     .sort((a, b) => a.timestamp - b.timestamp);
   fillTokenInfo(events);
 
+  const knownPrices = (await loadBlob<KnownPrices>(pxKey).catch(() => null)) ?? undefined;
   const stats = await analyze({
-    events, resolved, timeframe: input.timeframe, sinceTs, untilTs, coverageStart, truncated, cap: Number.isFinite(cap) ? cap : 0, providerPrices, notes,
+    knownPrices, events, resolved, timeframe: input.timeframe, sinceTs, untilTs, coverageStart, truncated, cap: Number.isFinite(cap) ? cap : 0, providerPrices, notes,
     onStage: (stage, message) => say({ stage, message, fetched }),
     // The platform stops a run ~100s after the reading deadline: the optional extras must end before.
     finishBy: input.deadline ? input.deadline + Number(process.env.ANALYZE_TAIL_SECONDS ?? 75) * 1000 : undefined,
@@ -163,6 +182,8 @@ export interface AnalyzeInput {
   providerPrices?: Record<string, number>;
   notes?: string[];
   onStage?: (stage: Progress["stage"], message: string) => void;
+  /** Current prices already looked up during this lookup (coins in it aren't asked again). */
+  knownPrices?: KnownPrices;
   /** Hard stop (ms): optional extras (price peaks, charts, sniper) are skipped or cut short past it. */
   finishBy?: number;
 }
@@ -174,7 +195,7 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   const notes = [...new Set(a.notes ?? [])];
   const now = Math.floor(Date.now() / 1000);
   a.onStage?.("pricing", "Looking up prices");
-  const pb = await buildPriceBook(events, sinceTs, a.providerPrices ?? {});
+  const pb = await buildPriceBook(events, sinceTs, a.providerPrices ?? {}, 25, a.knownPrices);
   enrichEvents(events, pb);
   const spamFiltered = filterSpam(events, (k) => pb.current(k));
   const { bridges } = mergeIdentity(events, wallets);
