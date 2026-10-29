@@ -141,26 +141,39 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
               S.wins = [{ from: opts.sinceTs, to: nowS, url: null }];
               break;
             }
-            let oldest = Infinity;
+            let oldest = Infinity, added = 0;
             for (const tx of page.data) {
               oldest = Math.min(oldest, mined(tx));
+              w.oldest = Math.min(w.oldest ?? Infinity, oldest);
               const h = tx.attributes.hash;
               if (known.has(h)) continue;
               known.add(h);
               S.seen++;
               const e = normalize(wallet, tx);
               if (e) S.events.push(e);
+              added++;
             }
+            if (w.rechecked && added) { S.recovered = (S.recovered ?? 0) + added; }
             opts.onProgress?.({ chain: family === "evm" ? "evm" : "solana", fetched: S.seen });
             const next = page.links?.next;
-            if (!next || !page.data.length) { S.wins = S.wins.filter((x) => x !== w); break; }
+            if (!next || !page.data.length) {
+              // Zerion sometimes ends a range early (an empty or "last" page while older transactions
+              // remain). If this one stopped short of its start, ask once more for the rest.
+              const reached = w.oldest ?? w.to;
+              if (!S.sequential && !w.rechecked && reached - w.from > 60) {
+                Object.assign(w, { to: reached + 1, url: null, rechecked: true });
+                continue;
+              }
+              S.wins = S.wins.filter((x) => x !== w);
+              break;
+            }
             // Optional cap (MAX_TXS_PER_ADDRESS); by default the whole history is read.
             if (S.seen >= opts.maxTxs) { S.truncated = true; S.wins = []; stop = true; break; }
             if (!S.sequential && idle > 0 && oldest - w.from > 2 * 3600) {
               // Dense range and a reader is waiting: hand it the older half (1s overlap at the cut).
               const mid = Math.floor((w.from + oldest) / 2);
               S.wins.push({ from: w.from, to: mid + 1, url: null });
-              Object.assign(w, { from: mid, to: oldest + 1, url: null });
+              Object.assign(w, { from: mid, to: oldest + 1, url: null, rechecked: false });
             } else {
               w.url = next;
             }
@@ -184,6 +197,7 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
     await Promise.all(Array.from({ length: readers }, (_, n) => reader(n)));
 
     if (failure) throw failure;
+    if (S.recovered && !S.wins.length) console.warn(`zerion: ${S.recovered} transactions recovered from ranges that ended early (${wallet})`);
     if (S.quotaCut) {
       // Daily data limit ran out partway through a huge history: keep what we read and say so, instead
       // of failing the whole lookup. With nothing read yet, it's a real error.
@@ -266,7 +280,11 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
 }
 
 /** A date range still to read (seconds, both ends included) and its next-page cursor, if started. */
-interface ZWin { from: number; to: number; url: string | null }
+interface ZWin {
+  from: number; to: number; url: string | null;
+  /** Oldest transaction seen in this range, and whether its end was already double-checked. */
+  oldest?: number; rechecked?: boolean;
+}
 
 /** On-chain double-check results for a wallet, reused by later lookups (trades up to `until`). */
 interface VerifiedCache { until: number; fixes: Record<string, { in: Leg[]; out: Leg[] }> }
@@ -287,6 +305,8 @@ interface ZerionState {
   notes: string[];
   backfill?: { pending: string[]; added: number };
   fixed?: number;
+  /** Transactions found only by asking again after a range ended early (see the reader). */
+  recovered?: number;
   verCacheApplied?: boolean;
   verCacheSaved?: boolean;
   verCacheUnsafe?: boolean;
