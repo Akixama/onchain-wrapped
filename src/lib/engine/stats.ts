@@ -7,6 +7,8 @@ import type { PriceBook } from "../prices/pricebook";
 import { type Position, pricePoints } from "./pnl";
 import { appFeeStats, revengeStats, type BagStats, type RevengeStats, narrativeStats, profitTimeline, speedStats, type AppFeeStats, type NarrativeStats, type ProfitTimeline, type SpeedStats } from "./extras";
 import type { SniperStats } from "../launch";
+import type { Graveyard } from "./graveyard";
+import type { AchievementResult } from "./achievements";
 
 // Everything the cards need, as plain JSON. The UI never recomputes anything.
 
@@ -124,13 +126,17 @@ export interface WrappedStats {
   bags?: BagStats;
   sniper?: SniperStats;
   revenge?: RevengeStats;
+  /** Every coin they held that died, biggest graves first. */
+  graveyard?: Graveyard;
+  /** Badges this lookup earned (rarity is looked up when the story is viewed). */
+  achievements?: AchievementResult;
   /** Story order, only cards with something worth saying. The UI renders exactly these. */
   cards: CardId[];
 }
 
 export type CardId =
   | "archetype" | "overview" | "pnl" | "profitTime" | "best" | "worst" | "roundTrip" | "paperHands" | "diamondHands" | "bags" | "speed" | "sniper" | "revenge" | "narrative"
-  | "counterfactual" | "appFees" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "roast" | "summary";
+  | "counterfactual" | "appFees" | "gas" | "rugs" | "graveyard" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "achievements" | "roast" | "summary";
 
 export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
   const t = s.overview.totalTrades;
@@ -152,12 +158,14 @@ export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
     ["counterfactual", s.overview.totalTrades > 0 && Math.abs(s.counterfactual.justHeldDiffUsd) >= 5],
     ["appFees", (s.appFees?.totalUsd ?? 0) >= 1 && (s.appFees?.coverage ?? 0) >= 0.8],
     ["gas", s.gas.totalUsd >= 1],
-    ["rugs", s.rugs.count + s.rugs.dodged > 0],
+    ["rugs", s.rugs.count + s.rugs.dodged > 0 && !s.graveyard],
+    ["graveyard", (s.graveyard?.count ?? 0) > 0],
     ["airdrops", s.airdrops.count > 0],
     ["sleep", t >= 10],
     ["bridges", s.bridges.hops.length > 0],
     ["percentile", s.percentile.activity !== null],
     ["chains", Object.keys(s.pnl.byChain).length > 0],
+    ["achievements", (s.achievements?.earned.length ?? 0) > 0],
     ["roast", !!s.roast?.text],
     ["summary", true],
   ];

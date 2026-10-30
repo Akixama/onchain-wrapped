@@ -2,6 +2,23 @@
 import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
 import type { Timeframe } from "@/lib/core/types";
 import { NARRATIVE_LABEL } from "@/lib/engine/extras";
+import { ACHIEVEMENT_BY_ID, TIER_LABEL, TIER_ORDER } from "@/lib/achievements-catalog";
+import { CAUSE_LABEL, type DeathCause } from "@/lib/engine/graveyard-labels";
+
+export { CAUSE_LABEL, type DeathCause };
+
+type Earned = { id: string; detail?: string };
+/** Rarest first: by real percentage once there are enough wallets, else by tier. */
+export function rarestFirst<T extends Earned>(earned: T[], pct?: Record<string, number> | null): T[] {
+  return [...earned].filter((e) => ACHIEVEMENT_BY_ID[e.id]).sort((a, b) =>
+    pct ? (pct[a.id] ?? 0) - (pct[b.id] ?? 0) : TIER_ORDER[ACHIEVEMENT_BY_ID[a.id].tier] - TIER_ORDER[ACHIEVEMENT_BY_ID[b.id].tier]);
+}
+/** "Legendary" until enough wallets are counted, then "3.2% of wallets". */
+export function rarityLabel(id: string, pct?: Record<string, number> | null): string {
+  const p = pct?.[id];
+  if (p !== undefined) return p < 1 ? "<1% of wallets" : `${Math.round(p)}% of wallets`;
+  return TIER_LABEL[ACHIEVEMENT_BY_ID[id].tier];
+}
 
 export type Venue = WrappedStats["bridges"]["journey"][number];
 
@@ -127,6 +144,15 @@ export function shareText(s: WrappedStats, card: CardId): string {
     case "appFees": return s.appFees ? `I paid ${s.appFees.byApp[0]?.app ?? "trading apps"} ${usd(s.appFees.totalUsd)} in fees ${periodPhrase(s.meta.timeframe)}. ${tail}` : tail;
     case "gas": return `I burned ${usd(s.gas.totalUsd)} on gas. ${tail}`;
     case "rugs": return `Caught in ${s.rugs.count} rugs, dodged ${s.rugs.dodged}. ${tail}`;
+    case "graveyard": {
+      const g = s.graveyard; if (!g) return tail;
+      return `I buried ${num(g.count)} coin${g.count === 1 ? "" : "s"} and ${usd(g.buriedUsd)}${g.mostExpensive ? `. Most expensive grave: $${g.mostExpensive.symbol}` : ""}. 🪦 ${tail}`;
+    }
+    case "achievements": {
+      const e = s.achievements?.earned ?? []; if (!e.length) return tail;
+      const top = rarestFirst(e).slice(0, 3).map((x) => `${ACHIEVEMENT_BY_ID[x.id].emoji} ${ACHIEVEMENT_BY_ID[x.id].name}`).join(", ");
+      return `I unlocked ${e.length} achievement${e.length === 1 ? "" : "s"}: ${top}. ${tail}`;
+    }
     case "airdrops": return `${s.airdrops.count} airdrops claimed, ${usd(s.airdrops.valueUsd)} free money. ${tail}`;
     case "sleep": return `Most active trading hour: ${hourLabel(s.sleep.peakHourUtc)} UTC. Sleep is optional. ${tail}`;
     case "chains": {
@@ -159,6 +185,7 @@ export const CARD_TITLE: Record<CardId, string> = {
   roundTrip: "The round trip", paperHands: "Paper hands", diamondHands: "Diamond hands", counterfactual: "What if",
   revenge: "Revenge trading", sniper: "Launch sniper", bags: "Bags still held", appFees: "App fees", gas: "Gas burned", rugs: "Rugs", airdrops: "Airdrops", sleep: "Sleep schedule", bridges: "Bridge journey",
   percentile: "Ranking", chains: "Profit by chain", roast: "The roast", summary: "Your Wrapped",
+  graveyard: "The coin graveyard", achievements: "Achievements",
 };
 
 /** Per-card background: deep base + two glows. Shared by UI and OG images. */
@@ -181,6 +208,8 @@ export const CARD_THEME: Record<CardId, { bg: string; a: string; b: string; ink:
   appFees: { bg: "#1F0A16", a: "#F43F5E", b: "#F59E0B", ink: "#FFF1F4" },
   gas: { bg: "#1C0F05", a: "#FB923C", b: "#FACC15", ink: "#FFF6EC" },
   rugs: { bg: "#1A0A1F", a: "#E11D48", b: "#8B5CF6", ink: "#FFF0F5" },
+  graveyard: { bg: "#0B0D12", a: "#64748B", b: "#7C3AED", ink: "#F1F5F9" },
+  achievements: { bg: "#17110A", a: "#F59E0B", b: "#A855F7", ink: "#FFF8EB" },
   airdrops: { bg: "#06201F", a: "#2DD4BF", b: "#FDE68A", ink: "#EFFFFC" },
   sleep: { bg: "#070B24", a: "#6366F1", b: "#EC4899", ink: "#EEF0FF" },
   bridges: { bg: "#03161C", a: "#14F195", b: "#3D7BFF", ink: "#EAFFF8" },

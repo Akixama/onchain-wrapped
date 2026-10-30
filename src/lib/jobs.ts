@@ -7,6 +7,7 @@ import { LimitError, takeLookup } from "./limits";
 import { rankActivity } from "./percentile";
 import { runWrapped, type FetchSlots, type Timeframe } from "./pipeline";
 import { makeRoast } from "./roast";
+import { recordAchievements } from "./rarity";
 import { clearCheckpoint, findRecent, getJob, loadCheckpoint, lookupKey, newId, putJob, rememberKey, saveCheckpoint, type Job } from "./store";
 import { kv } from "./infra/kv";
 import { liveZerionKey } from "./chains/zerion-keys";
@@ -173,6 +174,7 @@ export async function runJob(id: string) {
     const [roast, pct] = await Promise.all([
       makeRoast(stats, job.id),
       rankActivity(job.id, stats.overview.totalTrades).catch(() => null),
+      recordAchievements(stats.meta.wallets, stats.achievements?.earned.map((e) => e.id) ?? []).catch(() => {}),
     ]);
     stats.roast = roast;
     stats.percentile.activity = pct;

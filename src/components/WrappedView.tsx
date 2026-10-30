@@ -4,6 +4,7 @@ import type { CardId } from "@/lib/engine/stats";
 import { ngnRate } from "@/lib/fx";
 import { getJob, publicJob } from "@/lib/store";
 import { siteUrl } from "@/lib/site";
+import { getRarity } from "@/lib/rarity";
 import { CARD_TITLE, shareText, whoLabel } from "./format";
 import { StoryPlayer } from "./story/StoryPlayer";
 
@@ -12,7 +13,8 @@ export async function WrappedView({ params }: { params: Promise<{ id: string; ca
   const { id, card } = await params;
   const job = await getJob(id);
   if (!job) notFound();
-  return <StoryPlayer job={publicJob(job)} startCard={card} ngnRate={await ngnRate()} siteUrl={siteUrl()} />;
+  const [rate, rarity] = await Promise.all([ngnRate(), getRarity().then((r) => r.pct).catch(() => null)]);
+  return <StoryPlayer job={publicJob(job)} startCard={card} ngnRate={rate} siteUrl={siteUrl()} rarity={rarity} />;
 }
 
 export async function wrappedMetadata(params: Promise<{ id: string; card?: string }>): Promise<Metadata> {

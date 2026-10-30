@@ -5,7 +5,12 @@ import { GT_NETWORK } from "@/lib/gecko";
 import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
 import { CHAIN_COLOR, CHAIN_NAME, afterLaunch, waitLabel, capOrPrice, hourLabel, num, pct, periodLabel, tradeMath, usd, whoLabel } from "../format";
 import { Big, BigNumber, Chip, CountUp, Kicker, Line, Stat, rise } from "./primitives";
-import { TradeChart, heldPeak, useCandles } from "./TradeChart";
+import { ChartJobContext, TradeChart, heldPeak, useCandles } from "./TradeChart";
+import { useContext } from "react";
+import { BadgeTile, Gravestone } from "../Gravestone";
+import { ACHIEVEMENTS } from "@/lib/achievements-catalog";
+import { CAUSE_EMOJI, CAUSE_LABEL } from "@/lib/engine/graveyard-labels";
+import { rarestFirst } from "../format";
 import { NARRATIVE_EMOJI, NARRATIVE_LABEL } from "@/lib/engine/extras";
 
 export interface CardCtx {
@@ -13,6 +18,8 @@ export interface CardCtx {
   currency: "USD" | "NGN";
   setCurrency: (c: "USD" | "NGN") => void;
   ngnRate: number | null;
+  /** Achievement rarity % by id, or null until enough wallets are counted (tiers shown instead). */
+  rarity?: Record<string, number> | null;
 }
 type CardProps = { s: WrappedStats; ctx: CardCtx };
 
@@ -757,7 +764,65 @@ const AppFees = ({ s }: CardProps) => {
   );
 };
 
+/** A link inside a story card: taps on it must not flip the card. */
+function CardLink({ href, children }: { href: string; children: ReactNode }) {
+  const stop = (e: React.SyntheticEvent) => e.stopPropagation();
+  return (
+    <motion.a variants={rise} href={href} onPointerDown={stop} onPointerUp={stop} onClick={stop}
+      className="inline-flex items-center gap-1 rounded-full bg-white/15 px-4 py-2 text-sm font-semibold hover:bg-white/25">
+      {children}
+    </motion.a>
+  );
+}
+
+const Graveyard = ({ s }: CardProps) => {
+  const g = s.graveyard!;
+  const id = useContext(ChartJobContext);
+  return (
+    <>
+      <Kicker>The coin graveyard</Kicker>
+      <Body className="space-y-5">
+        <Line className="text-xl opacity-80">You buried</Line>
+        <BigNumber className="text-[76px] @3xl:text-[106px]" color="#CBD5E1"><CountUp value={g.count} format={(n) => num(Math.round(n))} /> <span className="text-[0.45em] opacity-70">coin{g.count === 1 ? "" : "s"}</span></BigNumber>
+        <Line className="text-xl opacity-80">
+          and <b className="text-[#FB7185]">{money(g.buriedUsd)}</b> with them. You dug <b>{money(g.gotOutUsd)}</b> back out.
+        </Line>
+        {g.topCause && g.topCause !== "unknown" && (
+          <Line className="text-base opacity-80">Most common cause of death: <b>{CAUSE_EMOJI[g.topCause]} {CAUSE_LABEL[g.topCause]}</b> ({num(g.causes[g.topCause])}).</Line>
+        )}
+        <R><motion.div variants={rise} className="grid grid-cols-3 items-end gap-2">
+          {g.graves.slice(0, 3).map((x, i) => <div key={x.address} className={i === 0 ? "order-2" : i === 1 ? "order-1" : "order-3"}><Gravestone g={x} compact /></div>)}
+        </motion.div></R>
+        {g.mostExpensive && <R><Line className="text-center text-sm italic opacity-80">&ldquo;{g.mostExpensive.epitaph}&rdquo;</Line></R>}
+        {id && <CardLink href={`/rip/${id}`}>Walk the graveyard →</CardLink>}
+      </Body>
+    </>
+  );
+};
+
+const Achievements = ({ s, ctx }: CardProps) => {
+  const earned = rarestFirst(s.achievements!.earned, ctx.rarity);
+  const id = useContext(ChartJobContext);
+  const have = new Set(earned.map((e) => e.id));
+  const locked = rarestFirst(ACHIEVEMENTS.filter((a) => !have.has(a.id)).map((a) => ({ id: a.id }))).slice(0, 3);
+  return (
+    <>
+      <Kicker>Achievements</Kicker>
+      <Body className="space-y-5">
+        <Line className="text-xl opacity-80">Without knowing it, you unlocked</Line>
+        <BigNumber className="text-[76px] @3xl:text-[106px]" color="#FCD34D"><CountUp value={earned.length} format={(n) => String(Math.round(n))} /> <span className="text-[0.45em] opacity-70">of {ACHIEVEMENTS.length}</span></BigNumber>
+        <R><motion.div variants={rise} className="grid grid-cols-3 gap-2">
+          {earned.slice(0, 6).map((e) => <BadgeTile key={e.id} id={e.id} detail={e.detail} pct={ctx.rarity} />)}
+          {earned.length < 6 && locked.slice(0, 6 - earned.length).map((e) => <BadgeTile key={e.id} id={e.id} locked />)}
+        </motion.div></R>
+        {id && <CardLink href={`/badges/${id}`}>See all badges →</CardLink>}
+      </Body>
+    </>
+  );
+};
+
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
+  graveyard: Graveyard, achievements: Achievements,
   appFees: AppFees, bags: Bags, sniper: Sniper, revenge: Revenge,
   archetype: Archetype, overview: Overview, pnl: Pnl, profitTime: ProfitTime, best: Best, worst: Worst, roundTrip: RoundTrip,
   paperHands: PaperHands, diamondHands: DiamondHands, speed: Speed, narrative: Narrative, counterfactual: Counterfactual, gas: Gas, rugs: Rugs,

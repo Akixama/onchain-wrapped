@@ -18,7 +18,7 @@ const noopSubscribe = () => () => {};
 
 type PublicJob = Pick<PublicJobT, "id" | "status" | "progress" | "error" | "stats"> & { createdAt?: number };
 
-export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl }: { job: PublicJob; startCard?: string; ngnRate: number | null; siteUrl: string }) {
+export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl, rarity = null }: { job: PublicJob; startCard?: string; ngnRate: number | null; siteUrl: string; rarity?: Record<string, number> | null }) {
   const [job, setJob] = useState(initial);
 
   useEffect(() => {
@@ -34,10 +34,10 @@ export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl }: { job
 
   if (job.status === "error") return <ErrorScreen message={job.error ?? "Something went wrong."} />;
   if (job.status !== "done" || !job.stats) return <Loading progress={job.progress} startedAt={job.createdAt} />;
-  return <Story id={job.id} s={job.stats} startCard={startCard} ngnRate={ngnRate} siteUrl={siteUrl} />;
+  return <Story id={job.id} s={job.stats} startCard={startCard} ngnRate={ngnRate} siteUrl={siteUrl} rarity={rarity} />;
 }
 
-function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedStats; startCard?: string; ngnRate: number | null; siteUrl: string }) {
+function Story({ id, s, startCard, ngnRate, siteUrl, rarity }: { id: string; s: WrappedStats; startCard?: string; ngnRate: number | null; siteUrl: string; rarity: Record<string, number> | null }) {
   const cards = s.cards;
   const [i, setI] = useState(() => Math.max(0, cards.indexOf(startCard as CardId)));
   const [dir, setDir] = useState(1);
@@ -89,7 +89,7 @@ function Story({ id, s, startCard, ngnRate, siteUrl }: { id: string; s: WrappedS
     return () => window.removeEventListener("keydown", k);
   }, [go]);
 
-  const ctx: CardCtx = { tzOffsetH: tz, currency, setCurrency, ngnRate };
+  const ctx: CardCtx = { tzOffsetH: tz, currency, setCurrency, ngnRate, rarity };
   const Card = CARDS[card];
   const url = `${siteUrl}/w/${id}/${card}`;
 

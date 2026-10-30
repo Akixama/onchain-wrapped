@@ -16,6 +16,8 @@ import { personality } from "./engine/personality";
 import { computeStats, storyCards, type WrappedStats } from "./engine/stats";
 import { addTradeCharts } from "./charts";
 import { refinePeaks } from "./peaks";
+import { buildGraveyard } from "./engine/graveyard";
+import { detectAchievements } from "./engine/achievements";
 import { usageSnapshot } from "./infra/usage";
 import { cacheGet, cacheSet } from "./infra/cache";
 import { currentTokenBalances } from "./chains/solana-rpc";
@@ -224,8 +226,14 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   if (actualBalances) stats.bags = bagStats([...positions.values()].filter((p) => p.chain === "solana"));
   a.onStage?.("crunching", "Checking how early you bought");
   stats.sniper = left(15_000) ? await sniperStats([...positions.values()], Math.min(Date.now() + 75_000, a.finishBy ?? Infinity) - (a.finishBy ? 5_000 : 0)).catch(() => undefined) : undefined;
+  a.onStage?.("crunching", "Digging the graveyard");
+  stats.graveyard = await buildGraveyard(positions.values(), pbx, now, a.finishBy ? a.finishBy - 5_000 : Date.now() + 40_000).catch((e) => {
+    console.error("[graveyard]", e);
+    return undefined;
+  });
   // Last: the personality uses every stat, including the sniper and bags ones computed above.
   stats.archetype = personality(stats);
+  stats.achievements = detectAchievements({ stats, positions: [...positions.values()], events, pb: pbx, now });
   stats.cards = storyCards(stats);
   stats.meta.names = Object.fromEntries(resolved.filter((w) => w.name).map((w) => [w.address, w.name!]));
   return stats;
