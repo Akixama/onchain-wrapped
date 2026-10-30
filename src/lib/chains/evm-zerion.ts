@@ -264,6 +264,13 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
       );
       S.fixed = (S.fixed ?? 0) + v.fixed;
       if (v.remaining) return partial();
+      // Helius kept failing on some: try again in the next part (a few times), then say so honestly.
+      if ("failed" in v && v.failed) {
+        S.verifyFails = (S.verifyFails ?? 0) + 1;
+        if (S.verifyFails < 3) return partial();
+        notes.push(`${v.failed.toLocaleString()} transactions couldn't be double-checked on-chain (the checker didn't answer), so a few trades may show as transfers.`);
+        S.verCacheUnsafe = true; // don't remember an incomplete check
+      }
       if (helius && !S.verCacheSaved && !S.verCacheUnsafe) {
         S.verCacheSaved = true;
         const fixes: VerifiedCache["fixes"] = {};
@@ -310,6 +317,8 @@ interface ZerionState {
   verCacheApplied?: boolean;
   verCacheSaved?: boolean;
   verCacheUnsafe?: boolean;
+  /** Parts in which some on-chain checks kept failing (retried up to 3 parts, then noted). */
+  verifyFails?: number;
 }
 /** Saved state from before parallel reading (one cursor). */
 type OldState = Omit<ZerionState, "wins"> & { url: string | null; topUrl?: string };

@@ -1,7 +1,7 @@
 import { minOf, pushAll } from "../core/num";
 import type { ChainAdapter, EventType, FetchOptions, FetchResult, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { fetchJson } from "../infra/http";
-import { drain, timeUp } from "../infra/drain";
+import { drain, drainBatches, timeUp } from "../infra/drain";
 import { appFeeOf } from "./app-fees";
 
 // Helius Enhanced Transactions: already-parsed Solana txs (type SWAP/TRANSFER/..., source JUPITER/PUMP_FUN/...).
@@ -284,15 +284,16 @@ async function failedFees(
   const batches: (typeof st.pending)[] = [];
   for (let i = 0; i < st.pending.length; i += size) batches.push(st.pending.slice(i, i + size));
   // Each batch takes seconds to come back; several in flight keep us near the plan's request rate.
-  const left = await drain(batches, Number(process.env.HELIUS_VERIFY_CONCURRENCY ?? 12), deadline, async (batch) => {
+  // Failing batches are retried in smaller pieces (they used to be dropped, losing those fees).
+  const { left } = await drainBatches(batches, Number(process.env.HELIUS_VERIFY_CONCURRENCY ?? 12), deadline, async (batch) => {
     if (stopped()) return;
     const txs = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/transactions?api-key=${process.env.HELIUS_API_KEY}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ transactions: batch.map((x) => x.signature) }),
       endpoint: "enhanced/transactions-batch",
-      timeoutMs: 90_000,
-    });
+      timeoutMs: 45_000,
+    }, 1);
     const bySig = new Map(txs.map((t) => [t.signature, t]));
     for (const x of batch) {
       const t = bySig.get(x.signature);
@@ -319,7 +320,7 @@ export async function verifyTransfersHelius(
   isMoney: (t: TokenRef) => boolean,
   deadline?: number,
   onProgress?: (done: number, total: number) => void,
-): Promise<{ checked: number; fixed: number; remaining: number }> {
+): Promise<{ checked: number; fixed: number; remaining: number; failed: number }> {
   const list = events.filter(
     (e) => e.chain === "solana" && !e.verified && ["transfer_in", "transfer_out", "other"].includes(e.type) && [...e.in, ...e.out].some((l) => !isMoney(l.token)),
   );
@@ -328,19 +329,21 @@ export async function verifyTransfersHelius(
   for (let i = 0; i < list.length; i += size) batches.push(list.slice(i, i + size));
   let checked = 0, fixed = 0, done = 0;
   onProgress?.(0, list.length);
-  const left = await drain(batches, 4, deadline, async (batch) => {
+  // A batch that times out or errors is retried in smaller pieces; it used to be dropped, which left
+  // thousands of real trades labeled as transfers whenever Helius had a slow spell.
+  const { left, failed } = await drainBatches(batches, 4, deadline, async (batch) => {
     const txs = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/transactions?api-key=${process.env.HELIUS_API_KEY}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ transactions: [...new Set(batch.map((e) => e.txHash))] }),
       endpoint: "enhanced/transactions-batch",
-      timeoutMs: 90_000, // up to 100 parsed transactions: a few MB
-    });
+      timeoutMs: 45_000, // 100 parsed transactions normally take ~5s; a slow spell is better split than waited out
+    }, 1);
     const bySig = new Map(txs.map((t) => [t.signature, t]));
     for (const e of batch) {
       done++;
       const tx = bySig.get(e.txHash);
-      e.verified = true; // checked (or not parseable): don't fetch it again
+      e.verified = true; // answered (parsed or not): don't fetch it again
       if (!tx) continue;
       checked++;
       const real = normalize(e.wallet, tx);
@@ -356,5 +359,5 @@ export async function verifyTransfersHelius(
     }
     onProgress?.(done, list.length);
   });
-  return { checked, fixed, remaining: left.reduce((n, b) => n + b.length, 0) };
+  return { checked, fixed, remaining: left.reduce((n, b) => n + b.length, 0), failed: failed.length };
 }
