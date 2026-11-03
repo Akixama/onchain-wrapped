@@ -87,9 +87,7 @@ const RULES: Record<string, Rule> = {
     return false;
   },
   round_tripper: ({ stats: s }) => !!s.roundTrip && s.roundTrip.peakGainUsd >= 1000 && s.roundTrip.endedWithUsd <= 0 && `$${s.roundTrip.symbol}, up ${usd(s.roundTrip.peakGainUsd)}`,
-  rug_survivor: ({ stats: s }) => { const n = s.graveyard?.causes.rug ?? 0; return n >= 10 && `${n} rugs`; },
-  grave_digger: ({ stats: s }) => (s.graveyard?.count ?? 0) >= 100 && `${s.graveyard!.count} coins`,
-  undertaker: ({ stats: s }) => (s.graveyard?.buriedUsd ?? 0) >= 10_000 && usd(s.graveyard!.buriedUsd),
+  rug_survivor: ({ stats: s }) => { const n = s.rugs.count + s.rugs.dodged; return n >= 10 && `${n} dead coins`; },
   rug_proof: ({ stats: s }, d) => d.coins.length >= 50 && s.rugs.count === 0 && `${d.coins.length} coins`,
   escape_artist: ({ stats: s }) => s.rugs.dodged >= 5 && `${s.rugs.dodged} coins`,
   bag_collector: ({ stats: s }) => (s.bags?.count ?? 0) >= 20 && `${s.bags!.count} bags`,

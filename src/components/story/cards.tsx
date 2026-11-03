@@ -7,9 +7,8 @@ import { CHAIN_COLOR, CHAIN_NAME, afterLaunch, waitLabel, capOrPrice, hourLabel,
 import { Big, BigNumber, Chip, CountUp, Kicker, Line, Stat, rise } from "./primitives";
 import { ChartJobContext, TradeChart, heldPeak, useCandles } from "./TradeChart";
 import { useContext } from "react";
-import { BadgeTile, Gravestone } from "../Gravestone";
+import { BadgeTile } from "../BadgeTile";
 import { ACHIEVEMENTS } from "@/lib/achievements-catalog";
-import { CAUSE_EMOJI, CAUSE_LABEL } from "@/lib/engine/graveyard-labels";
 import { rarestFirst } from "../format";
 import { NARRATIVE_EMOJI, NARRATIVE_LABEL } from "@/lib/engine/extras";
 
@@ -775,31 +774,6 @@ function CardLink({ href, children }: { href: string; children: ReactNode }) {
   );
 }
 
-const Graveyard = ({ s }: CardProps) => {
-  const g = s.graveyard!;
-  const id = useContext(ChartJobContext);
-  return (
-    <>
-      <Kicker>The coin graveyard</Kicker>
-      <Body className="space-y-5">
-        <Line className="text-xl opacity-80">You buried</Line>
-        <BigNumber className="text-[76px] @3xl:text-[106px]" color="#CBD5E1"><CountUp value={g.count} format={(n) => num(Math.round(n))} /> <span className="text-[0.45em] opacity-70">coin{g.count === 1 ? "" : "s"}</span></BigNumber>
-        <Line className="text-xl opacity-80">
-          and <b className="text-[#FB7185]">{money(g.buriedUsd)}</b> with them. You dug <b>{money(g.gotOutUsd)}</b> back out.
-        </Line>
-        {g.topCause && g.topCause !== "unknown" && (
-          <Line className="text-base opacity-80">Most common cause of death: <b>{CAUSE_EMOJI[g.topCause]} {CAUSE_LABEL[g.topCause]}</b> ({num(g.causes[g.topCause])}).</Line>
-        )}
-        <R><motion.div variants={rise} className="grid grid-cols-3 items-end gap-2">
-          {g.graves.slice(0, 3).map((x, i) => <div key={x.address} className={i === 0 ? "order-2" : i === 1 ? "order-1" : "order-3"}><Gravestone g={x} compact /></div>)}
-        </motion.div></R>
-        {g.mostExpensive && <R><Line className="text-center text-sm italic opacity-80">&ldquo;{g.mostExpensive.epitaph}&rdquo;</Line></R>}
-        {id && <CardLink href={`/rip/${id}`}>Walk the graveyard →</CardLink>}
-      </Body>
-    </>
-  );
-};
-
 const Achievements = ({ s, ctx }: CardProps) => {
   const earned = rarestFirst(s.achievements!.earned, ctx.rarity);
   const id = useContext(ChartJobContext);
@@ -822,7 +796,7 @@ const Achievements = ({ s, ctx }: CardProps) => {
 };
 
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
-  graveyard: Graveyard, achievements: Achievements,
+  achievements: Achievements,
   appFees: AppFees, bags: Bags, sniper: Sniper, revenge: Revenge,
   archetype: Archetype, overview: Overview, pnl: Pnl, profitTime: ProfitTime, best: Best, worst: Worst, roundTrip: RoundTrip,
   paperHands: PaperHands, diamondHands: DiamondHands, speed: Speed, narrative: Narrative, counterfactual: Counterfactual, gas: Gas, rugs: Rugs,

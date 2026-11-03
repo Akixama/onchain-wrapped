@@ -16,5 +16,5 @@ const fixed = events.filter((e) => e.onchainFix).length;
 s.meta.notes = [`Corrected ${fixed} Solana trades the data provider had labeled as plain transfers.`, ...(s.meta.notes ?? [])];
 s.cards = storyCards(s);
 writeFileSync(out, JSON.stringify(s));
-console.log(`done in ${((Date.now() - t0) / 1000).toFixed(0)}s: trades ${s.overview.totalTrades}, pnl ${s.pnl.totalUsd}, graves ${s.graveyard?.count}, badges ${s.achievements?.earned.length}`);
+console.log(`done in ${((Date.now() - t0) / 1000).toFixed(0)}s: trades ${s.overview.totalTrades}, pnl ${s.pnl.totalUsd}, badges ${s.achievements?.earned.length}`);
 process.exit(0);

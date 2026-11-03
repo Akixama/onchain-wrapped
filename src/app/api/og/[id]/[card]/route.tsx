@@ -7,8 +7,7 @@ import { NARRATIVE_LABEL } from "@/lib/engine/extras";
 import { CARD_THEME, CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel, afterLaunch, waitLabel, tradeMath } from "@/components/format";
 import { EVM_ENABLED } from "@/lib/site";
 import { ACHIEVEMENT_BY_ID, ACHIEVEMENTS, TIER_LABEL } from "@/lib/achievements-catalog";
-import { CAUSE_LABEL } from "@/lib/engine/graveyard-labels";
-import { rarestFirst } from "@/components/format";
+import { liveCards, rarestFirst } from "@/components/format";
 import { getRarity } from "@/lib/rarity";
 
 // Fonts are the same for every request: read once.
@@ -88,14 +87,6 @@ function content(s: WrappedStats, card: CardId, rarity: Record<string, number> |
       return { kicker: "Gas burned", big: m(s.gas.totalUsd), bigColor: "#FDBA74", sub: `${num(s.gas.txCount)} transactions · priciest ${m(s.gas.priciestTxUsd)}` };
     case "rugs":
       return { kicker: "Rugs", big: `${s.rugs.count} caught · ${s.rugs.dodged} dodged`, sub: s.rugs.count ? `Cost me ${m(s.rugs.lostUsd)}` : "Untouchable." };
-    case "graveyard": {
-      const g = s.graveyard!;
-      return {
-        kicker: "My coin graveyard 🪦", lead: `${num(g.count)} coin${g.count === 1 ? "" : "s"} buried`, big: m(g.buriedUsd), bigColor: "#FB7185",
-        sub: [`got ${m(g.gotOutUsd)} back`, g.topCause && g.topCause !== "unknown" && `top cause: ${CAUSE_LABEL[g.topCause].toLowerCase()}`].filter(Boolean).join(" · "),
-        chips: g.graves.slice(0, 4).map((x) => ({ label: `RIP $${x.symbol.slice(0, 10)} ${m(x.putInUsd)}`, color: "#94A3B8" })),
-      };
-    }
     case "achievements": {
       const e = rarestFirst(s.achievements!.earned, rarity);
       const top = e[0] && ACHIEVEMENT_BY_ID[e[0].id];
@@ -156,7 +147,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/og/[id]/[card]"
   const job = await getJob(id);
   const s = job?.stats;
   const card = (rawCard.replace(/\.png$/, "") as CardId) || "summary";
-  const valid = s && (s.cards.includes(card) || card === "summary");
+  const valid = s && (liveCards(s).includes(card) || card === "summary");
   const rarity = valid && card === "achievements" ? await getRarity().then((r) => r.pct).catch(() => null) : null;
   const c: Content = valid ? content(s, card, rarity) : { kicker: "Wrapped Onchain", big: "Your onchain year, wrapped.", sub: "Paste any Solana wallet." };
   const t = CARD_THEME[valid ? card : "summary"];

@@ -3,7 +3,7 @@ import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Loading } from "@/components/story/Loading";
 import { ExtraPage } from "@/components/ExtraPage";
-import { BadgeTile } from "@/components/Gravestone";
+import { BadgeTile } from "@/components/BadgeTile";
 import { rarestFirst, shareText, whoLabel } from "@/components/format";
 import { ACHIEVEMENTS, RARITY_MIN_WALLETS } from "@/lib/achievements-catalog";
 import { getRarity } from "@/lib/rarity";

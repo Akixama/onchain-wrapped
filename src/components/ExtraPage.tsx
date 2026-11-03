@@ -1,4 +1,4 @@
-// Frame for the standalone graveyard / achievements pages: header, share buttons, link back to the story.
+// Frame for the standalone achievements page: header, share buttons, link back to the story.
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -21,7 +21,7 @@ export function ExtraPage({ id, title, sub, shareText, shareUrl, bg, children }:
           <a href={tg} target="_blank" rel="noopener noreferrer" className="rounded-full bg-white/10 px-4 py-2 text-sm font-semibold hover:bg-white/20">Telegram</a>
         </div>
         {children}
-        <p className="pb-6 text-center text-xs opacity-50">Prices from public market data. Death dates marked ~ are estimates (the last time you traded the coin). Not financial advice.</p>
+        <p className="pb-6 text-center text-xs opacity-50">Prices from public market data. Not financial advice.</p>
       </div>
     </div>
   );

@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
 import type { PublicJob as PublicJobT } from "@/lib/store";
 import { EVM_ENABLED } from "@/lib/site";
-import { CARD_THEME, CARD_TITLE, periodLabel, shareText } from "../format";
+import { CARD_THEME, CARD_TITLE, liveCards, periodLabel, shareText } from "../format";
 import { CARDS, type CardCtx } from "./cards";
 import { FitContent, stagger } from "./primitives";
 import { Loading } from "./Loading";
@@ -38,7 +38,7 @@ export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl, rarity 
 }
 
 function Story({ id, s, startCard, ngnRate, siteUrl, rarity }: { id: string; s: WrappedStats; startCard?: string; ngnRate: number | null; siteUrl: string; rarity: Record<string, number> | null }) {
-  const cards = s.cards;
+  const cards = useMemo(() => liveCards(s), [s]);
   const [i, setI] = useState(() => Math.max(0, cards.indexOf(startCard as CardId)));
   const [dir, setDir] = useState(1);
   const [held, setHeld] = useState(false);

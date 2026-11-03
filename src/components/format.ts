@@ -3,9 +3,6 @@ import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
 import type { Timeframe } from "@/lib/core/types";
 import { NARRATIVE_LABEL } from "@/lib/engine/extras";
 import { ACHIEVEMENT_BY_ID, TIER_LABEL, TIER_ORDER } from "@/lib/achievements-catalog";
-import { CAUSE_LABEL, type DeathCause } from "@/lib/engine/graveyard-labels";
-
-export { CAUSE_LABEL, type DeathCause };
 
 type Earned = { id: string; detail?: string };
 /** Rarest first: by real percentage once there are enough wallets, else by tier. */
@@ -144,12 +141,8 @@ export function shareText(s: WrappedStats, card: CardId): string {
     case "appFees": return s.appFees ? `I paid ${s.appFees.byApp[0]?.app ?? "trading apps"} ${usd(s.appFees.totalUsd)} in fees ${periodPhrase(s.meta.timeframe)}. ${tail}` : tail;
     case "gas": return `I burned ${usd(s.gas.totalUsd)} on gas. ${tail}`;
     case "rugs": return `Caught in ${s.rugs.count} rugs, dodged ${s.rugs.dodged}. ${tail}`;
-    case "graveyard": {
-      const g = s.graveyard; if (!g) return tail;
-      return `I buried ${num(g.count)} coin${g.count === 1 ? "" : "s"} and ${usd(g.buriedUsd)}${g.mostExpensive ? `. Most expensive grave: $${g.mostExpensive.symbol}` : ""}. 🪦 ${tail}`;
-    }
     case "achievements": {
-      const e = s.achievements?.earned ?? []; if (!e.length) return tail;
+      const e = rarestFirst(s.achievements?.earned ?? []); if (!e.length) return tail;
       const top = rarestFirst(e).slice(0, 3).map((x) => `${ACHIEVEMENT_BY_ID[x.id].emoji} ${ACHIEVEMENT_BY_ID[x.id].name}`).join(", ");
       return `I unlocked ${e.length} achievement${e.length === 1 ? "" : "s"}: ${top}. ${tail}`;
     }
@@ -179,13 +172,16 @@ export function shareText(s: WrappedStats, card: CardId): string {
   }
 }
 
+/** Story cards that still exist (results saved before a card was removed may list it). */
+export const liveCards = (s: Pick<WrappedStats, "cards">): CardId[] => s.cards.filter((c) => c in CARD_TITLE);
+
 export const CARD_TITLE: Record<CardId, string> = {
   archetype: "Your era", overview: "The numbers", pnl: "The bottom line", profitTime: "Profit over time", best: "Best trade", worst: "Worst trade",
   speed: "Speed", narrative: "Favourite narrative",
   roundTrip: "The round trip", paperHands: "Paper hands", diamondHands: "Diamond hands", counterfactual: "What if",
   revenge: "Revenge trading", sniper: "Launch sniper", bags: "Bags still held", appFees: "App fees", gas: "Gas burned", rugs: "Rugs", airdrops: "Airdrops", sleep: "Sleep schedule", bridges: "Bridge journey",
   percentile: "Ranking", chains: "Profit by chain", roast: "The roast", summary: "Your Wrapped",
-  graveyard: "The coin graveyard", achievements: "Achievements",
+  achievements: "Achievements",
 };
 
 /** Per-card background: deep base + two glows. Shared by UI and OG images. */
@@ -208,7 +204,6 @@ export const CARD_THEME: Record<CardId, { bg: string; a: string; b: string; ink:
   appFees: { bg: "#1F0A16", a: "#F43F5E", b: "#F59E0B", ink: "#FFF1F4" },
   gas: { bg: "#1C0F05", a: "#FB923C", b: "#FACC15", ink: "#FFF6EC" },
   rugs: { bg: "#1A0A1F", a: "#E11D48", b: "#8B5CF6", ink: "#FFF0F5" },
-  graveyard: { bg: "#0B0D12", a: "#64748B", b: "#7C3AED", ink: "#F1F5F9" },
   achievements: { bg: "#17110A", a: "#F59E0B", b: "#A855F7", ink: "#FFF8EB" },
   airdrops: { bg: "#06201F", a: "#2DD4BF", b: "#FDE68A", ink: "#EFFFFC" },
   sleep: { bg: "#070B24", a: "#6366F1", b: "#EC4899", ink: "#EEF0FF" },
