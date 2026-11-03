@@ -5,6 +5,7 @@
 import type { Position } from "./engine/pnl";
 import { fetchJson } from "./infra/http";
 import { drain } from "./infra/drain";
+import { withHeliusKey } from "./chains/helius-keys";
 
 export interface SniperStats {
   /** Solana coins bought in the period. */
@@ -25,7 +26,7 @@ export interface SniperStats {
   rest: { count: number; pnlUsd: number };
 }
 
-const rpcUrl = () => process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+const rpcUrl = () => withHeliusKey(process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com");
 const r2 = (n: number) => Math.round(n * 100) / 100;
 // A dedicated RPC does ~8 calls/s; the free public node ~1/s, so check far fewer there.
 const maxCoins = () => (process.env.SOLANA_RPC_URL ? 200 : 30);

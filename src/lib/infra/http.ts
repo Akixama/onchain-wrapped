@@ -1,4 +1,5 @@
 import { logUsage } from "./usage";
+import { heliusKeySpent } from "../chains/helius-keys";
 
 // Per-provider throttle: minimum gap between requests so we stay under free-tier RPS.
 const MIN_GAP_MS: Record<string, number> = {
@@ -54,10 +55,11 @@ export class QuotaError extends Error {
 
 export async function fetchJson<T>(
   provider: string,
-  url: string,
+  urlIn: string,
   init: RequestInit & { endpoint?: string; timeoutMs?: number; throttle?: string; onHeaders?: (h: Headers) => void } = {},
   retries = 4,
 ): Promise<T> {
+  let url = urlIn;
   for (let attempt = 0; ; attempt++) {
     await throttle(init.throttle ?? provider);
     const t0 = Date.now();
@@ -81,6 +83,15 @@ export async function fetchJson<T>(
       continue;
     }
     if (res.ok) return JSON.parse(body) as T;
+    // A Helius key out of credits: switch to the next key and ask again (doesn't use up a retry).
+    if (res.status === 429 && /helius-rpc.com/.test(url) && /max usage/i.test(body)) {
+      const old = /api-key=([^&]+)/.exec(url)?.[1];
+      const next = old ? await heliusKeySpent(decodeURIComponent(old)) : null;
+      if (!next) throw new QuotaError("helius", 6);
+      url = url.replace(/api-key=[^&]+/, `api-key=${next}`);
+      attempt--;
+      continue;
+    }
     // Daily quota gone (Zerion sends ratelimit-org-day-remaining): retrying won't help, fail fast.
     if (res.status === 429 && res.headers.get("ratelimit-org-day-remaining") === "0") {
       const resetH = Math.ceil(Number(res.headers.get("ratelimit-org-day-reset") ?? 0) / 3600);

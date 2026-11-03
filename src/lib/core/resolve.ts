@@ -1,6 +1,7 @@
 import { isEvmAddress, isSolanaAddress, normalizeAddress } from "./identity";
 import type { ChainFamily } from "./types";
 import { EVM_ENABLED } from "../site";
+import { withHeliusKey } from "../chains/helius-keys";
 
 const SOLANA_ONLY_MSG = "Only Solana wallets work here. Paste a Solana address or .sol name.";
 
@@ -19,7 +20,7 @@ export interface ResolvedWallet {
 export class InputError extends Error {}
 
 const ETH_RPC = () => process.env.ETH_RPC_URL ?? "https://ethereum-rpc.publicnode.com";
-const SOL_RPC = () => process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+const SOL_RPC = () => withHeliusKey(process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com");
 
 export function splitInput(raw: string | string[]): string[] {
   const parts = (Array.isArray(raw) ? raw : [raw]).flatMap((s) => s.split(/[\s,;]+/)).map((s) => s.trim()).filter(Boolean);

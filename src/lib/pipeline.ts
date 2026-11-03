@@ -16,6 +16,7 @@ import { personality } from "./engine/personality";
 import { computeStats, storyCards, type WrappedStats } from "./engine/stats";
 import { addTradeCharts } from "./charts";
 import { refinePeaks } from "./peaks";
+import { loadHeliusKeys } from "./chains/helius-keys";
 import { buildGraveyard } from "./engine/graveyard";
 import { detectAchievements } from "./engine/achievements";
 import { usageSnapshot } from "./infra/usage";
@@ -60,6 +61,7 @@ const pricesKey = (wallets: string[]) => `pxc:${createHash("sha1").update([...wa
 
 export async function runWrapped(input: RunInput): Promise<RunOutput> {
   input.onProgress?.({ stage: "fetching", message: "Finding your wallets", fetched: 0 });
+  await loadHeliusKeys(); // skip Helius keys another lookup already found used up
   const resolved = await resolveWallets(input.addresses);
   const wallets = resolved.map((w) => w.address);
   // No cap by default: the whole history in the timeframe. MAX_TXS_PER_ADDRESS can still set one.

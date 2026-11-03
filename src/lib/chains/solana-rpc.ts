@@ -1,6 +1,7 @@
 import type { EventType, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { fetchJson } from "../infra/http";
 import { drain } from "../infra/drain";
+import { withHeliusKey } from "./helius-keys";
 
 // Raw Solana RPC: ground truth, free, but one call per transaction. Used to fill gaps a provider
 // left (Zerion sometimes stops indexing very spammy wallets). Same net-balance-change idea as the
@@ -8,7 +9,7 @@ import { drain } from "../infra/drain";
 
 const WSOL = "So11111111111111111111111111111111111111112";
 // Set SOLANA_RPC_URL to a dedicated node (e.g. https://mainnet.helius-rpc.com/?api-key=...) for ~10x faster checks.
-const rpcUrl = () => process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+const rpcUrl = () => withHeliusKey(process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com");
 
 interface TokenBal { accountIndex: number; mint: string; owner?: string; uiTokenAmount: { amount: string; decimals: number } }
 interface RawTx {

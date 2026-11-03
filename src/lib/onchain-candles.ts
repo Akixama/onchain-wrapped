@@ -4,9 +4,10 @@
 // price = SOL that moved in/out of the pool / tokens that moved out/in.
 import type { Candle } from "./gecko";
 import { fetchJson } from "./infra/http";
+import { withHeliusKey } from "./chains/helius-keys";
 
 const WSOL = "So11111111111111111111111111111111111111112";
-const rpcUrl = () => process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com";
+const rpcUrl = () => withHeliusKey(process.env.SOLANA_RPC_URL ?? "https://api.mainnet-beta.solana.com");
 const MAX_TXS = Number(process.env.CHAIN_CANDLE_TXS ?? 80);
 const MAX_SIG_PAGES = 6;
 

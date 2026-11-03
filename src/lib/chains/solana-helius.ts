@@ -1,6 +1,7 @@
 import { minOf, pushAll } from "../core/num";
 import type { ChainAdapter, EventType, FetchOptions, FetchResult, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { fetchJson } from "../infra/http";
+import { heliusKey, heliusKeys } from "./helius-keys";
 import { drain, drainBatches, timeUp } from "../infra/drain";
 import { appFeeOf } from "./app-fees";
 
@@ -56,13 +57,13 @@ interface DasAsset {
 }
 
 const apiBase = () => process.env.HELIUS_API_BASE ?? "https://api-mainnet.helius-rpc.com";
-const rpcUrl = () => `https://mainnet.helius-rpc.com/?api-key=${process.env.HELIUS_API_KEY}`;
+const rpcUrl = () => `https://mainnet.helius-rpc.com/?api-key=${heliusKey()}`;
 
 export const heliusAdapter: ChainAdapter = {
   id: "helius",
   family: "solana",
   chains: ["solana"],
-  isConfigured: () => !!process.env.HELIUS_API_KEY,
+  isConfigured: () => heliusKeys().length > 0,
 
   async fetchEvents(address: string, opts: FetchOptions): Promise<FetchResult> {
     // Everything read so far lives in `st`, so a run that hits its deadline can hand it to the next run.
@@ -83,7 +84,7 @@ export const heliusAdapter: ChainAdapter = {
     while (!st.done && !timeUp(opts.deadline)) {
       // token-accounts=balanceChanged: also include txs that only touched the wallet's token accounts
       // (e.g. someone sending tokens into an existing account). Without it those receives are invisible.
-      const qs = new URLSearchParams({ "api-key": process.env.HELIUS_API_KEY!, limit: "100", "token-accounts": "balanceChanged" });
+      const qs = new URLSearchParams({ "api-key": heliusKey(), limit: "100", "token-accounts": "balanceChanged" });
       if (st.before) qs.set(pageParam, st.before);
       const page = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/addresses/${address}/transactions?${qs}`, {
         endpoint: "enhanced/transactions",
@@ -287,7 +288,7 @@ async function failedFees(
   // Failing batches are retried in smaller pieces (they used to be dropped, losing those fees).
   const { left } = await drainBatches(batches, Number(process.env.HELIUS_VERIFY_CONCURRENCY ?? 12), deadline, async (batch) => {
     if (stopped()) return;
-    const txs = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/transactions?api-key=${process.env.HELIUS_API_KEY}`, {
+    const txs = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/transactions?api-key=${heliusKey()}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ transactions: batch.map((x) => x.signature) }),
@@ -332,7 +333,7 @@ export async function verifyTransfersHelius(
   // A batch that times out or errors is retried in smaller pieces; it used to be dropped, which left
   // thousands of real trades labeled as transfers whenever Helius had a slow spell.
   const { left, failed } = await drainBatches(batches, 4, deadline, async (batch) => {
-    const txs = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/transactions?api-key=${process.env.HELIUS_API_KEY}`, {
+    const txs = await fetchJson<HeliusTx[]>("helius", `${apiBase()}/v0/transactions?api-key=${heliusKey()}`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ transactions: [...new Set(batch.map((e) => e.txHash))] }),

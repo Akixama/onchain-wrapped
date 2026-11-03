@@ -1,6 +1,7 @@
 import type { ChainAdapter, ChainId, EventType, FetchOptions, FetchResult, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { NATIVE } from "../core/assets";
 import { fetchJson, QuotaError } from "../infra/http";
+import { heliusKeys } from "./helius-keys";
 import { fetchRawEvent, signaturesSince, verifySolanaTransfers } from "./solana-rpc";
 import { drain, timeUp } from "../infra/drain";
 import { keyTag, liveZerionKey, markZerionKeySpent, zerionHeaders, zerionAuth, zerionKeys } from "./zerion-keys";
@@ -239,7 +240,7 @@ function makeZerionAdapter(family: "evm" | "solana"): ChainAdapter {
       }
       opts.onProgress?.({ chain: "solana", fetched: S.seen });
       // Helius batch parser (100 per request) when available; plain RPC one by one otherwise.
-      const helius = !!process.env.HELIUS_API_KEY;
+      const helius = heliusKeys().length > 0;
       const verify = helius ? verifyTransfersHelius : verifySolanaTransfers;
       // An earlier lookup of this wallet already checked everything up to `until`: reuse its answers.
       const verKey = `ver:solana:${wallet}`;
