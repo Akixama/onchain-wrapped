@@ -169,7 +169,7 @@ export async function runJob(id: string) {
     }
     const { stats } = run;
     stats.meta.names = job.names;
-    job.progress = { stage: "crunching", message: "Writing your roast", fetched: job.progress?.fetched ?? 0 };
+    job.progress = { ...job.progress, stage: "crunching", message: "Writing your roast", fetched: job.progress?.fetched ?? 0 };
     void save({ ...job }).catch(() => {});
     const [roast, pct] = await Promise.all([
       makeRoast(stats, job.id),

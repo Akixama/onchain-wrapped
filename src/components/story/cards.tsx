@@ -1,6 +1,6 @@
 "use client";
 import { motion } from "motion/react";
-import { Children, isValidElement, useCallback, useState, type ReactNode } from "react";
+import { Children, isValidElement, useCallback, useEffect, useState, type ReactNode } from "react";
 import { GT_NETWORK } from "@/lib/gecko";
 import type { CardId, TradeCard, WrappedStats } from "@/lib/engine/stats";
 import { CHAIN_COLOR, CHAIN_NAME, afterLaunch, waitLabel, capOrPrice, hourLabel, num, pct, periodLabel, tradeMath, usd, whoLabel } from "../format";
@@ -10,6 +10,7 @@ import { useContext } from "react";
 import { BadgeTile } from "../BadgeTile";
 import { ACHIEVEMENTS } from "@/lib/achievements-catalog";
 import { rarestFirst } from "../format";
+import { GUESS_QS, loadGuesses, type Guesses } from "../guesses";
 import { NARRATIVE_EMOJI, NARRATIVE_LABEL } from "@/lib/engine/extras";
 
 export interface CardCtx {
@@ -795,8 +796,42 @@ const Achievements = ({ s, ctx }: CardProps) => {
   );
 };
 
+/** Their waiting-screen guesses next to the real numbers. */
+const Guess = ({ s }: CardProps) => {
+  const id = useContext(ChartJobContext);
+  const [g, setG] = useState<Guesses | null>(null);
+  useEffect(() => { const t = setTimeout(() => setG(id ? loadGuesses(id) : null), 0); return () => clearTimeout(t); }, [id]);
+  const asked = GUESS_QS.filter((q) => g?.[q.id] !== undefined);
+  const right = asked.filter((q) => g![q.id] === q.answer(s)).length;
+  const verdict = !asked.length ? "" : right === asked.length ? "You know yourself. Scary." : right === 0 ? "You don't know yourself at all." : "Half self-aware. Half in denial.";
+  return (
+    <>
+      <Kicker>Your guesses</Kicker>
+      <Body className="space-y-5">
+        <Line className="text-xl opacity-80">While you waited, you guessed. You got</Line>
+        <BigNumber className="text-[76px] @3xl:text-[106px]" color="#7DD3FC">{right} <span className="text-[0.45em] opacity-70">of {asked.length}</span></BigNumber>
+        {verdict && <Line className="text-xl">{verdict}</Line>}
+        <R><motion.div variants={rise} className="space-y-2">
+          {asked.map((q) => {
+            const ok = g![q.id] === q.answer(s);
+            return (
+              <div key={q.id} className="rounded-2xl border border-white/10 bg-white/[0.07] p-4">
+                <div className="text-xs uppercase tracking-wider opacity-60">{q.q}</div>
+                <div className="mt-1 flex items-baseline justify-between gap-3">
+                  <span className={ok ? "" : "line-through opacity-60"}>You said {q.options[g![q.id]!].replace(/ [📈📉]/u, "")}</span>
+                  <b style={{ color: ok ? "#4ADE80" : "#F87171" }} className="text-right">{ok ? "✓ " : ""}{q.real(s)}</b>
+                </div>
+              </div>
+            );
+          })}
+        </motion.div></R>
+      </Body>
+    </>
+  );
+};
+
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
-  achievements: Achievements,
+  achievements: Achievements, guess: Guess,
   appFees: AppFees, bags: Bags, sniper: Sniper, revenge: Revenge,
   archetype: Archetype, overview: Overview, pnl: Pnl, profitTime: ProfitTime, best: Best, worst: Worst, roundTrip: RoundTrip,
   paperHands: PaperHands, diamondHands: DiamondHands, speed: Speed, narrative: Narrative, counterfactual: Counterfactual, gas: Gas, rugs: Rugs,

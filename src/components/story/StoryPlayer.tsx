@@ -11,6 +11,7 @@ import { CARD_THEME, CARD_TITLE, liveCards, periodLabel, shareText } from "../fo
 import { CARDS, type CardCtx } from "./cards";
 import { FitContent, stagger } from "./primitives";
 import { Loading } from "./Loading";
+import { hasGuesses, loadGuesses } from "../guesses";
 import { ChartJobContext } from "./TradeChart";
 
 const CARD_MS = 7000;
@@ -26,20 +27,65 @@ export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl, rarity 
     const t = setInterval(async () => {
       try {
         const r = await fetch(`/api/wrapped/${job.id}`, { cache: "no-store" });
-        if (r.ok) setJob(await r.json());
+        if (r.ok) {
+          const next = await r.json();
+          if (next.status === "done" || next.status === "error") readyPing(next.status === "done");
+          setJob(next);
+        }
       } catch {}
     }, 2500);
     return () => clearInterval(t);
   }, [job.id, job.status]);
 
   if (job.status === "error") return <ErrorScreen message={job.error ?? "Something went wrong."} />;
-  if (job.status !== "done" || !job.stats) return <Loading progress={job.progress} startedAt={job.createdAt} />;
+  if (job.status !== "done" || !job.stats) return <Loading progress={job.progress} startedAt={job.createdAt} jobId={job.id} />;
   return <Story id={job.id} s={job.stats} startCard={startCard} ngnRate={ngnRate} siteUrl={siteUrl} rarity={rarity} />;
 }
 
+/** The lookup finished while the viewer might be in another tab: say so in the tab title, a soft chime and a notification. */
+function readyPing(ok: boolean) {
+  if (typeof document === "undefined" || !document.hidden) return;
+  const was = document.title;
+  document.title = ok ? "✅ Your Wrapped is ready" : "⚠️ Your Wrapped hit a problem";
+  const back = () => { if (!document.hidden) { document.title = was; document.removeEventListener("visibilitychange", back); } };
+  document.addEventListener("visibilitychange", back);
+  try {
+    const ctx = new AudioContext();
+    [660, 880].forEach((f, k) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = f; o.type = "sine";
+      g.gain.setValueAtTime(0.0001, ctx.currentTime + k * 0.18);
+      g.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + k * 0.18 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + k * 0.18 + 0.5);
+      o.connect(g).connect(ctx.destination); o.start(ctx.currentTime + k * 0.18); o.stop(ctx.currentTime + k * 0.18 + 0.55);
+    });
+  } catch { /* browsers may block sound until the page was tapped */ }
+  try {
+    if (typeof Notification !== "undefined" && Notification.permission === "granted")
+      new Notification(ok ? "Your Wrapped is ready" : "Your Wrapped hit a problem", { body: ok ? "Tap to see your year onchain." : "Open the tab to see what happened.", icon: "/favicon.ico" });
+  } catch {}
+}
+
 function Story({ id, s, startCard, ngnRate, siteUrl, rarity }: { id: string; s: WrappedStats; startCard?: string; ngnRate: number | null; siteUrl: string; rarity: Record<string, number> | null }) {
-  const cards = useMemo(() => liveCards(s), [s]);
-  const [i, setI] = useState(() => Math.max(0, cards.indexOf(startCard as CardId)));
+  // "Your guesses vs reality" goes right after the bottom line, if they played the waiting-screen game here.
+  const [guessed, setGuessed] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setGuessed(hasGuesses(loadGuesses(id))), 0); return () => clearTimeout(t); }, [id]);
+  const cards = useMemo(() => {
+    const c = liveCards(s);
+    if (!guessed) return c;
+    const at = c.indexOf("pnl") >= 0 ? c.indexOf("pnl") + 1 : Math.min(2, c.length);
+    return [...c.slice(0, at), "guess" as CardId, ...c.slice(at)];
+  }, [s, guessed]);
+  const [i, setI] = useState(() => Math.max(0, liveCards(s).indexOf(startCard as CardId)));
+  // The guess card is added after the first render: keep showing the same card if it lands before it.
+  const added = useRef(false);
+  useEffect(() => {
+    if (!guessed || added.current) return;
+    added.current = true;
+    const at = cards.indexOf("guess");
+    const t = setTimeout(() => setI((x) => (startCard === "guess" ? at : x >= at && x > 0 ? x + 1 : x)), 0);
+    return () => clearTimeout(t);
+  }, [guessed, cards, startCard]);
   const [dir, setDir] = useState(1);
   const [held, setHeld] = useState(false);
   const [sheet, setSheet] = useState(false);

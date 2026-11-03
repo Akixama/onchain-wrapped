@@ -17,6 +17,7 @@ import { computeStats, storyCards, type WrappedStats } from "./engine/stats";
 import { addTradeCharts } from "./charts";
 import { refinePeaks } from "./peaks";
 import { loadHeliusKeys } from "./chains/helius-keys";
+import { quickPreview, type Preview } from "./engine/preview";
 import { detectAchievements } from "./engine/achievements";
 import { usageSnapshot } from "./infra/usage";
 import { cacheGet, cacheSet } from "./infra/cache";
@@ -30,6 +31,8 @@ export interface Progress {
   stage: "fetching" | "pricing" | "crunching" | "done";
   message: string;
   fetched: number;
+  /** Sneak peeks for the waiting screen, known once the history is read. */
+  preview?: Preview;
 }
 
 export interface RunInput {
@@ -159,11 +162,12 @@ export async function runWrapped(input: RunInput): Promise<RunOutput> {
     .filter((e) => e.timestamp >= coverageStart && (!untilTs || e.timestamp <= untilTs))
     .sort((a, b) => a.timestamp - b.timestamp);
   fillTokenInfo(events);
+  const preview = quickPreview(events);
 
   const knownPrices = (await loadBlob<KnownPrices>(pxKey).catch(() => null)) ?? undefined;
   const stats = await analyze({
     knownPrices, events, resolved, timeframe: input.timeframe, sinceTs, untilTs, coverageStart, truncated, cap: Number.isFinite(cap) ? cap : 0, providerPrices, notes,
-    onStage: (stage, message) => say({ stage, message, fetched }),
+    onStage: (stage, message) => say({ stage, message, fetched, preview }),
     // The platform stops a run ~100s after the reading deadline: the optional extras must end before.
     finishBy: input.deadline ? input.deadline + Number(process.env.ANALYZE_TAIL_SECONDS ?? 75) * 1000 : undefined,
   });

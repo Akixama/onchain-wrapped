@@ -133,7 +133,9 @@ export interface WrappedStats {
 
 export type CardId =
   | "archetype" | "overview" | "pnl" | "profitTime" | "best" | "worst" | "roundTrip" | "paperHands" | "diamondHands" | "bags" | "speed" | "sniper" | "revenge" | "narrative"
-  | "counterfactual" | "appFees" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "achievements" | "roast" | "summary";
+  | "counterfactual" | "appFees" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "achievements" | "roast" | "summary"
+  /** Client-only: "your guesses vs reality", added in the browser when they played the waiting-screen game. */
+  | "guess";
 
 export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
   const t = s.overview.totalTrades;

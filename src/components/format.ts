@@ -181,7 +181,7 @@ export const CARD_TITLE: Record<CardId, string> = {
   roundTrip: "The round trip", paperHands: "Paper hands", diamondHands: "Diamond hands", counterfactual: "What if",
   revenge: "Revenge trading", sniper: "Launch sniper", bags: "Bags still held", appFees: "App fees", gas: "Gas burned", rugs: "Rugs", airdrops: "Airdrops", sleep: "Sleep schedule", bridges: "Bridge journey",
   percentile: "Ranking", chains: "Profit by chain", roast: "The roast", summary: "Your Wrapped",
-  achievements: "Achievements",
+  achievements: "Achievements", guess: "Your guesses",
 };
 
 /** Per-card background: deep base + two glows. Shared by UI and OG images. */
@@ -205,6 +205,7 @@ export const CARD_THEME: Record<CardId, { bg: string; a: string; b: string; ink:
   gas: { bg: "#1C0F05", a: "#FB923C", b: "#FACC15", ink: "#FFF6EC" },
   rugs: { bg: "#1A0A1F", a: "#E11D48", b: "#8B5CF6", ink: "#FFF0F5" },
   achievements: { bg: "#17110A", a: "#F59E0B", b: "#A855F7", ink: "#FFF8EB" },
+  guess: { bg: "#0A1622", a: "#38BDF8", b: "#F472B6", ink: "#F0F9FF" },
   airdrops: { bg: "#06201F", a: "#2DD4BF", b: "#FDE68A", ink: "#EFFFFC" },
   sleep: { bg: "#070B24", a: "#6366F1", b: "#EC4899", ink: "#EEF0FF" },
   bridges: { bg: "#03161C", a: "#14F195", b: "#3D7BFF", ink: "#EAFFF8" },
