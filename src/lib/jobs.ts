@@ -59,6 +59,8 @@ const STALL_MS = Number(process.env.JOB_STALL_SECONDS ?? 330) * 1000;
 const HANDOFF_MS = 8_000;
 // Restarts in a row without a part finishing normally, before giving up.
 const MAX_RECOVERIES = 5;
+// Retries after an unexpected error inside a part (counted in the same `recoveries`).
+const MAX_ERROR_RETRIES = 3;
 
 /** Shared secret for the part-to-part handoff, so nobody else can poke the continue endpoint. */
 export const continueKey = () =>
@@ -183,6 +185,19 @@ export async function runJob(id: string) {
     job.status = "done";
     job.progress = { stage: "done", message: "Done", fetched: job.progress?.fetched ?? 0 };
   } catch (e) {
+    // A one-off failure (a provider timing out, a dropped connection) shouldn't end the lookup:
+    // restart this part from the last save, a few times, before showing an error.
+    if (!(e instanceof QuotaError) && !(e instanceof InputError) && (job.recoveries ?? 0) < MAX_ERROR_RETRIES && (await mine())) {
+      console.error(`[job ${id}] part ${seg + 1} failed, retrying`, e);
+      job.recoveries = (job.recoveries ?? 0) + 1;
+      job.segment = seg + 1; // the next part resumes from the last checkpoint (or starts fresh if there is none)
+      job.handoffAt = Date.now();
+      job.progress = { ...job.progress, stage: job.progress?.stage ?? "fetching", fetched: job.progress?.fetched ?? 0, message: "Hit a hiccup, picking it back up" };
+      await putJob(job);
+      await flushUsage();
+      await startNextPart(id);
+      return;
+    }
     job.status = "error";
     job.error =
       e instanceof QuotaError

@@ -797,13 +797,16 @@ const Achievements = ({ s, ctx }: CardProps) => {
 };
 
 /** Their waiting-screen guesses next to the real numbers. */
-const Guess = ({ s }: CardProps) => {
+const Guess = ({ s, ctx }: CardProps) => {
   const id = useContext(ChartJobContext);
   const [g, setG] = useState<Guesses | null>(null);
   useEffect(() => { const t = setTimeout(() => setG(id ? loadGuesses(id) : null), 0); return () => clearTimeout(t); }, [id]);
-  const asked = GUESS_QS.filter((q) => g?.[q.id] !== undefined);
-  const right = asked.filter((q) => g![q.id] === q.answer(s)).length;
-  const verdict = !asked.length ? "" : right === asked.length ? "You know yourself. Scary." : right === 0 ? "You don't know yourself at all." : "Half self-aware. Half in denial.";
+  const tz = ctx.tzOffsetH;
+  // Only questions they answered (not "not sure") that this result can answer.
+  const asked = GUESS_QS.filter((q) => (g?.[q.id] ?? -1) >= 0 && q.answer(s, tz) !== null);
+  const right = asked.filter((q) => g![q.id] === q.answer(s, tz)).length;
+  const share = asked.length ? right / asked.length : 0;
+  const verdict = !asked.length ? "" : share === 1 ? "You know yourself. Scary." : share >= 0.7 ? "Pretty self-aware." : share >= 0.4 ? "Half self-aware. Half in denial." : share > 0 ? "Mostly in denial." : "You don't know yourself at all.";
   return (
     <>
       <Kicker>Your guesses</Kicker>
@@ -811,16 +814,13 @@ const Guess = ({ s }: CardProps) => {
         <Line className="text-xl opacity-80">While you waited, you guessed. You got</Line>
         <BigNumber className="text-[76px] @3xl:text-[106px]" color="#7DD3FC">{right} <span className="text-[0.45em] opacity-70">of {asked.length}</span></BigNumber>
         {verdict && <Line className="text-xl">{verdict}</Line>}
-        <R><motion.div variants={rise} className="space-y-2">
+        <R><motion.div variants={rise} className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.06] text-sm">
           {asked.map((q) => {
-            const ok = g![q.id] === q.answer(s);
+            const ok = g![q.id] === q.answer(s, tz);
             return (
-              <div key={q.id} className="rounded-2xl border border-white/10 bg-white/[0.07] p-4">
-                <div className="text-xs uppercase tracking-wider opacity-60">{q.q}</div>
-                <div className="mt-1 flex items-baseline justify-between gap-3">
-                  <span className={ok ? "" : "line-through opacity-60"}>You said {q.options[g![q.id]!].replace(/ [📈📉]/u, "")}</span>
-                  <b style={{ color: ok ? "#4ADE80" : "#F87171" }} className="text-right">{ok ? "✓ " : ""}{q.real(s)}</b>
-                </div>
+              <div key={q.id} className="grid grid-cols-[1fr_auto] items-baseline gap-x-3 px-3 py-1.5">
+                <span className="truncate"><span className="opacity-60">{q.short}:</span> <span className={ok ? "" : "line-through opacity-60"}>{q.options[g![q.id]].replace(/ [📈📉]/u, "")}</span></span>
+                <b style={{ color: ok ? "#4ADE80" : "#F87171" }} className="text-right">{ok ? "✓" : "✗"} {q.real(s, tz)}</b>
               </div>
             );
           })}

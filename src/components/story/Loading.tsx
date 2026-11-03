@@ -15,6 +15,30 @@ const QUIPS = [
   "Finding the one that got away…",
 ];
 
+// Fun facts about Solana, shown one at a time at the bottom of the waiting screen.
+const FACTS = [
+  "Solana's mainnet beta went live in March 2020.",
+  "A new Solana block (a \"slot\") comes about every 400 milliseconds.",
+  "Solana is named after Solana Beach, California, near where its founders lived and surfed.",
+  "Founder Anatoly Yakovenko spent over a decade at Qualcomm before starting Solana.",
+  "1 SOL = 1,000,000,000 lamports, named after computer scientist Leslie Lamport.",
+  "The base fee for a Solana transaction is 0.000005 SOL, a tiny fraction of a cent.",
+  "Proof of History is Solana's built-in clock: validators agree on when things happened without asking each other.",
+  "Sealevel lets Solana run many smart contracts at the same time instead of one by one.",
+  "Solana has no mempool: Gulf Stream forwards transactions straight to the upcoming block leaders.",
+  "Turbine, Solana's way of spreading blocks, was inspired by BitTorrent.",
+  "Block leaders rotate every 4 slots, so a new validator takes the wheel every 1.6 seconds.",
+  "An epoch is 432,000 slots, about 2 days.",
+  "A Solana transaction can be at most 1,232 bytes, small enough to fit in one network packet.",
+  "Most Solana programs are written in Rust.",
+  "BONK was airdropped to the Solana community on Christmas Day 2022.",
+  "After the FTX collapse in late 2022, SOL dropped below $10.",
+  "Pump.fun launched in January 2024 and has since minted millions of tokens.",
+  "dogwifhat, a dog in a pink knit hat, hit a multi-billion-dollar market cap in 2024.",
+  "Firedancer is a second, independent Solana validator client built by Jump Crypto.",
+  "Solana Mobile released the Saga, a crypto phone, in 2023.",
+];
+
 const STAGE: Record<Progress["stage"], string> = {
   fetching: "Reading your history",
   pricing: "Looking up prices",
@@ -47,6 +71,13 @@ export function Loading({ progress, startedAt, jobId }: { progress?: Progress; s
     const t = setInterval(() => setQ((x) => (x + 1) % QUIPS.length), 2600);
     return () => clearInterval(t);
   }, []);
+  // A random fact first (picked in the browser), then the next one every 7 seconds.
+  const [fact, setFact] = useState(-1);
+  useEffect(() => {
+    const first = setTimeout(() => setFact(Math.floor(Math.random() * FACTS.length)), 0);
+    const t = setInterval(() => setFact((x) => (x + 1) % FACTS.length), 7000);
+    return () => { clearTimeout(first); clearInterval(t); };
+  }, []);
 
   // Guess game: questions first, then the sneak peeks (so a peek never gives an answer away).
   const [guesses, setGuesses] = useState<Guesses | null>(null);
@@ -64,7 +95,7 @@ export function Loading({ progress, startedAt, jobId }: { progress?: Progress; s
   };
   const skip = () => {
     if (!jobId || !guesses) return;
-    const g = { ...guesses, skipped: true };
+    const g = { ...guesses, skipped: 1 };
     setGuesses(g);
     saveGuesses(jobId, g);
   };
@@ -134,15 +165,21 @@ export function Loading({ progress, startedAt, jobId }: { progress?: Progress; s
                 <span>{GUESS_QS.indexOf(nextQ) + 1} / {GUESS_QS.length}</span>
               </div>
               <p className="font-display text-2xl font-bold leading-tight">{nextQ.q}</p>
-              <div className={`grid gap-2 ${nextQ.options.length === 2 ? "grid-cols-2" : "grid-cols-1"}`}>
+              <div className="grid grid-cols-2 gap-2">
                 {nextQ.options.map((o, i) => (
                   <button key={o} onClick={() => answer(nextQ.id, i)}
-                    className="rounded-2xl border border-white/15 bg-white/[0.06] px-4 py-3 text-left font-semibold transition hover:border-white/40 hover:bg-white/15 active:scale-[0.98]">
+                    className="min-h-14 rounded-2xl border border-white/15 bg-white/[0.06] px-3 py-3 text-left text-[15px] font-semibold leading-tight transition hover:border-white/40 hover:bg-white/15 active:scale-[0.98]">
                     {o}
                   </button>
                 ))}
               </div>
-              <button onClick={skip} className="text-xs opacity-50 hover:opacity-80">Skip the game</button>
+              <div className="flex items-center justify-between text-xs">
+                <button onClick={() => answer(nextQ.id, -1)} className="opacity-60 hover:opacity-90">Not sure</button>
+                <button onClick={skip} className="opacity-40 hover:opacity-80">Skip the game</button>
+              </div>
+              <div className="h-1 overflow-hidden rounded-full bg-white/10">
+                <div className="h-full rounded-full bg-white/60 transition-all" style={{ width: `${(GUESS_QS.indexOf(nextQ) / GUESS_QS.length) * 100}%` }} />
+              </div>
             </motion.div>
           ) : peeks.length ? (
             <motion.div key="peeks" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-2 text-left">
@@ -187,6 +224,16 @@ export function Loading({ progress, startedAt, jobId }: { progress?: Progress; s
             <button onClick={askNotify} className="rounded-full bg-white/10 px-3 py-1.5 text-xs font-semibold hover:bg-white/20">🔔 Notify me when ready</button>
           )}
           {notify === "on" && <span className="text-xs opacity-60">🔔 We&apos;ll ping you</span>}
+        </div>
+        <div className="min-h-16 rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3">
+          <div className="text-[10px] font-semibold uppercase tracking-wider opacity-50">Solana fun fact</div>
+          <AnimatePresence mode="wait">
+            {fact >= 0 && (
+              <motion.p key={fact} initial={{ opacity: 0 }} animate={{ opacity: 0.85 }} exit={{ opacity: 0 }} transition={{ duration: 0.8 }} className="mt-1 text-sm leading-snug">
+                {FACTS[fact]}
+              </motion.p>
+            )}
+          </AnimatePresence>
         </div>
         <p className="text-xs opacity-60">
           {part ? `Big wallet: reading in parts (part ${part}). Keep this tab open; it picks up where it left off.` : "Most wallets take 1–3 minutes. Very busy ones can take 10 or more. You can switch tabs; this one will tell you when it's ready."}
