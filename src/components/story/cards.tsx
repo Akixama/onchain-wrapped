@@ -830,6 +830,12 @@ const Guess = ({ s, ctx }: CardProps) => {
   );
 };
 
+/** Button to the full Pump.fun page. */
+function PumpLink() {
+  const id = useContext(ChartJobContext);
+  return id ? <CardLink href={`/pump/${id}`}>See your full Pump.fun Wrapped →</CardLink> : null;
+}
+
 /** Pump.fun Wrapped, 1/3: how much of the year was pump.fun coins, and how they did vs the rest. */
 const PumpYear = ({ s }: CardProps) => {
   const p = s.pumpfun!;
@@ -845,6 +851,7 @@ const PumpYear = ({ s }: CardProps) => {
           <Stat label="Everything else"><span style={{ color: gainColor(p.otherPnlUsd) }}>{money(p.otherPnlUsd, true)}</span></Stat>
         </div></R>
         {p.wins + p.losses > 0 && <Line className="text-base opacity-80">You won on <b>{num(p.wins)}</b> pump.fun coins and lost on <b>{num(p.losses)}</b>.</Line>}
+        <PumpLink />
       </Body>
     </>
   );
@@ -872,6 +879,7 @@ const PumpGrad = ({ s }: CardProps) => {
         </motion.div></R>
         {(p.launched ?? 0) > 0 && <Line className="text-base opacity-85">And you launched <b>{num(p.launched!)}</b> coin{p.launched === 1 ? "" : "s"} yourself.</Line>}
         {p.unchecked > 0 && <Line className="text-xs opacity-55">{num(p.unchecked)} couldn&apos;t be checked.</Line>}
+        <PumpLink />
       </Body>
     </>
   );
@@ -897,6 +905,7 @@ const PumpBest = ({ s }: CardProps) => {
         <Line className="text-xl opacity-80">Your pump.fun highlight reel</Line>
         {p.best && row("Best pump", p.best)}
         {p.worst && row("Worst pump", p.worst)}
+        <PumpLink />
       </Body>
     </>
   );

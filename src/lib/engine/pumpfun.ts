@@ -11,6 +11,8 @@ import type { SniperStats } from "../launch";
 import { rpc } from "../chains/solana-rpc";
 
 export interface PumpCoin { symbol: string; address: string; icon?: string; pnlUsd: number; costUsd: number; proceedsUsd: number }
+/** One row of the Pump.fun page. */
+export interface PumpRow extends PumpCoin { status: "alive" | "graduated" | "curve" | "unknown"; firstTs: number }
 
 export interface PumpStats {
   /** Pump.fun coins traded, and their share of every coin traded. */
@@ -33,6 +35,8 @@ export interface PumpStats {
   worst: PumpCoin | null;
   /** Coins they launched themselves (from the launch check; absent when it didn't run). */
   launched?: number;
+  /** Every pump.fun coin they bought (biggest first, up to 150), for the Pump.fun page. */
+  list?: PumpRow[];
 }
 
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -72,12 +76,15 @@ export async function pumpStats(positions: Position[], events: UnifiedEvent[], p
 
   const grad = await graduation(pump.map((p) => p.token.address), stopAt).catch(() => new Map<string, boolean | null>());
   let graduated = 0, graduatedAlive = 0, neverGraduated = 0, unchecked = 0;
+  const status = new Map<string, PumpRow["status"]>();
   for (const p of pump) {
     const g = grad.get(p.token.address);
-    if (g == null) { unchecked++; continue; }
-    if (!g) { neverGraduated++; continue; }
+    if (g == null) { unchecked++; status.set(p.key, "unknown"); continue; }
+    if (!g) { neverGraduated++; status.set(p.key, "curve"); continue; }
     graduated++;
-    if ((pb.liquidity(p.key) ?? 0) >= 1000) graduatedAlive++;
+    const alive = (pb.liquidity(p.key) ?? 0) >= 1000;
+    if (alive) graduatedAlive++;
+    status.set(p.key, alive ? "alive" : "graduated");
   }
   const coin = (p: Position): PumpCoin => ({ symbol: p.token.symbol, address: p.token.address, icon: p.token.icon, pnlUsd: r2(p.pnl), costUsd: r2(p.costIn), proceedsUsd: r2(p.proceeds) });
   const byPnl = [...pump].sort((a, b) => b.pnl - a.pnl);
@@ -96,5 +103,6 @@ export async function pumpStats(positions: Position[], events: UnifiedEvent[], p
     graduated, graduatedAlive, neverGraduated, unchecked,
     best, worst,
     launched: sniper && !sniper.sampled ? sniper.launched : undefined,
+    list: [...pump].sort((a, b) => b.costIn - a.costIn).slice(0, 150).map((p) => ({ ...coin(p), status: status.get(p.key) ?? "unknown", firstTs: p.firstTs })),
   };
 }
