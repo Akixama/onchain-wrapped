@@ -18,6 +18,8 @@ export function LandingForm() {
   const [wallets, setWallets] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
   const [timeframe, setTimeframe] = useState<Timeframe>("12m");
+  // What to open when it's ready: the full story, or just the Pump.fun Wrapped page. Same lookup either way.
+  const [view, setView] = useState<"all" | "pump">("all");
   // Custom range ("YYYY-MM-DD"). Filled when Custom is picked: the page is pre-rendered, where "today" isn't available.
   const [range, setRange] = useState<{ from: string; to: string; min: string; max: string } | null>(null);
   const pickCustom = () => {
@@ -76,7 +78,7 @@ export function LandingForm() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error ?? "Something went wrong.");
       setBusy(false);
-      startNav(() => router.push(`/w/${j.id}`));
+      startNav(() => router.push(view === "pump" ? `/w/${j.id}?view=pump` : `/w/${j.id}`));
     } catch (err) {
       setError((err as Error).message);
       setBusy(false);
@@ -85,6 +87,15 @@ export function LandingForm() {
 
   return (
     <form onSubmit={submit} className="space-y-3">
+      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-white/10 p-1 text-sm font-semibold" role="radiogroup" aria-label="What to see">
+        {([["all", "Full Wrapped", "Everything you traded"], ["pump", "Pump.fun Wrapped", "Just your pump.fun coins"]] as const).map(([v, label, hint]) => (
+          <button key={v} type="button" role="radio" aria-checked={view === v} onClick={() => setView(v)}
+            className={`rounded-xl px-3 py-2.5 text-left transition ${view === v ? (v === "pump" ? "bg-emerald-300 text-black" : "bg-white text-black") : "text-white/75 hover:bg-white/10"}`}>
+            <span className="block leading-tight">{label}</span>
+            <span className={`block text-xs font-normal leading-tight ${view === v ? "opacity-70" : "opacity-50"}`}>{hint}</span>
+          </button>
+        ))}
+      </div>
       <div className="rounded-3xl border border-white/15 bg-white/[0.06] p-2 backdrop-blur focus-within:border-white/40">
         {wallets.length > 0 && (
           <div className="flex flex-wrap gap-2 p-2">
@@ -144,8 +155,8 @@ export function LandingForm() {
             : <>Big wallet: it has more transactions in this period than today&apos;s free data can read (about {Math.round(size.capacity! / 1000).toLocaleString()}k). Pick a shorter period to get it all now, or the result will be partial.</>}
         </p>
       )}
-      <button disabled={busy || navigating} className="w-full rounded-2xl bg-white py-4 font-display text-lg font-bold text-black transition active:scale-[0.98] disabled:opacity-60">
-        {busy || navigating ? "Starting…" : timeframe === "12m" ? "Wrap my year" : timeframe === "custom" ? "Wrap these dates" : `Wrap my ${TIMEFRAME_LABEL[timeframe].toLowerCase()}`}
+      <button disabled={busy || navigating} className={`w-full rounded-2xl py-4 font-display text-lg font-bold text-black transition active:scale-[0.98] disabled:opacity-60 ${view === "pump" ? "bg-emerald-300" : "bg-white"}`}>
+        {busy || navigating ? "Starting…" : (view === "pump" ? "Wrap my pump.fun " : "Wrap my ") + (timeframe === "12m" ? "year" : timeframe === "custom" ? "dates" : TIMEFRAME_LABEL[timeframe].toLowerCase())}
       </button>
       {error && <p role="alert" className="text-center text-sm text-rose-300">{error}</p>}
       <p className="text-center text-xs text-white/50">Got more than one wallet? Add them all. Transfers between your own wallets don&apos;t count as trades.</p>

@@ -19,7 +19,7 @@ const noopSubscribe = () => () => {};
 
 type PublicJob = Pick<PublicJobT, "id" | "status" | "progress" | "error" | "stats"> & { createdAt?: number };
 
-export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl, rarity = null }: { job: PublicJob; startCard?: string; ngnRate: number | null; siteUrl: string; rarity?: Record<string, number> | null }) {
+export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl, rarity = null, view }: { job: PublicJob; startCard?: string; ngnRate: number | null; siteUrl: string; rarity?: Record<string, number> | null; view?: string }) {
   const [job, setJob] = useState(initial);
 
   useEffect(() => {
@@ -37,8 +37,16 @@ export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl, rarity 
     return () => clearInterval(t);
   }, [job.id, job.status]);
 
+  // Opened from "Pump.fun Wrapped" on the homepage: go to that page when it's ready.
+  // Comes from the server (?view=pump): the story rewrites the address as it plays, which drops it.
+  const [pumpOnly, setPumpOnly] = useState(view === "pump");
+  const router = useRouter();
+  const goPump = pumpOnly && job.status === "done" && !!job.stats?.pumpfun;
+  useEffect(() => { if (goPump) router.replace(`/pump/${job.id}`); }, [goPump, job.id, router]);
+
   if (job.status === "error") return <ErrorScreen message={job.error ?? "Something went wrong."} />;
-  if (job.status !== "done" || !job.stats) return <Loading progress={job.progress} startedAt={job.createdAt} jobId={job.id} />;
+  if (job.status !== "done" || !job.stats || goPump) return <Loading progress={job.progress} startedAt={job.createdAt} jobId={job.id} />;
+  if (pumpOnly && !job.stats.pumpfun) return <NoPumpScreen onFull={() => { setPumpOnly(false); window.history.replaceState(null, "", `/w/${job.id}`); }} />;
   return <Story id={job.id} s={job.stats} startCard={startCard} ngnRate={ngnRate} siteUrl={siteUrl} rarity={rarity} />;
 }
 
@@ -341,6 +349,21 @@ function CompareSheet({ onClose, myId, timeframe }: { onClose: () => void; myId:
         </button>
       </motion.form>
     </motion.div>
+  );
+}
+
+function NoPumpScreen({ onFull }: { onFull: () => void }) {
+  return (
+    <div className="grid min-h-[100dvh] place-items-center bg-[#06160C] p-6 text-center text-white">
+      <div className="max-w-sm space-y-4">
+        <div className="font-display text-3xl font-bold">No pump.fun coins here</div>
+        <p className="opacity-75">This wallet didn&apos;t buy any pump.fun coins in this period. Its full Wrapped is ready though.</p>
+        <div className="flex flex-wrap justify-center gap-2">
+          <button onClick={onFull} className="rounded-2xl bg-white px-6 py-3 font-semibold text-black">See the full Wrapped</button>
+          <Link href="/" className="rounded-2xl bg-white/10 px-6 py-3 font-semibold">Try another wallet</Link>
+        </div>
+      </div>
+    </div>
   );
 }
 

@@ -7,7 +7,7 @@ export const generateMetadata = (props: PageProps<"/w/[id]">) => wrappedMetadata
 export default function Page(props: PageProps<"/w/[id]">) {
   return (
     <Suspense fallback={<Loading />}>
-      <WrappedView params={props.params} />
+      <WrappedView params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );
 }
