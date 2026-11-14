@@ -141,6 +141,18 @@ export function shareText(s: WrappedStats, card: CardId): string {
     case "appFees": return s.appFees ? `I paid ${s.appFees.byApp[0]?.app ?? "trading apps"} ${usd(s.appFees.totalUsd)} in fees ${periodPhrase(s.meta.timeframe)}. ${tail}` : tail;
     case "gas": return `I burned ${usd(s.gas.totalUsd)} on gas. ${tail}`;
     case "rugs": return `Caught in ${s.rugs.count} rugs, dodged ${s.rugs.dodged}. ${tail}`;
+    case "pumpYear": {
+      const p = s.pumpfun; if (!p) return tail;
+      return `${num(p.coins)} of my coins came from pump.fun. Result on them: ${usd(p.pnlUsd, { sign: true })}. ${tail}`;
+    }
+    case "pumpGrad": {
+      const p = s.pumpfun; if (!p) return tail;
+      return `Of the pump.fun coins I bought, ${p.graduated} graduated (${p.graduatedAlive} still trading) and ${p.neverGraduated} never left the bonding curve. ${tail}`;
+    }
+    case "pumpBest": {
+      const p = s.pumpfun; if (!p) return tail;
+      return [p.best && `Best pump: $${p.best.symbol} ${usd(p.best.pnlUsd, { sign: true })}.`, p.worst && `Worst: $${p.worst.symbol} ${usd(p.worst.pnlUsd)}.`, tail].filter(Boolean).join(" ");
+    }
     case "achievements": {
       const e = rarestFirst(s.achievements?.earned ?? []); if (!e.length) return tail;
       const top = rarestFirst(e).slice(0, 3).map((x) => `${ACHIEVEMENT_BY_ID[x.id].emoji} ${ACHIEVEMENT_BY_ID[x.id].name}`).join(", ");
@@ -182,6 +194,7 @@ export const CARD_TITLE: Record<CardId, string> = {
   revenge: "Revenge trading", sniper: "Launch sniper", bags: "Bags still held", appFees: "App fees", gas: "Gas burned", rugs: "Rugs", airdrops: "Airdrops", sleep: "Sleep schedule", bridges: "Bridge journey",
   percentile: "Ranking", chains: "Profit by chain", roast: "The roast", summary: "Your Wrapped",
   achievements: "Achievements", guess: "Your guesses",
+  pumpYear: "Pump.fun Wrapped", pumpGrad: "Did they graduate?", pumpBest: "Best & worst pump",
 };
 
 /** Per-card background: deep base + two glows. Shared by UI and OG images. */
@@ -206,6 +219,9 @@ export const CARD_THEME: Record<CardId, { bg: string; a: string; b: string; ink:
   rugs: { bg: "#1A0A1F", a: "#E11D48", b: "#8B5CF6", ink: "#FFF0F5" },
   achievements: { bg: "#17110A", a: "#F59E0B", b: "#A855F7", ink: "#FFF8EB" },
   guess: { bg: "#0A1622", a: "#38BDF8", b: "#F472B6", ink: "#F0F9FF" },
+  pumpYear: { bg: "#06160C", a: "#22C55E", b: "#A3E635", ink: "#F0FFF4" },
+  pumpGrad: { bg: "#08140F", a: "#4ADE80", b: "#2DD4BF", ink: "#EFFFF8" },
+  pumpBest: { bg: "#0F1408", a: "#A3E635", b: "#F43F5E", ink: "#F9FFEF" },
   airdrops: { bg: "#06201F", a: "#2DD4BF", b: "#FDE68A", ink: "#EFFFFC" },
   sleep: { bg: "#070B24", a: "#6366F1", b: "#EC4899", ink: "#EEF0FF" },
   bridges: { bg: "#03161C", a: "#14F195", b: "#3D7BFF", ink: "#EAFFF8" },

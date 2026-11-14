@@ -8,6 +8,7 @@ import { type Position, pricePoints } from "./pnl";
 import { appFeeStats, revengeStats, type BagStats, type RevengeStats, narrativeStats, profitTimeline, speedStats, type AppFeeStats, type NarrativeStats, type ProfitTimeline, type SpeedStats } from "./extras";
 import type { SniperStats } from "../launch";
 import type { AchievementResult } from "./achievements";
+import type { PumpStats } from "./pumpfun";
 
 // Everything the cards need, as plain JSON. The UI never recomputes anything.
 
@@ -127,6 +128,8 @@ export interface WrappedStats {
   revenge?: RevengeStats;
   /** Badges this lookup earned (rarity is looked up when the story is viewed). */
   achievements?: AchievementResult;
+  /** The part of the year spent on pump.fun coins (absent when they traded none). */
+  pumpfun?: PumpStats;
   /** Story order, only cards with something worth saying. The UI renders exactly these. */
   cards: CardId[];
 }
@@ -135,7 +138,8 @@ export type CardId =
   | "archetype" | "overview" | "pnl" | "profitTime" | "best" | "worst" | "roundTrip" | "paperHands" | "diamondHands" | "bags" | "speed" | "sniper" | "revenge" | "narrative"
   | "counterfactual" | "appFees" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "achievements" | "roast" | "summary"
   /** Client-only: "your guesses vs reality", added in the browser when they played the waiting-screen game. */
-  | "guess";
+  | "guess"
+  | "pumpYear" | "pumpGrad" | "pumpBest";
 
 export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
   const t = s.overview.totalTrades;
@@ -154,6 +158,10 @@ export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
     ["revenge", (s.revenge?.revenge.count ?? 0) >= 5],
     ["speed", (s.speed?.closedCount ?? 0) >= 3 && !!s.speed?.fastestFlip],
     ["narrative", !!s.narratives?.top.length && s.narratives.top[0].id !== "other" && s.narratives.coverage >= 0.15],
+    // Pump.fun Wrapped: a short run of its own inside the story.
+    ["pumpYear", (s.pumpfun?.coins ?? 0) >= 3],
+    ["pumpGrad", (s.pumpfun?.coins ?? 0) >= 3 && (s.pumpfun!.graduated + s.pumpfun!.neverGraduated) >= 3],
+    ["pumpBest", (s.pumpfun?.coins ?? 0) >= 3 && !!(s.pumpfun!.best || s.pumpfun!.worst)],
     ["counterfactual", s.overview.totalTrades > 0 && Math.abs(s.counterfactual.justHeldDiffUsd) >= 5],
     ["appFees", (s.appFees?.totalUsd ?? 0) >= 1 && (s.appFees?.coverage ?? 0) >= 0.8],
     ["gas", s.gas.totalUsd >= 1],

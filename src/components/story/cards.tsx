@@ -830,7 +830,80 @@ const Guess = ({ s, ctx }: CardProps) => {
   );
 };
 
+/** Pump.fun Wrapped, 1/3: how much of the year was pump.fun coins, and how they did vs the rest. */
+const PumpYear = ({ s }: CardProps) => {
+  const p = s.pumpfun!;
+  return (
+    <>
+      <Kicker>Pump.fun Wrapped</Kicker>
+      <Body className="space-y-5">
+        <Line className="text-xl opacity-80">Of every coin you traded,</Line>
+        <BigNumber className="text-[76px] @3xl:text-[106px]" color="#86EFAC"><CountUp value={p.coins} format={(n) => num(Math.round(n))} /> <span className="text-[0.4em] opacity-70">from pump.fun</span></BigNumber>
+        <Line className="text-xl opacity-80">That&apos;s <b>{Math.round(p.share * 100)}%</b> of your coins, over <b>{num(p.trades)}</b> trades and <b>{money(p.volumeUsd)}</b> of volume.</Line>
+        <R><div className="grid grid-cols-2 gap-3">
+          <Stat label="On pump.fun coins"><span style={{ color: gainColor(p.pnlUsd) }}>{money(p.pnlUsd, true)}</span></Stat>
+          <Stat label="Everything else"><span style={{ color: gainColor(p.otherPnlUsd) }}>{money(p.otherPnlUsd, true)}</span></Stat>
+        </div></R>
+        {p.wins + p.losses > 0 && <Line className="text-base opacity-80">You won on <b>{num(p.wins)}</b> pump.fun coins and lost on <b>{num(p.losses)}</b>.</Line>}
+      </Body>
+    </>
+  );
+};
+
+/** Pump.fun Wrapped, 2/3: what became of the pump.fun coins they bought. */
+const PumpGrad = ({ s }: CardProps) => {
+  const p = s.pumpfun!;
+  const known = p.graduated + p.neverGraduated;
+  const rows: [string, number, string][] = [["Graduated, still trading", p.graduatedAlive, "#4ADE80"], ["Graduated, then died", p.graduated - p.graduatedAlive, "#FACC15"], ["Never graduated", p.neverGraduated, "#F87171"]];
+  return (
+    <>
+      <Kicker>Pump.fun Wrapped &middot; Graduation</Kicker>
+      <Body className="space-y-5">
+        <Line className="text-xl opacity-80">Of the pump.fun coins you bought,</Line>
+        <BigNumber className="text-[76px] @3xl:text-[106px]" color="#4ADE80"><CountUp value={p.graduated} format={(n) => num(Math.round(n))} /> <span className="text-[0.4em] opacity-70">graduated</span></BigNumber>
+        <Line className="text-xl opacity-80">That&apos;s <b>{known ? Math.round((p.graduated / known) * 100) : 0}%</b>. The rest never left the bonding curve.</Line>
+        <R><motion.div variants={rise} className="space-y-3">
+          {rows.map(([k, n, c]) => (
+            <div key={k}>
+              <div className="flex justify-between text-sm"><span className="opacity-80">{k}</span><b className="tabular-nums">{num(n)}</b></div>
+              <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full" style={{ width: `${known ? Math.max(2, (n / known) * 100) : 0}%`, background: c }} /></div>
+            </div>
+          ))}
+        </motion.div></R>
+        {(p.launched ?? 0) > 0 && <Line className="text-base opacity-85">And you launched <b>{num(p.launched!)}</b> coin{p.launched === 1 ? "" : "s"} yourself.</Line>}
+        {p.unchecked > 0 && <Line className="text-xs opacity-55">{num(p.unchecked)} couldn&apos;t be checked.</Line>}
+      </Body>
+    </>
+  );
+};
+
+/** Pump.fun Wrapped, 3/3: the best and worst pump.fun coin. */
+const PumpBest = ({ s }: CardProps) => {
+  const p = s.pumpfun!;
+  const row = (label: string, c: NonNullable<typeof p.best>) => (
+    <motion.div variants={rise} className="rounded-2xl border border-white/10 bg-white/[0.07] p-5">
+      <div className="text-[12px] font-medium uppercase tracking-wider opacity-60">{label}</div>
+      <div className="mt-1 flex items-baseline justify-between gap-3">
+        <span className="min-w-0 truncate font-display text-3xl font-bold">${c.symbol}</span>
+        <span className="shrink-0 font-display text-3xl font-bold tabular-nums" style={{ color: gainColor(c.pnlUsd) }}>{money(c.pnlUsd, true)}</span>
+      </div>
+      <div className="mt-1 text-sm opacity-70">Put in {money(c.costUsd)}, got back {money(c.proceedsUsd)}</div>
+    </motion.div>
+  );
+  return (
+    <>
+      <Kicker>Pump.fun Wrapped &middot; Best &amp; worst</Kicker>
+      <Body className="space-y-4">
+        <Line className="text-xl opacity-80">Your pump.fun highlight reel</Line>
+        {p.best && row("Best pump", p.best)}
+        {p.worst && row("Worst pump", p.worst)}
+      </Body>
+    </>
+  );
+};
+
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
+  pumpYear: PumpYear, pumpGrad: PumpGrad, pumpBest: PumpBest,
   achievements: Achievements, guess: Guess,
   appFees: AppFees, bags: Bags, sniper: Sniper, revenge: Revenge,
   archetype: Archetype, overview: Overview, pnl: Pnl, profitTime: ProfitTime, best: Best, worst: Worst, roundTrip: RoundTrip,

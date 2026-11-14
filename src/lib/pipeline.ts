@@ -19,6 +19,7 @@ import { refinePeaks } from "./peaks";
 import { loadHeliusKeys } from "./chains/helius-keys";
 import { quickPreview, type Preview } from "./engine/preview";
 import { detectAchievements } from "./engine/achievements";
+import { pumpStats } from "./engine/pumpfun";
 import { usageSnapshot } from "./infra/usage";
 import { cacheGet, cacheSet } from "./infra/cache";
 import { currentTokenBalances } from "./chains/solana-rpc";
@@ -231,6 +232,7 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   if (actualBalances) stats.bags = bagStats([...positions.values()].filter((p) => p.chain === "solana"));
   a.onStage?.("crunching", "Checking how early you bought");
   stats.sniper = left(15_000) ? await sniperStats([...positions.values()], Math.min(Date.now() + 75_000, a.finishBy ?? Infinity) - (a.finishBy ? 5_000 : 0)).catch(() => undefined) : undefined;
+  stats.pumpfun = await pumpStats([...positions.values()], events, pbx, stats.sniper, a.finishBy ? a.finishBy - 3_000 : undefined).catch(() => undefined);
   // Last: the personality uses every stat, including the sniper and bags ones computed above.
   stats.archetype = personality(stats);
   stats.achievements = detectAchievements({ stats, positions: [...positions.values()], events, pb: pbx, now });

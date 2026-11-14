@@ -18,8 +18,12 @@ export interface PriceBook {
   liquidity(key: string): number | undefined;
   /** 24h trading volume (USD) of that pool, when known (graveyard: "abandoned" coins). Optional for fakes. */
   volume24h?(key: string): number | undefined;
-  /** Address of that pool, when known (graveyard: death-date candles). */
+  /** Address of that pool, when known. */
   pool?(key: string): string | undefined;
+  /** That pool's market ("pumpfun" = still on pump.fun's bonding curve, "pumpswap"/"raydium"/... = a real pool). */
+  dexId?(key: string): string | undefined;
+  /** DexScreener was asked about this coin (so "no pool" means it has none, not that we didn't look). */
+  dexChecked?(key: string): boolean;
 }
 
 const LLAMA_CHAIN: Record<ChainId, string> = {
@@ -137,7 +141,7 @@ async function llamaCurrent(ids: string[], stopAt?: number, asked?: Set<string>)
   return out;
 }
 
-type DexInfo = { price: number; liq: number; vol?: number; pool?: string };
+type DexInfo = { price: number; liq: number; vol?: number; pool?: string; dex?: string };
 async function dexscreener(keys: string[], stopAt?: number, asked?: Set<string>): Promise<Record<string, DexInfo>> {
   const out: Record<string, DexInfo> = {};
   const byChain = new Map<ChainId, string[]>();
@@ -150,7 +154,7 @@ async function dexscreener(keys: string[], stopAt?: number, asked?: Set<string>)
     await pool(chunks(addrs, 30), 4, async (batch) => {
       try {
         const pairs = await fetchJson<
-          { baseToken: { address: string }; pairAddress?: string; priceUsd?: string; liquidity?: { usd?: number }; volume?: { h24?: number } }[]
+          { baseToken: { address: string }; pairAddress?: string; dexId?: string; priceUsd?: string; liquidity?: { usd?: number }; volume?: { h24?: number } }[]
         >("dexscreener", `https://api.dexscreener.com/tokens/v1/${DEXSCREENER_CHAIN[chain]}/${batch.join(",")}`, {
           endpoint: "tokens",
         });
@@ -158,7 +162,7 @@ async function dexscreener(keys: string[], stopAt?: number, asked?: Set<string>)
           const addr = chain === "solana" ? p.baseToken.address : p.baseToken.address.toLowerCase();
           const k = `${chain}:${addr}`;
           const liq = p.liquidity?.usd ?? 0;
-          if (!out[k] || liq > out[k].liq) out[k] = { price: Number(p.priceUsd ?? 0), liq, vol: p.volume?.h24, pool: p.pairAddress };
+          if (!out[k] || liq > out[k].liq) out[k] = { price: Number(p.priceUsd ?? 0), liq, vol: p.volume?.h24, pool: p.pairAddress, dex: p.dexId };
         }
         for (const a of batch) asked?.add(`${chain}:${a}`);
       } catch {}
@@ -212,13 +216,16 @@ export async function buildPriceBook(
     return cur;
   });
   const majorCurP = llamaCurrent(majors.map(([, id]) => id));
+  let dexAsked = new Set<string>();
   const dexP = curLlamaP.then(async (cur) => {
     const needDex = tokens.filter((k) => providerCurrent[k] === undefined && cur[llamaId(k)] === undefined);
     // Pool size decides whether a coin is dead (rugs), so ask for every coin up to LIQUIDITY_MAX
     // (30 per request): a top-25 cut made the rug count depend on the period chosen.
     const want = [...new Set([...needDex, ...tokens.slice(0, Math.max(maxSeriesTokens, Number(process.env.LIQUIDITY_MAX ?? 900)))])];
-    const dex = await dexscreener(want.filter((k) => known[k]?.d === undefined));
-    for (const k of want) { const d = known[k]?.d; if (d) dex[k] = { price: d[0], liq: d[1], vol: d[2], pool: d[3] }; }
+    const asked = new Set<string>();
+    const dex = await dexscreener(want.filter((k) => known[k]?.d === undefined), undefined, asked);
+    for (const k of want) { const d = known[k]?.d; if (d !== undefined) asked.add(k); if (d) dex[k] = { price: d[0], liq: d[1], vol: d[2], pool: d[3], dex: d[4] }; }
+    dexAsked = asked;
     return dex;
   });
 
@@ -243,6 +250,8 @@ export async function buildPriceBook(
     liquidity: (k) => dex[k]?.liq,
     volume24h: (k) => dex[k]?.vol,
     pool: (k) => dex[k]?.pool,
+    dexId: (k) => dex[k]?.dex,
+    dexChecked: (k) => dexAsked.has(k),
   };
 }
 
@@ -252,7 +261,7 @@ export const priceAt = interp;
  * Per coin: DefiLlama's current price (null = it has none) and DexScreener's best pool
  * ([price, liquidity], null = no pool). A missing field = not asked yet.
  */
-export type KnownPrices = Record<string, { l?: number | null; d?: [number, number, number?, string?] | null }>;
+export type KnownPrices = Record<string, { l?: number | null; d?: [number, number, number?, string?, string?] | null }>;
 
 /**
  * The same current-price lookups buildPriceBook makes, done early (while the slow on-chain check runs)
@@ -278,7 +287,7 @@ export async function prefetchCurrent(events: UnifiedEvent[], known: KnownPrices
   const askD = [...keys].filter((k) => (known[k]?.l === null || top.has(k)) && known[k]?.l !== undefined && known[k]?.d === undefined);
   const askedD = new Set<string>();
   const dex = await dexscreener(askD, stopAt, askedD);
-  for (const k of askD) if (askedD.has(k)) entry(k).d = dex[k] ? [dex[k].price, dex[k].liq, dex[k].vol, dex[k].pool] : null;
+  for (const k of askD) if (askedD.has(k)) entry(k).d = dex[k] ? [dex[k].price, dex[k].liq, dex[k].vol, dex[k].pool, dex[k].dex] : null;
   return askedL.size + askedD.size;
 }
 

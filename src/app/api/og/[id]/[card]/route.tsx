@@ -87,6 +87,23 @@ function content(s: WrappedStats, card: CardId, rarity: Record<string, number> |
       return { kicker: "Gas burned", big: m(s.gas.totalUsd), bigColor: "#FDBA74", sub: `${num(s.gas.txCount)} transactions · priciest ${m(s.gas.priciestTxUsd)}` };
     case "rugs":
       return { kicker: "Rugs", big: `${s.rugs.count} caught · ${s.rugs.dodged} dodged`, sub: s.rugs.count ? `Cost me ${m(s.rugs.lostUsd)}` : "Untouchable." };
+    case "pumpYear": {
+      const p = s.pumpfun!;
+      return { kicker: "My Pump.fun Wrapped", lead: `${num(p.coins)} coins from pump.fun (${Math.round(p.share * 100)}% of mine)`, big: m(p.pnlUsd, true), bigColor: signColor(p.pnlUsd),
+        sub: `${num(p.trades)} trades · ${m(p.volumeUsd)} volume · everything else: ${m(p.otherPnlUsd, true)}` };
+    }
+    case "pumpGrad": {
+      const p = s.pumpfun!;
+      const known = p.graduated + p.neverGraduated;
+      return { kicker: "Pump.fun · did they graduate?", lead: "Of the pump.fun coins I bought", big: `${p.graduated} graduated`, bigColor: "#4ADE80",
+        sub: `${known ? Math.round((p.graduated / known) * 100) : 0}% · ${p.graduatedAlive} still trading · ${p.neverGraduated} never graduated${p.launched ? ` · I launched ${p.launched}` : ""}` };
+    }
+    case "pumpBest": {
+      const p = s.pumpfun!;
+      const c = p.best ?? p.worst!;
+      return { kicker: "My best & worst pump", lead: `$${c.symbol}`, big: m(c.pnlUsd, true), bigColor: signColor(c.pnlUsd),
+        sub: p.best && p.worst ? `Worst: $${p.worst.symbol} ${m(p.worst.pnlUsd)}` : `Put in ${m(c.costUsd)}, got back ${m(c.proceedsUsd)}` };
+    }
     case "achievements": {
       const e = rarestFirst(s.achievements!.earned, rarity);
       const top = e[0] && ACHIEVEMENT_BY_ID[e[0].id];
