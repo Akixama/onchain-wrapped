@@ -1,9 +1,9 @@
 // Compare today's saved Zerion read (local storage) with an older events file, month by month.
-//   UPSTASH_REDIS_REST_URL= node --env-file=.env.local --import tsx scripts/cmp-reads.mts <wallet> <old.events.json>
+//   UPSTASH_REDIS_REST_URL= node --env-file=.env.local --import tsx scripts/cmp-reads.mts <old.events.json> <new.events.json>
 import { readFileSync } from "node:fs";
 import type { UnifiedEvent } from "../src/lib/core/types";
-const [w, oldFile] = process.argv.slice(2);
-const now: UnifiedEvent[] = JSON.parse(readFileSync(process.argv[4], "utf8"));
+const oldFile = process.argv[2];
+const now: UnifiedEvent[] = JSON.parse(readFileSync(process.argv[3], "utf8"));
 const old: UnifiedEvent[] = JSON.parse(readFileSync(oldFile, "utf8"));
 const month = (t: number) => new Date(t * 1000).toISOString().slice(0, 7);
 const tally = (evs: UnifiedEvent[]) => { const m = new Map<string, { all: number; swap: number; tx: Set<string> }>(); for (const e of evs) { const k = month(e.timestamp); const r = m.get(k) ?? { all: 0, swap: 0, tx: new Set() }; r.all++; if (e.type === "swap") r.swap++; r.tx.add(e.txHash); m.set(k, r); } return m; };

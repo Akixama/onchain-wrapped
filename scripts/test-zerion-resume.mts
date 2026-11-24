@@ -73,7 +73,7 @@ const resetKeys = async () => {
 };
 
 // 1. Full read, all time.
-let t0 = Date.now();
+const t0 = Date.now();
 const r1 = await zerionAdapter.fetchEvents(W, { sinceTs: 0, maxTxs: Infinity });
 check(r1.events, "parallel read");
 console.log(`1. parallel read: ${r1.events.length} txs, ${calls} requests, ${((Date.now() - t0) / 1000).toFixed(1)}s (a one-after-another read is ${Math.ceil(history.length / 100)} requests in a row)`);

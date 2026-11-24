@@ -2,7 +2,7 @@ import { minOf, pushAll } from "../core/num";
 import type { ChainAdapter, EventType, FetchOptions, FetchResult, Leg, TokenRef, UnifiedEvent } from "../core/types";
 import { fetchJson } from "../infra/http";
 import { heliusKey, heliusKeys } from "./helius-keys";
-import { drain, drainBatches, timeUp } from "../infra/drain";
+import { drainBatches, timeUp } from "../infra/drain";
 import { appFeeOf } from "./app-fees";
 
 // Helius Enhanced Transactions: already-parsed Solana txs (type SWAP/TRANSFER/..., source JUPITER/PUMP_FUN/...).

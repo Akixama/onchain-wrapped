@@ -3,7 +3,7 @@
 // Graduation comes from pump.fun's own bonding-curve account on the chain: its "complete" flag flips when the
 // coin graduates. (DexScreener can't tell: it drops coins that graduated and then died.) Whether a graduated
 // coin still trades comes from its best pool's size today.
-import { PublicKey } from "@solana/web3.js";
+import { address, getAddressEncoder, getProgramDerivedAddress } from "@solana/kit";
 import type { UnifiedEvent } from "../core/types";
 import type { PriceBook } from "../prices/pricebook";
 import type { Position } from "./pnl";
@@ -42,18 +42,27 @@ export interface PumpStats {
 const r2 = (n: number) => Math.round(n * 100) / 100;
 export const isPumpMint = (address: string) => address.endsWith("pump");
 const MIN_RESULT = 5; // $: smaller results are noise, not wins or losses
-const PUMP_PROGRAM = new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
+const PUMP_PROGRAM = address("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
 const COMPLETE_OFFSET = 48; // 8-byte discriminator + five u64 reserves/supply fields, then `complete: bool`
 
 /** Graduated or not, per mint (null = no curve account / couldn't read). */
 export async function graduation(mints: string[], stopAt?: number): Promise<Map<string, boolean | null>> {
   const out = new Map<string, boolean | null>();
-  const curves = mints.map((m) => { try { return PublicKey.findProgramAddressSync([Buffer.from("bonding-curve"), new PublicKey(m).toBuffer()], PUMP_PROGRAM)[0].toBase58(); } catch { return null; } });
+  const addressEncoder = getAddressEncoder();
+  const curves = await Promise.all(mints.map(async (mint) => {
+    try {
+      const [curve] = await getProgramDerivedAddress({
+        programAddress: PUMP_PROGRAM,
+        seeds: ["bonding-curve", addressEncoder.encode(address(mint))],
+      });
+      return curve;
+    } catch { return null; }
+  }));
   for (let i = 0; i < mints.length; i += 100) {
     if (stopAt && Date.now() > stopAt) break;
     const batch = curves.slice(i, i + 100);
     try {
-      const r = await rpc<{ value: ({ data: [string, string] } | null)[] }>("getMultipleAccounts", [batch.map((c) => c ?? PUMP_PROGRAM.toBase58()), { encoding: "base64", dataSlice: { offset: COMPLETE_OFFSET, length: 1 } }]);
+      const r = await rpc<{ value: ({ data: [string, string] } | null)[] }>("getMultipleAccounts", [batch.map((c) => c ?? PUMP_PROGRAM), { encoding: "base64", dataSlice: { offset: COMPLETE_OFFSET, length: 1 } }]);
       r.value.forEach((a, j) => {
         const m = mints[i + j];
         if (!batch[j] || !a) { out.set(m, null); return; }

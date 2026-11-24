@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { TipFab } from "./TipJar";
 import { useState } from "react";
-import type { TradeCard } from "@/lib/engine/stats";
 import { usd } from "./format";
 import { ChartJobContext, TradeChart } from "./story/TradeChart";
 

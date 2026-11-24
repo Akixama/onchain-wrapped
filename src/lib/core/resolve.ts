@@ -6,7 +6,7 @@ import { withHeliusKey } from "../chains/helius-keys";
 const SOLANA_ONLY_MSG = "Only Solana wallets work here. Paste a Solana address or .sol name.";
 
 // Turn what the user typed ("vitalik.eth, toly.sol 0xabc...") into a deduped list of addresses.
-// ENS: viem against a public Ethereum node. SNS: Bonfida SDK against public Solana RPC.
+// ENS: viem against a public Ethereum node. SNS: Solana Name Service SDK against Solana RPC.
 
 export const MAX_WALLETS = Number(process.env.MAX_WALLETS_PER_LOOKUP ?? 6);
 
@@ -40,14 +40,14 @@ async function resolveEns(name: string): Promise<string | null> {
 }
 
 async function resolveSns(name: string): Promise<string | null> {
-  const { Connection } = await import("@solana/web3.js");
-  const sns = await import("@bonfida/spl-name-service");
-  // SNS moved .sol names to the .sns TLD; the SDK paused direct .sol lookups. Same name, new suffix.
+  const { createSolanaRpc } = await import("@solana/kit");
+  const { resolve } = await import("@solana-name-service/sns-sdk-kit/domain");
+  // The SDK rejects legacy .sol lookups; use the corresponding .sns domain.
   const domain = name.toLowerCase().replace(/\.sol$/, ".sns");
   try {
-    return (await sns.resolve(new Connection(SOL_RPC()), domain)).toBase58();
+    return await resolve({ rpc: createSolanaRpc(SOL_RPC()), domain });
   } catch (e) {
-    if (/does not exist|DomainDoesNotExist|AccountDoesNotExist/i.test(String((e as Error).message ?? e))) return null;
+    if (/does not exist|not found|DomainDoesNotExist|AccountDoesNotExist/i.test(String((e as Error).message ?? e))) return null;
     throw e;
   }
 }
