@@ -20,7 +20,7 @@ export default function Home() {
         <div className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full bg-[#7C3AED] opacity-40 blur-3xl" />
         <div className="absolute -bottom-48 -right-32 h-[520px] w-[520px] rounded-full bg-[#14F195] opacity-25 blur-3xl" />
       </div>
-      <div className="relative mx-auto flex min-h-[100dvh] max-w-xl flex-col px-4 py-6 sm:px-6">
+      <div className="relative mx-auto flex min-h-[100dvh] max-w-xl flex-col px-4 pb-24 pt-6 sm:px-6">
         <header className="flex items-center justify-between">
           <span className="font-display text-lg font-bold tracking-tight">Wrapped <span className="opacity-60">Onchain</span></span>
           <span className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/70">Free · no sign-up</span>

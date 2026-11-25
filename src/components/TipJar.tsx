@@ -3,7 +3,7 @@
 // The site never touches funds: it shows the address, a QR code and a payment link the wallet app opens.
 import QRCode from "qrcode";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TIP_ADDRESS } from "@/lib/site";
 
 /** Solana Pay transfer link: wallet apps open it with the address (and amount, if given) filled in. */
@@ -31,10 +31,44 @@ export function TipJar({ className = "" }: { className?: string }) {
  */
 export function TipFab() {
   const [open, setOpen] = useState(false);
+  // Never cover the page: when anything sits under the button's spot, it tucks into a small tab at
+  // the right edge (still tappable) and slides back out once the spot is clear.
+  const [tucked, setTucked] = useState(false);
+  const [margin, setMargin] = useState(16); // the corner gap (16px on phones, 24px from sm up)
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    let raf = 0;
+    const check = () => {
+      raf = 0;
+      const b = ref.current;
+      if (!b) return;
+      // Measure where the full button sits (its untucked spot), not where it is drawn right now.
+      const w = b.offsetWidth, h = b.offsetHeight, m = innerWidth >= 640 ? 24 : 16;
+      setMargin(m);
+      const r = { left: innerWidth - m - w, top: innerHeight - m - h, right: innerWidth - m, bottom: innerHeight - m };
+      const pts: [number, number][] = [[r.left + 4, r.top + 4], [r.right - 4, r.top + 4], [r.left + 4, r.bottom - 4], [r.right - 4, r.bottom - 4], [(r.left + r.right) / 2, (r.top + r.bottom) / 2]];
+      const covers = pts.some(([x, y]) => document.elementsFromPoint(x, y).some((el) => {
+        if (el === b || b.contains(el) || el === document.body || el === document.documentElement) return false;
+        if (el.closest("[aria-hidden='true']")) return false; // background glows
+        const er = el.getBoundingClientRect();
+        // Page-sized wrappers aren't content; cards, text, buttons and inputs are.
+        return !(er.width >= innerWidth * 0.9 && er.height >= innerHeight * 0.6) && !(er.width >= innerWidth * 0.9 && el.children.length > 1 && !el.textContent?.trim());
+      }));
+      setTucked(covers);
+    };
+    const schedule = () => { if (!raf) raf = requestAnimationFrame(check); };
+    schedule();
+    addEventListener("scroll", schedule, { passive: true });
+    addEventListener("resize", schedule);
+    const t = setInterval(schedule, 800); // content that moves on its own (animations, loading)
+    return () => { removeEventListener("scroll", schedule); removeEventListener("resize", schedule); clearInterval(t); if (raf) cancelAnimationFrame(raf); };
+  }, []);
   return (
     <>
-      <button onClick={() => setOpen(true)} aria-label="Tip the dev"
-        className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-gradient-to-br from-[#14F195] to-[#9945FF] p-3.5 font-semibold text-black shadow-[0_8px_30px_rgba(20,241,149,0.35)] transition hover:scale-105 active:scale-95 sm:bottom-6 sm:right-6 sm:px-5">
+      <button ref={ref} onClick={() => setOpen(true)} aria-label="Tip the dev"
+        // Tucked: only a 12px sliver shows, inside the page's side margin, so it covers nothing.
+        style={{ transform: tucked ? `translateX(calc(100% + ${margin}px - 12px))` : undefined }}
+        className={`fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-gradient-to-br from-[#14F195] to-[#9945FF] p-3.5 font-semibold text-black shadow-[0_8px_30px_rgba(20,241,149,0.35)] transition-[transform,opacity] duration-300 hover:!translate-x-0 active:scale-95 sm:bottom-6 sm:right-6 sm:px-5 ${tucked ? "opacity-80" : ""}`}>
         <CupIcon />
         <span className="hidden text-sm sm:inline">Tip the dev</span>
       </button>
