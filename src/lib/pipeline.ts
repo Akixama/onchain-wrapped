@@ -223,6 +223,10 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   if (untraced) notes.push(`${untraced} tokens left your wallets by routes we can't trace (bots, other wallets). We count them as moved, not sold.`);
   stats.meta.notes = notes;
   if (a.untilTs) stats.meta.toTs = a.untilTs;
+  // Graduation takes only a few batched RPC calls. Do it before optional charts and launch checks
+  // so a busy wallet does not spend the remaining serverless time and report every coin as unknown.
+  a.onStage?.("crunching", "Checking pump.fun graduations");
+  stats.pumpfun = await pumpStats([...positions.values()], events, pbx, undefined, a.finishBy ? a.finishBy - 15_000 : undefined).catch(() => undefined);
   a.onStage?.("crunching", "Drawing your charts");
   // Skipped when short on time: the story then loads these charts in the viewer's browser.
   if (left(50_000)) await addTradeCharts(stats, positions, pbx, (n) => notes.push(n), a.finishBy ? a.finishBy - 5_000 : undefined).catch(() => {});
@@ -232,7 +236,7 @@ export async function analyze(a: AnalyzeInput): Promise<WrappedStats> {
   if (actualBalances) stats.bags = bagStats([...positions.values()].filter((p) => p.chain === "solana"));
   a.onStage?.("crunching", "Checking how early you bought");
   stats.sniper = left(15_000) ? await sniperStats([...positions.values()], Math.min(Date.now() + 75_000, a.finishBy ?? Infinity) - (a.finishBy ? 5_000 : 0)).catch(() => undefined) : undefined;
-  stats.pumpfun = await pumpStats([...positions.values()], events, pbx, stats.sniper, a.finishBy ? a.finishBy - 3_000 : undefined).catch(() => undefined);
+  if (stats.pumpfun && stats.sniper && !stats.sniper.sampled) stats.pumpfun.launched = stats.sniper.launched;
   // Last: the personality uses every stat, including the sniper and bags ones computed above.
   stats.archetype = personality(stats);
   stats.achievements = detectAchievements({ stats, positions: [...positions.values()], events, pb: pbx, now });

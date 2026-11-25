@@ -50,16 +50,19 @@ async function View({ params }: { params: Promise<{ id: string }> }) {
 
       <section className="space-y-3 rounded-3xl border border-white/10 bg-white/[0.05] p-5">
         <h2 className="font-display text-2xl font-bold">Did they graduate?</h2>
-        <p className="opacity-80">Of the pump.fun coins you bought, <b className="text-emerald-300">{num(p.graduated)}</b> graduated ({known ? Math.round((p.graduated / known) * 100) : 0}%). Read from pump.fun&apos;s own records on the chain.</p>
+        {known ? <p className="opacity-80">Of the pump.fun coins we could check, <b className="text-emerald-300">{num(p.graduated)}</b> graduated ({Math.round((p.graduated / known) * 100)}%). Read from pump.fun&apos;s own records on the chain.</p>
+          : <p className="opacity-80">Graduation status couldn&apos;t be checked for this lookup. Try this wallet again later.</p>}
         <div className="flex h-4 overflow-hidden rounded-full bg-white/10">
           <div style={{ width: seg(p.graduatedAlive), background: "#4ADE80" }} />
           <div style={{ width: seg(dead), background: "#FACC15" }} />
           <div style={{ width: seg(p.neverGraduated), background: "#F87171" }} />
         </div>
         <div className="flex flex-wrap gap-x-5 gap-y-1 text-sm">
-          <Legend c="#4ADE80" k="Graduated, still trading" n={p.graduatedAlive} />
-          <Legend c="#FACC15" k="Graduated, then died" n={dead} />
-          <Legend c="#F87171" k="Never graduated" n={p.neverGraduated} />
+          {known > 0 && <>
+            <Legend c="#4ADE80" k="Graduated, still trading" n={p.graduatedAlive} />
+            <Legend c="#FACC15" k="Graduated, then died" n={dead} />
+            <Legend c="#F87171" k="Never graduated" n={p.neverGraduated} />
+          </>}
           {p.unchecked > 0 && <Legend c="rgba(255,255,255,0.4)" k="Couldn't check" n={p.unchecked} />}
         </div>
         {(p.launched ?? 0) > 0 && <p className="text-sm opacity-85">You also launched <b>{num(p.launched!)}</b> coin{p.launched === 1 ? "" : "s"} yourself.</p>}

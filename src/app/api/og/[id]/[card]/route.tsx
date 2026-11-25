@@ -95,8 +95,9 @@ function content(s: WrappedStats, card: CardId, rarity: Record<string, number> |
     case "pumpGrad": {
       const p = s.pumpfun!;
       const known = p.graduated + p.neverGraduated;
+      if (!known) return { kicker: "Pump.fun · did they graduate?", big: "Status unavailable", sub: `${p.unchecked} coins couldn't be checked during this lookup` };
       return { kicker: "Pump.fun · did they graduate?", lead: "Of the pump.fun coins I bought", big: `${p.graduated} graduated`, bigColor: "#4ADE80",
-        sub: `${known ? Math.round((p.graduated / known) * 100) : 0}% · ${p.graduatedAlive} still trading · ${p.neverGraduated} never graduated${p.launched ? ` · I launched ${p.launched}` : ""}` };
+        sub: `${Math.round((p.graduated / known) * 100)}% of those checked · ${p.graduatedAlive} still trading · ${p.neverGraduated} never graduated${p.unchecked ? ` · ${p.unchecked} unchecked` : ""}${p.launched ? ` · I launched ${p.launched}` : ""}` };
     }
     case "pumpBest": {
       const p = s.pumpfun!;

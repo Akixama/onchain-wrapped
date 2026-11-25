@@ -866,17 +866,19 @@ const PumpGrad = ({ s }: CardProps) => {
     <>
       <Kicker>Pump.fun Wrapped &middot; Graduation</Kicker>
       <Body className="space-y-5">
-        <Line className="text-xl opacity-80">Of the pump.fun coins you bought,</Line>
-        <BigNumber className="text-[76px] @3xl:text-[106px]" color="#4ADE80"><CountUp value={p.graduated} format={(n) => num(Math.round(n))} /> <span className="text-[0.4em] opacity-70">graduated</span></BigNumber>
-        <Line className="text-xl opacity-80">That&apos;s <b>{known ? Math.round((p.graduated / known) * 100) : 0}%</b>. The rest never left the bonding curve.</Line>
-        <R><motion.div variants={rise} className="space-y-3">
+        {known > 0 ? <>
+          <Line className="text-xl opacity-80">Of the pump.fun coins you bought,</Line>
+          <BigNumber className="text-[76px] @3xl:text-[106px]" color="#4ADE80"><CountUp value={p.graduated} format={(n) => num(Math.round(n))} /> <span className="text-[0.4em] opacity-70">graduated</span></BigNumber>
+          <Line className="text-xl opacity-80">That&apos;s <b>{Math.round((p.graduated / known) * 100)}%</b> of the coins we could check.</Line>
+        </> : <Line className="text-xl opacity-80">Graduation status couldn&apos;t be checked for this lookup.</Line>}
+        {known > 0 && <R><motion.div variants={rise} className="space-y-3">
           {rows.map(([k, n, c]) => (
             <div key={k}>
               <div className="flex justify-between text-sm"><span className="opacity-80">{k}</span><b className="tabular-nums">{num(n)}</b></div>
               <div className="mt-1 h-2.5 overflow-hidden rounded-full bg-white/10"><div className="h-full rounded-full" style={{ width: `${known ? Math.max(2, (n / known) * 100) : 0}%`, background: c }} /></div>
             </div>
           ))}
-        </motion.div></R>
+        </motion.div></R>}
         {(p.launched ?? 0) > 0 && <Line className="text-base opacity-85">And you launched <b>{num(p.launched!)}</b> coin{p.launched === 1 ? "" : "s"} yourself.</Line>}
         {p.unchecked > 0 && <Line className="text-xs opacity-55">{num(p.unchecked)} couldn&apos;t be checked.</Line>}
         <PumpLink />

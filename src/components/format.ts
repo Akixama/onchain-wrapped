@@ -147,7 +147,8 @@ export function shareText(s: WrappedStats, card: CardId): string {
     }
     case "pumpGrad": {
       const p = s.pumpfun; if (!p) return tail;
-      return `Of the pump.fun coins I bought, ${p.graduated} graduated (${p.graduatedAlive} still trading) and ${p.neverGraduated} never left the bonding curve. ${tail}`;
+      if (p.graduated + p.neverGraduated === 0) return `I bought ${p.coins} pump.fun coins, but their graduation status couldn't be checked this time. ${tail}`;
+      return `Of the pump.fun coins I bought, ${p.graduated} graduated (${p.graduatedAlive} still trading) and ${p.neverGraduated} never left the bonding curve.${p.unchecked ? ` ${p.unchecked} couldn't be checked.` : ""} ${tail}`;
     }
     case "pumpBest": {
       const p = s.pumpfun; if (!p) return tail;
