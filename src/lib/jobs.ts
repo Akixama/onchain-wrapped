@@ -8,6 +8,7 @@ import { rankActivity } from "./percentile";
 import { runWrapped, type FetchSlots, type Timeframe } from "./pipeline";
 import { makeRoast } from "./roast";
 import { recordAchievements } from "./rarity";
+import { recordWrap } from "./sitestats";
 import { clearCheckpoint, findRecent, getJob, loadCheckpoint, lookupKey, newId, putJob, rememberKey, saveCheckpoint, type Job } from "./store";
 import { kv } from "./infra/kv";
 import { liveZerionKey } from "./chains/zerion-keys";
@@ -184,6 +185,7 @@ export async function runJob(id: string) {
     job.stats = stats;
     job.status = "done";
     job.progress = { stage: "done", message: "Done", fetched: job.progress?.fetched ?? 0 };
+    await recordWrap(job.id, stats).catch(() => {});
   } catch (e) {
     // A one-off failure (a provider timing out, a dropped connection) shouldn't end the lookup:
     // restart this part from the last save, a few times, before showing an error.

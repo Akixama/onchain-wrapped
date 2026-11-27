@@ -12,6 +12,10 @@ export interface KV {
   zadd(key: string, score: number, member: string): Promise<void>;
   zcount(key: string, min: number | "-inf", max: number | "+inf"): Promise<number>;
   zcard(key: string): Promise<number>;
+  /** Members with scores, by rank (rev = highest score first). stop -1 = to the end. */
+  zrange(key: string, start: number, stop: number, rev?: boolean): Promise<[string, number][]>;
+  /** Keep only the `keep` highest-scored members. */
+  ztrim(key: string, keep: number): Promise<void>;
 }
 
 // Vercel's Upstash integration names them KV_REST_API_*; Upstash's own console uses UPSTASH_REDIS_REST_*.
@@ -64,6 +68,15 @@ const redisKV: KV = {
   },
   async zcard(key) {
     return (await redis<number>([["ZCARD", key]]))[0];
+  },
+  async zrange(key, start, stop, rev) {
+    const [flat] = await redis<string[]>([["ZRANGE", key, start, stop, ...(rev ? ["REV"] : []), "WITHSCORES"]]);
+    const out: [string, number][] = [];
+    for (let i = 0; i + 1 < (flat ?? []).length; i += 2) out.push([flat[i], Number(flat[i + 1])]);
+    return out;
+  },
+  async ztrim(key, keep) {
+    await redis([["ZREMRANGEBYRANK", key, 0, -(keep + 1)]]);
   },
 };
 
@@ -132,6 +145,17 @@ const fileKV: KV = {
   },
   async zcard(key) {
     return Object.keys(((await lread(key))?.v as Record<string, number>) ?? {}).length;
+  },
+  async zrange(key, start, stop, rev) {
+    const z = ((await lread(key))?.v as Record<string, number>) ?? {};
+    const all = Object.entries(z).sort((a, b) => (rev ? b[1] - a[1] : a[1] - b[1]));
+    return all.slice(start, stop === -1 ? undefined : stop + 1);
+  },
+  async ztrim(key, keep) {
+    const e = await lread(key);
+    const z = (e?.v as Record<string, number>) ?? {};
+    const kept = Object.entries(z).sort((a, b) => b[1] - a[1]).slice(0, keep);
+    await lwrite(key, { v: Object.fromEntries(kept) });
   },
 };
 

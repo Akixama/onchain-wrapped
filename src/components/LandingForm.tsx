@@ -13,13 +13,13 @@ const looksValid = (s: string) =>
     ? /^0x[a-fA-F0-9]{40}$/.test(s) || /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s) || /^[^\s]+\.[a-z0-9]+$/i.test(s)
     : /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(s) || /^[a-z0-9-_.]+\.(sol|sns)$/i.test(s);
 
-export function LandingForm() {
+export function LandingForm({ variant = "full", initialView = "all", lockView = false }: { variant?: "full" | "hero"; initialView?: "all" | "pump"; lockView?: boolean } = {}) {
   const router = useRouter();
   const [wallets, setWallets] = useState<string[]>([]);
   const [draft, setDraft] = useState("");
   const [timeframe, setTimeframe] = useState<Timeframe>("12m");
   // What to open when it's ready: the full story, or just the Pump.fun Wrapped page. Same lookup either way.
-  const [view, setView] = useState<"all" | "pump">("all");
+  const [view, setView] = useState<"all" | "pump">(initialView);
   // Custom range ("YYYY-MM-DD"). Filled when Custom is picked: the page is pre-rendered, where "today" isn't available.
   const [range, setRange] = useState<{ from: string; to: string; min: string; max: string } | null>(null);
   const pickCustom = () => {
@@ -87,56 +87,76 @@ export function LandingForm() {
 
   const seg = (on: boolean) =>
     `rounded-lg transition-colors duration-150 ${on ? "bg-ink-3 text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]" : "text-fg-2 hover:text-fg"}`;
-  return (
-    <form onSubmit={submit} className="space-y-3">
+  const hero = variant === "hero";
+  const label = busy || navigating ? "Starting…" : hero
+    ? (view === "pump" ? "Wrap my pump.fun" : "Wrap it")
+    : (view === "pump" ? "Wrap my pump.fun " : "Wrap my ") + (timeframe === "12m" ? "year" : timeframe === "custom" ? "dates" : TIMEFRAME_LABEL[timeframe].toLowerCase());
+
+  const chips = wallets.length > 0 && (
+    <div className={`flex flex-wrap gap-2 ${hero ? "pl-2" : "px-3 pt-3"}`}>
+      {wallets.map((w) => (
+        <span key={w} className="inline-flex max-w-full items-center gap-1 rounded-md bg-ink-3 py-1 pl-2 pr-1 font-mono text-xs">
+          <span className="truncate">{w.length > 16 ? `${w.slice(0, 6)}…${w.slice(-4)}` : w}</span>
+          <button type="button" aria-label={`Remove ${w}`} onClick={() => setWallets((x) => x.filter((y) => y !== w))}
+            className="grid h-5 w-5 place-items-center rounded text-fg-3 transition-colors hover:bg-ink-2 hover:text-fg"><X className="h-3.5 w-3.5" strokeWidth={1.5} /></button>
+        </span>
+      ))}
+    </div>
+  );
+  const input = (
+    <input
+      value={draft}
+      onChange={(e) => setDraft(e.target.value)}
+      onPaste={(e) => { const t = e.clipboardData.getData("text"); if (/[\s,;]/.test(t.trim())) { e.preventDefault(); addFrom(t); } }}
+      onKeyDown={(e) => {
+        if ((e.key === "Enter" && draft.trim() && wallets.length) || e.key === "," || e.key === " ") { e.preventDefault(); addFrom(draft); }
+        if (e.key === "Backspace" && !draft && wallets.length) setWallets((w) => w.slice(0, -1));
+      }}
+      onBlur={() => draft.trim() && addFrom(draft)}
+      placeholder={wallets.length ? "Add another wallet (optional)" : (EVM_ENABLED ? "Wallet address, vitalik.eth or toly.sol" : hero ? "Solana wallet or .sol name" : "Solana wallet address or toly.sol")}
+      aria-label="Wallet address or name"
+      autoComplete="off" autoCapitalize="off" spellCheck={false}
+      className={`h-12 w-full min-w-0 bg-transparent px-4 text-base outline-none placeholder:text-fg-3 ${hero ? "flex-1 basis-40" : ""}`}
+    />
+  );
+  const submitBtn = (
+    <button disabled={busy || navigating}
+      className={`rounded-xl bg-accent font-display font-medium text-white transition-[transform,opacity,background-color] duration-150 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink ${hero ? "accent-glow h-12 shrink-0 px-6 text-[16px]" : "h-12 w-full text-[17px] shadow-[inset_0_1px_0_rgba(255,255,255,0.18)]"}`}>
+      {label}
+    </button>
+  );
+  const viewToggle = !lockView && (
+    hero ? (
+      <div className="flex gap-1 rounded-xl border border-line bg-ink-0/80 p-1 text-xs" role="radiogroup" aria-label="What to see">
+        {([["all", "Full Wrapped"], ["pump", "Pump.fun only"]] as const).map(([v, l]) => (
+          <button key={v} type="button" role="radio" aria-checked={view === v} onClick={() => setView(v)} className={`${seg(view === v)} h-8 px-3`}>{l}</button>
+        ))}
+      </div>
+    ) : (
       <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-ink-0 p-1 text-sm" role="radiogroup" aria-label="What to see">
-        {([["all", "Full Wrapped", "Everything you traded"], ["pump", "Pump.fun Wrapped", "Just your pump.fun coins"]] as const).map(([v, label, hint]) => (
+        {([["all", "Full Wrapped", "Everything you traded"], ["pump", "Pump.fun Wrapped", "Just your pump.fun coins"]] as const).map(([v, l, hint]) => (
           <button key={v} type="button" role="radio" aria-checked={view === v} onClick={() => setView(v)} className={`${seg(view === v)} px-3 py-2 text-left`}>
-            <span className="block font-medium leading-5">{label}</span>
+            <span className="block font-medium leading-5">{l}</span>
             <span className="block text-xs leading-4 text-fg-3">{hint}</span>
           </button>
         ))}
       </div>
-      <div className="rounded-xl border border-line bg-ink-2 transition-colors duration-150 focus-within:border-[rgb(201_162_245/0.5)]">
-        {wallets.length > 0 && (
-          <div className="flex flex-wrap gap-2 px-3 pt-3">
-            {wallets.map((w) => (
-              <span key={w} className="inline-flex max-w-full items-center gap-1 rounded-md bg-ink-3 py-1 pl-2 pr-1 font-mono text-xs">
-                <span className="truncate">{w.length > 16 ? `${w.slice(0, 6)}…${w.slice(-4)}` : w}</span>
-                <button type="button" aria-label={`Remove ${w}`} onClick={() => setWallets((x) => x.filter((y) => y !== w))}
-                  className="grid h-5 w-5 place-items-center rounded text-fg-3 transition-colors hover:bg-ink-2 hover:text-fg"><X className="h-3.5 w-3.5" strokeWidth={1.5} /></button>
-              </span>
-            ))}
-          </div>
-        )}
-        <input
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onPaste={(e) => { const t = e.clipboardData.getData("text"); if (/[\s,;]/.test(t.trim())) { e.preventDefault(); addFrom(t); } }}
-          onKeyDown={(e) => {
-            if ((e.key === "Enter" && draft.trim() && wallets.length) || e.key === "," || e.key === " ") { e.preventDefault(); addFrom(draft); }
-            if (e.key === "Backspace" && !draft && wallets.length) setWallets((w) => w.slice(0, -1));
-          }}
-          onBlur={() => draft.trim() && addFrom(draft)}
-          placeholder={wallets.length ? "Add another wallet (optional)" : (EVM_ENABLED ? "Wallet address, vitalik.eth or toly.sol" : "Solana wallet address or toly.sol")}
-          aria-label="Wallet address or name"
-          autoComplete="off" autoCapitalize="off" spellCheck={false}
-          className="h-12 w-full bg-transparent px-4 text-base outline-none placeholder:text-fg-3"
-        />
-      </div>
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-1 rounded-xl border border-line bg-ink-0 p-1 text-sm" role="radiogroup" aria-label="Timeframe">
-          {([["1m", "1M"], ["3m", "3M"], ["6m", "6M"], ["12m", "1Y"]] as const).map(([v, l]) => (
-            <button key={v} type="button" role="radio" aria-checked={timeframe === v} aria-label={TIMEFRAME_LABEL[v]} onClick={() => setTimeframe(v)}
-              className={`${seg(timeframe === v)} h-8 px-3 font-mono text-xs sm:px-4`}>{l}</button>
-          ))}
-          <button type="button" role="radio" aria-checked={timeframe === "custom"} aria-label="Custom dates" onClick={pickCustom}
-            className={`${seg(timeframe === "custom")} h-8 px-3 text-xs sm:px-4`}>Custom</button>
-        </div>
-        <span className="font-mono text-xs text-fg-3">{wallets.length}/{MAX} wallets</span>
-      </div>
+    )
+  );
+  const timeframeRow = (
+    <div className={`flex flex-wrap gap-1 rounded-xl border border-line p-1 text-sm ${hero ? "bg-ink-0/80" : "bg-ink-0"}`} role="radiogroup" aria-label="Timeframe">
+      {([["1m", "1M"], ["3m", "3M"], ["6m", "6M"], ["12m", "1Y"]] as const).map(([v, l]) => (
+        <button key={v} type="button" role="radio" aria-checked={timeframe === v} aria-label={TIMEFRAME_LABEL[v]} onClick={() => setTimeframe(v)}
+          className={`${seg(timeframe === v)} h-8 px-3 font-mono text-xs sm:px-4`}>{l}</button>
+      ))}
+      <button type="button" role="radio" aria-checked={timeframe === "custom"} aria-label="Custom dates" onClick={pickCustom}
+        className={`${seg(timeframe === "custom")} h-8 px-3 text-xs sm:px-4`}>Custom</button>
+    </div>
+  );
+  const extras = (
+    <>
       {timeframe === "custom" && range && (
-        <div className="grid grid-cols-2 gap-3 text-sm">
+        <div className="grid grid-cols-2 gap-3 text-left text-sm">
           {(["from", "to"] as const).map((k) => (
             <label key={k} className="space-y-1">
               <span className="block text-xs text-fg-2">{k === "from" ? "From" : "To"}</span>
@@ -149,17 +169,45 @@ export function LandingForm() {
       )}
       {size?.key === sizeKey && size.checking && <p className="text-center text-xs text-fg-3">Checking wallet size…</p>}
       {size?.key === sizeKey && !size.checking && size.fits === false && (
-        <p role="status" className="rounded-xl border border-[rgb(229_180_84/0.2)] bg-[rgb(229_180_84/0.08)] px-4 py-3 text-sm text-[#e5c07b]">
+        <p role="status" className="rounded-xl border border-[rgb(229_180_84/0.2)] bg-[rgb(229_180_84/0.08)] px-4 py-3 text-left text-sm text-[#e5c07b]">
           {size.capacity! < 1000
             ? <>This wallet is flooded with bot transactions and today&apos;s free data is used up. Try again tomorrow for a full result.</>
             : <>Big wallet: it has more transactions in this period than today&apos;s free data can read (about {Math.round(size.capacity! / 1000).toLocaleString()}k). Pick a shorter period to get it all now, or the result will be partial.</>}
         </p>
       )}
-      <button disabled={busy || navigating}
-        className="h-12 w-full rounded-xl bg-accent font-display text-[17px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-[transform,opacity,background-color] duration-150 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink">
-        {busy || navigating ? "Starting…" : (view === "pump" ? "Wrap my pump.fun " : "Wrap my ") + (timeframe === "12m" ? "year" : timeframe === "custom" ? "dates" : TIMEFRAME_LABEL[timeframe].toLowerCase())}
-      </button>
       {error && <p role="alert" className="text-center text-sm text-neg">{error}</p>}
+    </>
+  );
+
+  if (hero) {
+    return (
+      <form onSubmit={submit} className="space-y-3">
+        <div className="flex flex-wrap items-center gap-1 rounded-2xl border border-line bg-ink-2/85 p-1.5 backdrop-blur transition-colors duration-150 focus-within:border-[rgb(201_162_245/0.5)]">
+          {chips}
+          {input}
+          {submitBtn}
+        </div>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          {viewToggle}
+          {timeframeRow}
+        </div>
+        {extras}
+      </form>
+    );
+  }
+  return (
+    <form onSubmit={submit} className="space-y-3">
+      {viewToggle}
+      <div className="rounded-xl border border-line bg-ink-2 transition-colors duration-150 focus-within:border-[rgb(201_162_245/0.5)]">
+        {chips}
+        {input}
+      </div>
+      <div className="flex items-center justify-between gap-3">
+        {timeframeRow}
+        <span className="font-mono text-xs text-fg-3">{wallets.length}/{MAX} wallets</span>
+      </div>
+      {extras}
+      {submitBtn}
       <p className="text-xs leading-5 text-fg-3">Got more than one wallet? Add them all. Transfers between your own wallets don&apos;t count as trades.</p>
     </form>
   );

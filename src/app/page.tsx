@@ -1,122 +1,94 @@
 import Link from "next/link";
 import { Suspense } from "react";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { LandingForm } from "@/components/LandingForm";
 import { TipFab } from "@/components/TipJar";
-import { Logo } from "@/components/Logo";
-import { CHAIN_NAME, num, pct, usd } from "@/components/format";
-import { EVM_ENABLED } from "@/lib/site";
-import { getJob } from "@/lib/store";
+import { RibbonField } from "@/components/site/RibbonField";
+import { LiveNumbers, RecentWraps } from "@/components/site/live";
+import { StatusBadge } from "@/components/site/StatusBadge";
+import { Rows, SectionTitle, SiteFooter, SiteHeader } from "@/components/site/SiteChrome";
+import { ExampleCard } from "@/components/site/ExampleCard";
 
-const ALL_DEMOS = [
-  { id: "sol-sniper", label: "Solana sniper", sub: "461 memecoin trades" },
-  { id: "machi", label: "machibigbrother.eth", sub: "EVM → Hyperliquid", evm: true },
-  { id: "sol-memes", label: "Memecoin trader", sub: "28,065 trades" },
-  { id: "sol-cluster", label: "One trader, 3 wallets", sub: "Merged identity" },
+const INSIDE: [string, string][] = [
+  ["Your era", "The kind of trader your year says you are, from how you actually traded."],
+  ["The bottom line", "Profit or loss from trading, at the prices when you traded, with wins and losses counted."],
+  ["Best and worst trade", "The coin that paid the most and the one that cost the most, each with its chart."],
+  ["The round trip", "The coin that was up big while you held it and gave it all back."],
+  ["Paper hands", "The coin you sold early, and what it would have been worth if you'd held."],
+  ["Rugs and snipes", "Coins that died in your bag, the ones you got out of, and how fast you bought new launches."],
+  ["Sleep schedule", "The hour you trade most, read from your own transactions."],
+  ["The roast", "A short, honest roast of your year to share."],
 ];
-const DEMOS = ALL_DEMOS.filter((d) => EVM_ENABLED || !("evm" in d));
-const CHAINS = EVM_ENABLED ? ["solana", "ethereum", "base", "arbitrum", "bsc", "polygon", "optimism"] : ["solana"];
-const PREVIEW_ID = "sol-memes";
+
+const REAL: [string, string][] = [
+  ["Read from the chain", "Every transaction comes from Solana itself, not from an app's history."],
+  ["Prices at the time", "Each trade is valued at the price when it happened, from public market data."],
+  ["Your own transfers", "Moving coins between wallets you add together is not counted as a trade."],
+  ["Estimates", "Some tiny coins have no reliable price; the story says when numbers are partial."],
+  ["Read-only", "No wallet connect, no keys, no signatures. Anyone can wrap any public wallet."],
+];
 
 export default function Home() {
   return (
     <main className="min-h-[100dvh] bg-ink-1 text-fg">
-      <div className="mx-auto flex min-h-[100dvh] max-w-6xl flex-col px-4 pb-24 pt-5 sm:px-8">
-        <header className="flex h-10 items-center justify-between">
-          <Logo />
-          <span className="text-sm text-fg-3">Free, no sign-up</span>
-        </header>
+      <SiteHeader />
 
-        <section className="grid flex-1 items-center gap-12 py-12 lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)] lg:gap-16 lg:py-16">
-          <div className="rise-in space-y-8">
-            <div className="space-y-4">
-              <h1 className="font-display text-[40px] font-medium leading-[1.04] tracking-[-0.02em] sm:text-[60px] sm:tracking-[-0.03em]">
-                Your Solana trading year, wrapped
-              </h1>
-              <p className="max-w-[36rem] text-lg leading-7 text-fg-2">
-                Best trade, worst trade, the round trip that hurt, the fees you burned. {EVM_ENABLED ? "Every chain, every wallet, one story." : "Every wallet you own, one story, checked against the chain."}
-              </p>
-            </div>
-            <LandingForm />
+      <section id="wrap" className="relative flex min-h-[calc(100svh-56px)] scroll-mt-14 items-center overflow-hidden border-b border-line">
+        <RibbonField variant="center" />
+        <div className="relative mx-auto w-full max-w-5xl px-4 pb-36 pt-10 text-center sm:px-8 sm:pb-40">
+          <div className="rise-in space-y-6">
+            <span className="inline-flex items-center gap-2 rounded-full border border-line bg-ink-2/80 px-3 py-1 text-xs text-fg-2 backdrop-blur">
+              <StatusBadge kind="live" /> Updating live
+            </span>
+            <h1 className="display text-[52px] sm:text-[80px] lg:text-[100px]">
+              Your trading year,<br /><span className="text-accent-ink">wrapped.</span>
+            </h1>
+            <p className="mx-auto max-w-xl text-lg text-fg-2">
+              Paste a Solana wallet. Get your best trade, your worst, the round trip that hurt and the fees you burned, as a story checked against the chain.
+            </p>
+            <div className="mx-auto max-w-2xl"><LandingForm variant="hero" /></div>
+            <Link href="/examples" className="inline-flex items-center gap-1 text-sm text-fg-2 transition-colors hover:text-fg">
+              or open a real example <ArrowRight className="h-4 w-4" strokeWidth={1.5} />
+            </Link>
           </div>
+          <LiveNumbers className="mx-auto mt-10 max-w-2xl" />
+        </div>
+      </section>
 
-          <Suspense fallback={<div className="hidden h-[520px] lg:block" />}>
-            <Preview />
-          </Suspense>
+      <div className="mx-auto max-w-6xl space-y-24 px-4 py-20 sm:space-y-32 sm:px-8 sm:py-28">
+        <section className="space-y-8">
+          <SectionTitle sub="Lookups as they finish. Only the kind of trader and the size, never the wallet.">Watch it wrap.</SectionTitle>
+          <RecentWraps />
         </section>
 
-        <section className="space-y-3 border-t border-line pt-8">
-          <h2 className="text-sm text-fg-2">Or open a real wallet</h2>
-          <div className="grid gap-2 sm:grid-cols-3">
-            {DEMOS.map((d) => (
-              <Link key={d.id} href={`/w/${d.id}`}
-                className="group flex items-center justify-between gap-3 rounded-xl border border-line bg-ink-2 px-4 py-3 transition-colors duration-150 hover:bg-ink-3">
-                <span className="min-w-0">
-                  <span className="block truncate text-sm font-medium">{d.label}</span>
-                  <span className="block font-mono text-xs text-fg-3">{d.sub}</span>
-                </span>
-                <ArrowUpRight className="h-4 w-4 shrink-0 text-fg-3 transition-colors group-hover:text-fg" strokeWidth={1.5} />
-              </Link>
+        <section className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-16">
+          <div className="space-y-6">
+            <SectionTitle sub="Up to 30 swipeable cards, only the ones your year earned.">What&apos;s inside.</SectionTitle>
+            <Rows items={INSIDE} />
+          </div>
+          <div className="lg:pt-24">
+            <Suspense fallback={<div className="h-[560px] rounded-[20px] border border-line bg-ink-2" />}>
+              <ExampleCard id="sol-memes" label="Memecoin trader" />
+            </Suspense>
+          </div>
+        </section>
+
+        <section className="space-y-6">
+          <SectionTitle sub="What the numbers are built from, so you can trust them or argue with them.">What is real, and what is not.</SectionTitle>
+          <dl className="divide-y divide-line">
+            {REAL.map(([k, v]) => (
+              <div key={k} className="grid gap-1 py-4 sm:grid-cols-[240px_1fr] sm:gap-6">
+                <dt className="font-display font-semibold">{k}</dt>
+                <dd className="text-fg-2">{v}</dd>
+              </div>
             ))}
-          </div>
+          </dl>
+          <Link href="/how" className="inline-flex items-center gap-1 text-sm text-fg-2 transition-colors hover:text-fg">How it works <ArrowRight className="h-4 w-4" strokeWidth={1.5} /></Link>
         </section>
-
-        <footer className="mt-8 flex flex-col gap-1 pr-16 text-xs text-fg-3 sm:flex-row sm:justify-between sm:pr-40">
-          <span>{CHAINS.map((c) => CHAIN_NAME[c]).join(" · ")} only. Read-only public data</span>
-          <span>Numbers are estimates, not financial or tax advice</span>
-        </footer>
       </div>
+
+      <SiteFooter />
       <TipFab />
     </main>
-  );
-}
-
-/** What you get: the summary of a real demo Wrapped, as story segments and a receipt. */
-async function Preview() {
-  const s = (await getJob(PREVIEW_ID))?.stats;
-  if (!s) return null;
-  const rows: [string, string, string?][] = [
-    ["Trades", num(s.overview.totalTrades)],
-    ["Coins traded", num(s.overview.tokensTraded)],
-    ["Win rate", pct(s.pnl.winRate)],
-    ...(s.bestTrade ? [["Best trade", `$${s.bestTrade.symbol}  ${usd(s.bestTrade.pnlUsd, { sign: true })}`, "pos"] as [string, string, string]] : []),
-    ...(s.worstTrade ? [["Worst trade", `$${s.worstTrade.symbol}  ${usd(s.worstTrade.pnlUsd, { sign: true })}`, "neg"] as [string, string, string]] : []),
-    ["Fees burned", usd(s.gas.totalUsd)],
-  ];
-  const total = s.pnl.totalUsd;
-  return (
-    <Link href={`/w/${PREVIEW_ID}`} aria-label="Open this example Wrapped"
-      className="rise-in group mx-auto block w-full max-w-[400px] rounded-[20px] border border-line bg-ink-2 p-5 shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-colors duration-150 [animation-delay:80ms] hover:border-[rgb(238_240_245/0.16)] lg:mr-0">
-      <div className="flex gap-1" aria-hidden>
-        {Array.from({ length: 12 }, (_, i) => (
-          <span key={i} className={`h-[3px] flex-1 rounded-full ${i === 0 ? "bg-accent-ink" : "bg-[rgb(238_240_245/0.14)]"}`} />
-        ))}
-      </div>
-      <div className="mt-5 flex items-center justify-between font-mono text-xs text-fg-3">
-        <span>Example · last 12 months</span>
-        <span>1 / 12</span>
-      </div>
-      <div className="mt-8 space-y-1">
-        <div className="text-sm text-fg-2">{s.archetype.title}</div>
-        <div className={`font-mono text-[44px] font-medium leading-none tabular-nums tracking-[-0.02em] ${total >= 0 ? "text-pos" : "text-neg"}`}>
-          {usd(total, { sign: true })}
-        </div>
-        <div className="text-sm text-fg-3">from trading, on {usd(s.overview.volumeUsd)} volume</div>
-      </div>
-      <dl className="mt-8 divide-y divide-dashed divide-[rgb(238_240_245/0.1)] border-y border-dashed border-[rgb(238_240_245/0.1)]">
-        {rows.map(([k, v, tone]) => (
-          <div key={k} className="flex items-center justify-between gap-4 py-2.5 text-sm">
-            <dt className="text-fg-2">{k}</dt>
-            <dd className={`truncate whitespace-pre font-mono tabular-nums ${tone === "pos" ? "text-pos" : tone === "neg" ? "text-neg" : "text-fg"}`}>{v}</dd>
-          </div>
-        ))}
-      </dl>
-      <div className="mt-5 flex items-center justify-between text-sm">
-        <span className="text-fg-3">Checked against the chain</span>
-        <span className="inline-flex items-center gap-1 text-fg transition-colors group-hover:text-accent-ink">
-          Open it <ArrowUpRight className="h-4 w-4" strokeWidth={1.5} />
-        </span>
-      </div>
-    </Link>
   );
 }
