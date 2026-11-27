@@ -7,7 +7,7 @@ import { NARRATIVE_LABEL } from "@/lib/engine/extras";
 import { CARD_THEME, CHAIN_COLOR, CHAIN_NAME, hourLabel, num, pct, periodLabel, price, usd, whoLabel, afterLaunch, waitLabel, tradeMath } from "@/components/format";
 import { EVM_ENABLED } from "@/lib/site";
 import { ACHIEVEMENT_BY_ID, ACHIEVEMENTS, TIER_LABEL } from "@/lib/achievements-catalog";
-import { liveCards, rarestFirst } from "@/components/format";
+import { liveCards, pumpStoryCards, rarestFirst } from "@/components/format";
 import { getRarity } from "@/lib/rarity";
 
 // Fonts are the same for every request: read once.
@@ -17,6 +17,7 @@ const [display, body, bodySemi] = await Promise.all([
   readFile(join(fontDir, "inter-latin-400-normal.woff")),
   readFile(join(fontDir, "inter-latin-600-normal.woff")),
 ]);
+const logo = `data:image/png;base64,${(await readFile(join(process.cwd(), "assets", "logo-96.png"))).toString("base64")}`;
 
 const W = 1200, H = 630;
 const green = "#4ADE80", red = "#F87171";
@@ -105,6 +106,17 @@ function content(s: WrappedStats, card: CardId, rarity: Record<string, number> |
       return { kicker: "My best & worst pump", lead: `$${c.symbol}`, big: m(c.pnlUsd, true), bigColor: signColor(c.pnlUsd),
         sub: p.best && p.worst ? `Worst: $${p.worst.symbol} ${m(p.worst.pnlUsd)}` : `Put in ${m(c.costUsd)}, got back ${m(c.proceedsUsd)}` };
     }
+    case "pumpCoins": {
+      const p = s.pumpfun!;
+      const l = p.list ?? [];
+      return { kicker: "My biggest pump.fun bets", big: l[0] ? `$${l[0].symbol}` : `${num(p.coins)} coins`, bigColor: l[0] ? signColor(l[0].pnlUsd) : undefined,
+        sub: l.slice(0, 4).map((c) => `$${c.symbol} ${m(c.pnlUsd, true)}`).join(" · ") };
+    }
+    case "pumpSummary": {
+      const p = s.pumpfun!;
+      return { kicker: "My Pump.fun Wrapped", lead: `${num(p.coins)} coins · ${num(p.trades)} trades`, big: m(p.pnlUsd, true), bigColor: signColor(p.pnlUsd),
+        sub: [p.graduated + p.neverGraduated ? `${p.graduated} graduated` : "", p.best ? `best: $${p.best.symbol} ${m(p.best.pnlUsd, true)}` : ""].filter(Boolean).join(" · ") };
+    }
     case "achievements": {
       const e = rarestFirst(s.achievements!.earned, rarity);
       const top = e[0] && ACHIEVEMENT_BY_ID[e[0].id];
@@ -165,7 +177,7 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/og/[id]/[card]"
   const job = await getJob(id);
   const s = job?.stats;
   const card = (rawCard.replace(/\.png$/, "") as CardId) || "summary";
-  const valid = s && (liveCards(s).includes(card) || card === "summary");
+  const valid = s && (liveCards(s).includes(card) || pumpStoryCards(s).includes(card) || card === "summary");
   const rarity = valid && card === "achievements" ? await getRarity().then((r) => r.pct).catch(() => null) : null;
   const c: Content = valid ? content(s, card, rarity) : { kicker: "Wrapped Onchain", big: "Your onchain year, wrapped.", sub: "Paste any Solana wallet." };
   const t = CARD_THEME[valid ? card : "summary"];
@@ -180,7 +192,9 @@ export async function GET(_req: Request, ctx: RouteContext<"/api/og/[id]/[card]"
         <div style={{ display: "flex", flexDirection: "column", justifyContent: "space-between", padding: "64px 72px", width: "100%", position: "relative" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: 4, textTransform: "uppercase", opacity: 0.75 }}>{c.kicker}</div>
-            <div style={{ display: "flex", fontFamily: "SpaceGrotesk", fontSize: 28 }}>
+            <div style={{ display: "flex", alignItems: "center", fontFamily: "SpaceGrotesk", fontSize: 28 }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={logo} width={40} height={40} alt="" style={{ marginRight: 12 }} />
               Wrapped&nbsp;<span style={{ opacity: 0.6 }}>Onchain</span>
             </div>
           </div>

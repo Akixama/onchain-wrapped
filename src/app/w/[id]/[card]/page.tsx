@@ -8,7 +8,7 @@ export const generateMetadata = (props: PageProps<"/w/[id]/[card]">) => wrappedM
 export default function Page(props: PageProps<"/w/[id]/[card]">) {
   return (
     <Suspense fallback={<Loading />}>
-      <WrappedView params={props.params} />
+      <WrappedView params={props.params} searchParams={props.searchParams} />
     </Suspense>
   );
 }

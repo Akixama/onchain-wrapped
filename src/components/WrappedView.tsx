@@ -5,7 +5,7 @@ import { ngnRate } from "@/lib/fx";
 import { getJob, publicJob } from "@/lib/store";
 import { siteUrl } from "@/lib/site";
 import { getRarity } from "@/lib/rarity";
-import { CARD_TITLE, liveCards, shareText, whoLabel } from "./format";
+import { CARD_TITLE, liveCards, pumpStoryCards, shareText, whoLabel } from "./format";
 import { StoryPlayer } from "./story/StoryPlayer";
 
 /** Server part of a public result page: loads the job, hands it to the client story. */
@@ -15,7 +15,9 @@ export async function WrappedView({ params, searchParams }: { params: Promise<{ 
   const job = await getJob(id);
   if (!job) notFound();
   const [rate, rarity] = await Promise.all([ngnRate(), getRarity().then((r) => r.pct).catch(() => null)]);
-  return <StoryPlayer job={publicJob(job)} startCard={card} ngnRate={rate} siteUrl={siteUrl()} rarity={rarity} view={typeof view === "string" ? view : undefined} />;
+  // Keyed by view: going from the Pump.fun story to the full one (same wallet, same id) must start fresh.
+  const v = typeof view === "string" ? view : undefined;
+  return <StoryPlayer key={`${id}:${v ?? "all"}`} job={publicJob(job)} startCard={card} ngnRate={rate} siteUrl={siteUrl()} rarity={rarity} view={v} />;
 }
 
 export async function wrappedMetadata(params: Promise<{ id: string; card?: string }>): Promise<Metadata> {
@@ -23,7 +25,7 @@ export async function wrappedMetadata(params: Promise<{ id: string; card?: strin
   const job = await getJob(id);
   const s = job?.stats;
   if (!s) return { title: "Wrapped Onchain", robots: { index: false } };
-  const c = (liveCards(s).includes(card as CardId) ? card : "summary") as CardId;
+  const c = (liveCards(s).includes(card as CardId) || pumpStoryCards(s).includes(card as CardId) ? card : "summary") as CardId;
   const title = `Wrapped Onchain: ${whoLabel(s)} · ${CARD_TITLE[c]}`;
   const description = shareText(s, c);
   const image = { url: `/api/og/${id}/${c}`, width: 1200, height: 630, alt: description };

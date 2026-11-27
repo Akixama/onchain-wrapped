@@ -154,6 +154,14 @@ export function shareText(s: WrappedStats, card: CardId): string {
       const p = s.pumpfun; if (!p) return tail;
       return [p.best && `Best pump: $${p.best.symbol} ${usd(p.best.pnlUsd, { sign: true })}.`, p.worst && `Worst: $${p.worst.symbol} ${usd(p.worst.pnlUsd)}.`, tail].filter(Boolean).join(" ");
     }
+    case "pumpCoins": {
+      const p = s.pumpfun; if (!p?.list?.length) return tail;
+      return `My biggest pump.fun bets: ${p.list.slice(0, 3).map((c) => `$${c.symbol} ${usd(c.pnlUsd, { sign: true })}`).join(", ")}. ${tail}`;
+    }
+    case "pumpSummary": {
+      const p = s.pumpfun; if (!p) return tail;
+      return `My Pump.fun Wrapped: ${num(p.coins)} coins, ${num(p.trades)} trades, ${usd(p.pnlUsd, { sign: true })}.${p.graduated + p.neverGraduated ? ` ${p.graduated} of them graduated.` : ""} ${tail}`;
+    }
     case "achievements": {
       const e = rarestFirst(s.achievements?.earned ?? []); if (!e.length) return tail;
       const top = rarestFirst(e).slice(0, 3).map((x) => `${ACHIEVEMENT_BY_ID[x.id].emoji} ${ACHIEVEMENT_BY_ID[x.id].name}`).join(", ");
@@ -186,6 +194,20 @@ export function shareText(s: WrappedStats, card: CardId): string {
 }
 
 /** Story cards that still exist (results saved before a card was removed may list it). */
+/** The Pump.fun Wrapped story: its own run of cards, worked out from the saved stats (no extra lookup). */
+export function pumpStoryCards(s: Pick<WrappedStats, "pumpfun">): CardId[] {
+  const p = s.pumpfun;
+  if (!p) return [];
+  const c: [CardId, boolean][] = [
+    ["pumpYear", true],
+    ["pumpGrad", p.graduated + p.neverGraduated > 0],
+    ["pumpCoins", (p.list?.length ?? 0) >= 2],
+    ["pumpBest", !!(p.best || p.worst)],
+    ["pumpSummary", true],
+  ];
+  return c.filter(([, ok]) => ok).map(([id]) => id);
+}
+
 export const liveCards = (s: Pick<WrappedStats, "cards">): CardId[] => s.cards.filter((c) => c in CARD_TITLE);
 
 export const CARD_TITLE: Record<CardId, string> = {
@@ -196,6 +218,7 @@ export const CARD_TITLE: Record<CardId, string> = {
   percentile: "Ranking", chains: "Profit by chain", roast: "The roast", summary: "Your Wrapped",
   achievements: "Achievements", guess: "Your guesses",
   pumpYear: "Pump.fun Wrapped", pumpGrad: "Did they graduate?", pumpBest: "Best & worst pump",
+  pumpCoins: "Biggest pump.fun bets", pumpSummary: "Your Pump.fun Wrapped",
 };
 
 /** Per-card background: deep base + two glows. Shared by UI and OG images. */
@@ -223,6 +246,8 @@ export const CARD_THEME: Record<CardId, { bg: string; a: string; b: string; ink:
   pumpYear: { bg: "#06160C", a: "#22C55E", b: "#A3E635", ink: "#F0FFF4" },
   pumpGrad: { bg: "#08140F", a: "#4ADE80", b: "#2DD4BF", ink: "#EFFFF8" },
   pumpBest: { bg: "#0F1408", a: "#A3E635", b: "#F43F5E", ink: "#F9FFEF" },
+  pumpCoins: { bg: "#07130D", a: "#34D399", b: "#A3E635", ink: "#F0FFF6" },
+  pumpSummary: { bg: "#06160C", a: "#22C55E", b: "#2DD4BF", ink: "#F0FFF4" },
   airdrops: { bg: "#06201F", a: "#2DD4BF", b: "#FDE68A", ink: "#EFFFFC" },
   sleep: { bg: "#070B24", a: "#6366F1", b: "#EC4899", ink: "#EEF0FF" },
   bridges: { bg: "#03161C", a: "#14F195", b: "#3D7BFF", ink: "#EAFFF8" },

@@ -139,7 +139,9 @@ export type CardId =
   | "counterfactual" | "appFees" | "gas" | "rugs" | "airdrops" | "sleep" | "bridges" | "percentile" | "chains" | "achievements" | "roast" | "summary"
   /** Client-only: "your guesses vs reality", added in the browser when they played the waiting-screen game. */
   | "guess"
-  | "pumpYear" | "pumpGrad" | "pumpBest";
+  | "pumpYear" | "pumpGrad" | "pumpBest"
+  /** Only in the Pump.fun Wrapped story (picked on the homepage). */
+  | "pumpCoins" | "pumpSummary";
 
 export function storyCards(s: Omit<WrappedStats, "cards">): CardId[] {
   const t = s.overview.totalTrades;

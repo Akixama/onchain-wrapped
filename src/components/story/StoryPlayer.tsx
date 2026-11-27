@@ -7,7 +7,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import type { CardId, WrappedStats } from "@/lib/engine/stats";
 import type { PublicJob as PublicJobT } from "@/lib/store";
 import { EVM_ENABLED } from "@/lib/site";
-import { CARD_THEME, CARD_TITLE, liveCards, periodLabel, shareText } from "../format";
+import { CARD_THEME, CARD_TITLE, liveCards, periodLabel, pumpStoryCards, shareText } from "../format";
 import { CARDS, type CardCtx } from "./cards";
 import { FitContent, stagger } from "./primitives";
 import { Loading } from "./Loading";
@@ -37,17 +37,14 @@ export function StoryPlayer({ job: initial, startCard, ngnRate, siteUrl, rarity 
     return () => clearInterval(t);
   }, [job.id, job.status]);
 
-  // Opened from "Pump.fun Wrapped" on the homepage: go to that page when it's ready.
-  // Comes from the server (?view=pump): the story rewrites the address as it plays, which drops it.
+  // Opened from "Pump.fun Wrapped" on the homepage (?view=pump, read on the server): play the Pump.fun story.
   const [pumpOnly, setPumpOnly] = useState(view === "pump");
-  const router = useRouter();
-  const goPump = pumpOnly && job.status === "done" && !!job.stats?.pumpfun;
-  useEffect(() => { if (goPump) router.replace(`/pump/${job.id}`); }, [goPump, job.id, router]);
+  const showFull = useCallback(() => { setPumpOnly(false); window.history.replaceState(null, "", `/w/${job.id}`); }, [job.id]);
 
   if (job.status === "error") return <ErrorScreen message={job.error ?? "Something went wrong."} />;
-  if (job.status !== "done" || !job.stats || goPump) return <Loading progress={job.progress} startedAt={job.createdAt} jobId={job.id} />;
-  if (pumpOnly && !job.stats.pumpfun) return <NoPumpScreen onFull={() => { setPumpOnly(false); window.history.replaceState(null, "", `/w/${job.id}`); }} />;
-  return <Story id={job.id} s={job.stats} startCard={startCard} ngnRate={ngnRate} siteUrl={siteUrl} rarity={rarity} />;
+  if (job.status !== "done" || !job.stats) return <Loading progress={job.progress} startedAt={job.createdAt} jobId={job.id} />;
+  if (pumpOnly && !job.stats.pumpfun) return <NoPumpScreen onFull={showFull} />;
+  return <Story key={pumpOnly ? "pump" : "all"} id={job.id} s={job.stats} startCard={startCard} ngnRate={ngnRate} siteUrl={siteUrl} rarity={rarity} pump={pumpOnly} onFull={showFull} />;
 }
 
 /** The lookup finished while the viewer might be in another tab: say so in the tab title, a soft chime and a notification. */
@@ -70,30 +67,31 @@ function readyPing(ok: boolean) {
   } catch { /* browsers may block sound until the page was tapped */ }
   try {
     if (typeof Notification !== "undefined" && Notification.permission === "granted")
-      new Notification(ok ? "Your Wrapped is ready" : "Your Wrapped hit a problem", { body: ok ? "Tap to see your year onchain." : "Open the tab to see what happened.", icon: "/favicon.ico" });
+      new Notification(ok ? "Your Wrapped is ready" : "Your Wrapped hit a problem", { body: ok ? "Tap to see your year onchain." : "Open the tab to see what happened.", icon: "/logo-96.png" });
   } catch {}
 }
 
-function Story({ id, s, startCard, ngnRate, siteUrl, rarity }: { id: string; s: WrappedStats; startCard?: string; ngnRate: number | null; siteUrl: string; rarity: Record<string, number> | null }) {
+function Story({ id, s, startCard, ngnRate, siteUrl, rarity, pump = false, onFull }: { id: string; s: WrappedStats; startCard?: string; ngnRate: number | null; siteUrl: string; rarity: Record<string, number> | null; pump?: boolean; onFull?: () => void }) {
   // "Your guesses vs reality" goes right after the bottom line, if they played the waiting-screen game here.
   const [guessed, setGuessed] = useState(false);
   useEffect(() => { const t = setTimeout(() => setGuessed(hasGuesses(loadGuesses(id))), 0); return () => clearTimeout(t); }, [id]);
   const cards = useMemo(() => {
+    if (pump) return pumpStoryCards(s);
     const c = liveCards(s);
     if (!guessed) return c;
     const at = c.indexOf("pnl") >= 0 ? c.indexOf("pnl") + 1 : Math.min(2, c.length);
     return [...c.slice(0, at), "guess" as CardId, ...c.slice(at)];
-  }, [s, guessed]);
-  const [i, setI] = useState(() => Math.max(0, liveCards(s).indexOf(startCard as CardId)));
+  }, [s, guessed, pump]);
+  const [i, setI] = useState(() => Math.max(0, (pump ? pumpStoryCards(s) : liveCards(s)).indexOf(startCard as CardId)));
   // The guess card is added after the first render: keep showing the same card if it lands before it.
   const added = useRef(false);
   useEffect(() => {
-    if (!guessed || added.current) return;
+    if (pump || !guessed || added.current) return;
     added.current = true;
     const at = cards.indexOf("guess");
     const t = setTimeout(() => setI((x) => (startCard === "guess" ? at : x >= at && x > 0 ? x + 1 : x)), 0);
     return () => clearTimeout(t);
-  }, [guessed, cards, startCard]);
+  }, [guessed, cards, startCard, pump]);
   const [dir, setDir] = useState(1);
   const [held, setHeld] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -124,8 +122,8 @@ function Story({ id, s, startCard, ngnRate, siteUrl, rarity }: { id: string; s: 
 
   // Keep the address bar on the current card, so copying the URL shares this card.
   useEffect(() => {
-    window.history.replaceState(null, "", `/w/${id}/${card}`);
-  }, [id, card]);
+    window.history.replaceState(null, "", `/w/${id}/${card}${pump ? "?view=pump" : ""}`);
+  }, [id, card, pump]);
 
   useEffect(() => {
     if (paused || i === cards.length - 1) return;
@@ -145,7 +143,8 @@ function Story({ id, s, startCard, ngnRate, siteUrl, rarity }: { id: string; s: 
 
   const ctx: CardCtx = { tzOffsetH: tz, currency, setCurrency, ngnRate, rarity };
   const Card = CARDS[card];
-  const url = `${siteUrl}/w/${id}/${card}`;
+  const url = `${siteUrl}/w/${id}/${card}${pump ? "?view=pump" : ""}`;
+  const last = card === "summary" || card === "pumpSummary";
 
   return (
     <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-black sm:p-3">
@@ -175,7 +174,7 @@ function Story({ id, s, startCard, ngnRate, siteUrl, rarity }: { id: string; s: 
           ))}
         </div>
         <div className="absolute inset-x-0 top-6 z-20 flex items-center justify-between px-4 pt-2">
-          <Link href="/" className="font-display text-sm font-bold tracking-tight opacity-90">Wrapped <span className="opacity-60">Onchain</span></Link>
+          <Link href="/" className="inline-flex items-center gap-1.5 font-display text-sm font-bold tracking-tight opacity-90">{/* eslint-disable-next-line @next/next/no-img-element */}<img src="/logo-48.png" alt="" width={20} height={20} className="h-5 w-5" />Wrapped <span className="opacity-60">Onchain</span></Link>
           <div className="flex items-center gap-2">
             <button aria-label="Share this card" onClick={() => setSheet(true)} className="rounded-full bg-white/15 px-3 py-1.5 text-xs font-semibold backdrop-blur hover:bg-white/25">Share</button>
             <Link href="/" aria-label="Close" className="grid h-8 w-8 place-items-center rounded-full bg-white/15 text-sm backdrop-blur hover:bg-white/25">✕</Link>
@@ -207,8 +206,8 @@ function Story({ id, s, startCard, ngnRate, siteUrl, rarity }: { id: string; s: 
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={{ opacity: 0, x: dir * -60, scale: 0.98 }}
               transition={{ type: "spring", stiffness: 260, damping: 30 }}
-              className={`absolute inset-0 flex flex-col px-6 pt-[72px] sm:px-7 @3xl:px-14 @3xl:pt-[84px] ${card === "summary" ? "" : "pb-16"}`}
-              style={card === "summary" ? { paddingBottom: Math.max(footerH + 16, 196) } : undefined}
+              className={`absolute inset-0 flex flex-col px-6 pt-[72px] sm:px-7 @3xl:px-14 @3xl:pt-[84px] ${last ? "" : "pb-16"}`}
+              style={last ? { paddingBottom: Math.max(footerH + 16, 196) } : undefined}
               aria-label={CARD_TITLE[card]}
             >
               <motion.div variants={stagger} initial="hidden" animate="show" className="flex min-h-0 flex-1 flex-col">
@@ -222,7 +221,17 @@ function Story({ id, s, startCard, ngnRate, siteUrl, rarity }: { id: string; s: 
 
         {/* footer */}
         <div ref={footer} className="absolute inset-x-0 bottom-0 z-20 px-5 pb-5">
-          {card === "summary" ? (
+          {card === "pumpSummary" ? (
+            <div className="space-y-3 @3xl:px-9">
+              <div className="grid grid-cols-2 gap-2.5 @3xl:grid-cols-3 @3xl:gap-3">
+                <button onClick={() => setSheet(true)} className="col-span-2 w-full rounded-2xl bg-white py-3.5 @3xl:col-span-1 font-display text-base font-bold text-black active:scale-[0.98]">Share my Pump.fun Wrapped</button>
+                <button onClick={onFull} className="w-full rounded-2xl border border-white/40 bg-white/10 py-3 text-sm font-semibold @3xl:py-3.5">See my full Wrapped</button>
+                <Link href={`/pump/${id}`} className="block w-full rounded-2xl border border-white/25 py-3 text-center text-sm font-semibold @3xl:py-3.5">Every coin</Link>
+              </div>
+              <div className="text-center text-xs"><Link href="/" className="opacity-60 underline-offset-4 hover:underline">Check another wallet</Link></div>
+              <div className="text-center"><TipJar /></div>
+            </div>
+          ) : card === "summary" ? (
             <div className="space-y-3 @3xl:px-9">
               <div className="grid grid-cols-2 gap-2.5 @3xl:grid-cols-3 @3xl:gap-3">
                 <button onClick={() => setSheet(true)} className="col-span-2 w-full rounded-2xl bg-white py-3.5 @3xl:col-span-1 font-display text-base font-bold text-black active:scale-[0.98]">Share my Wrapped</button>

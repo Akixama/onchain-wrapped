@@ -913,8 +913,74 @@ const PumpBest = ({ s }: CardProps) => {
   );
 };
 
+const PUMP_STATUS: Record<string, [string, string]> = {
+  alive: ["Graduated, trading", "#4ADE80"], graduated: ["Graduated, died", "#FACC15"], curve: ["Never graduated", "#F87171"], unknown: ["Unchecked", "rgba(255,255,255,0.45)"],
+};
+
+/** Pump.fun story: the coins they put the most into, and what became of each. */
+const PumpCoins = ({ s }: CardProps) => {
+  const p = s.pumpfun!;
+  const top = (p.list ?? []).slice(0, 5);
+  return (
+    <>
+      <Kicker>Pump.fun Wrapped &middot; Biggest bets</Kicker>
+      <Body className="space-y-4">
+        <Line className="text-xl opacity-80">Where most of your pump.fun money went</Line>
+        <R><motion.div variants={rise} className="divide-y divide-white/10 overflow-hidden rounded-2xl border border-white/10 bg-white/[0.07]">
+          {top.map((c, k) => (
+            <div key={c.address} className="flex items-center gap-3 px-4 py-3">
+              <span className="w-4 shrink-0 text-sm tabular-nums opacity-50">{k + 1}</span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-display text-lg font-medium">${c.symbol}</span>
+                <span className="flex items-center gap-1.5 text-xs opacity-70"><i className="inline-block h-1.5 w-1.5 rounded-full" style={{ background: PUMP_STATUS[c.status][1] }} />{PUMP_STATUS[c.status][0]} &middot; put in {money(c.costUsd)}</span>
+              </span>
+              <b className="shrink-0 font-display text-lg font-medium tabular-nums" style={{ color: gainColor(c.pnlUsd) }}>{money(c.pnlUsd, true)}</b>
+            </div>
+          ))}
+        </motion.div></R>
+        {p.coins > top.length && <Line className="text-sm opacity-60">Top {top.length} of {num(p.coins)} by money put in.</Line>}
+        <PumpLink />
+      </Body>
+    </>
+  );
+};
+
+/** Pump.fun story, last card: the whole pump.fun year on one screen (share it from here). */
+const PumpSummary = ({ s }: CardProps) => {
+  const p = s.pumpfun!;
+  const known = p.graduated + p.neverGraduated;
+  const tiles: [string, string, string?][] = [
+    ["Coins", num(p.coins)],
+    ["Trades", num(p.trades)],
+    ["Volume", money(p.volumeUsd)],
+    ["Graduated", known ? `${num(p.graduated)} of ${num(known)}` : "n/a"],
+  ];
+  return (
+    <>
+      <Kicker>Pump.fun Wrapped &middot; {periodLabel(s)} &middot; {whoLabel(s)}</Kicker>
+      <Body className="space-y-3">
+        <Line className="text-lg opacity-80">Your result on pump.fun coins</Line>
+        <Big className="text-[52px] tabular-nums @3xl:text-[72px]"><span style={{ color: gainColor(p.pnlUsd) }}>{money(p.pnlUsd, true)}</span></Big>
+        <div className="grid grid-cols-2 gap-2">
+          {tiles.map(([k, v]) => (
+            <motion.div key={k} variants={rise} className="rounded-xl border border-white/10 bg-white/[0.07] px-3 py-2.5">
+              <div className="text-xs opacity-60">{k}</div>
+              <div className="truncate font-display text-xl font-medium tabular-nums">{v}</div>
+            </motion.div>
+          ))}
+        </div>
+        <R><motion.div variants={rise} className="space-y-1.5 rounded-xl border border-white/10 bg-white/[0.07] px-3 py-2.5 text-sm @3xl:px-4 @3xl:py-4 @3xl:text-base">
+          {p.best && <Row k="Best" v={`$${p.best.symbol}`} n={p.best.pnlUsd} />}
+          {p.worst && <Row k="Worst" v={`$${p.worst.symbol}`} n={p.worst.pnlUsd} />}
+          <Row k="Everything else" n={p.otherPnlUsd} />
+        </motion.div></R>
+      </Body>
+    </>
+  );
+};
+
 export const CARDS: Record<CardId, (p: CardProps) => React.ReactNode> = {
-  pumpYear: PumpYear, pumpGrad: PumpGrad, pumpBest: PumpBest,
+  pumpYear: PumpYear, pumpGrad: PumpGrad, pumpBest: PumpBest, pumpCoins: PumpCoins, pumpSummary: PumpSummary,
   achievements: Achievements, guess: Guess,
   appFees: AppFees, bags: Bags, sniper: Sniper, revenge: Revenge,
   archetype: Archetype, overview: Overview, pnl: Pnl, profitTime: ProfitTime, best: Best, worst: Worst, roundTrip: RoundTrip,
