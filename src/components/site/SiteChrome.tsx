@@ -30,7 +30,7 @@ export function SiteHeader() {
         </nav>
         <div className="ml-auto flex items-center gap-2">
           <LiveChip />
-          <Link href="/#wrap" className="whitespace-nowrap rounded-lg bg-accent px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-accent-hover">Wrap a wallet</Link>
+          <Link href="/#wrap" className="whitespace-nowrap rounded-lg bg-fg px-3.5 py-2 text-sm font-medium text-ink-0 transition-colors hover:bg-white">Wrap a wallet</Link>
         </div>
       </div>
       <nav className="flex gap-1 overflow-x-auto px-4 pb-2 text-sm [scrollbar-width:none] lg:hidden">

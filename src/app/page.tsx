@@ -41,7 +41,7 @@ export default function Home() {
               <StatusBadge kind="live" /> Updating live
             </span>
             <h1 className="display text-[52px] sm:text-[80px] lg:text-[100px]">
-              Your trading year,<br /><span className="text-accent-ink">wrapped.</span>
+              Your trading year,<br /><span className="text-fg-2">wrapped.</span>
             </h1>
             <p className="mx-auto max-w-xl text-lg text-fg-2">
               Paste a Solana wallet. Get your best trade, your worst, the round trip that hurt and the fees you burned, as a story checked against the chain.

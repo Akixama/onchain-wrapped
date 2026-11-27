@@ -21,7 +21,7 @@ export function StatusBadge({ kind, className = "" }: { kind: Kind; className?: 
   if (kind === "done") {
     // The signature shape: a tiny ribbon loop closed with a tick.
     return (
-      <svg viewBox="0 0 14 14" className={`h-3.5 w-3.5 text-accent-ink ${className}`} aria-hidden>
+      <svg viewBox="0 0 14 14" className={`h-3.5 w-3.5 text-fg-2 ${className}`} aria-hidden>
         <circle cx="7" cy="7" r="5.75" fill="none" stroke="currentColor" strokeOpacity="0.35" strokeWidth="1.25" />
         <path d="M4.4 7.2l1.8 1.8 3.4-3.6" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="[stroke-dasharray:10] motion-safe:animate-[draw_500ms_cubic-bezier(0.22,1,0.36,1)_both]" />
       </svg>

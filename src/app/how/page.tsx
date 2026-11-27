@@ -39,7 +39,7 @@ export default function How() {
     <main className="min-h-[100dvh] bg-ink-1 text-fg">
       <SiteHeader />
       <PageHero title={<>How it<br />works.</>} sub="Read-only, from the chain, priced at the time. Here is exactly what happens to a wallet you paste.">
-        <Link href="/#wrap" className="accent-glow inline-flex h-12 items-center rounded-xl bg-accent px-6 font-display font-medium text-white transition-colors hover:bg-accent-hover">Wrap a wallet</Link>
+        <Link href="/#wrap" className="inline-flex h-12 items-center rounded-xl bg-fg px-6 font-display font-medium text-ink-0 transition-colors hover:bg-white">Wrap a wallet</Link>
       </PageHero>
       <div className="mx-auto max-w-6xl space-y-24 px-4 py-16 sm:px-8 sm:py-24">
         <section className="space-y-6">

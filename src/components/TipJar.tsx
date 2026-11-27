@@ -70,7 +70,7 @@ export function TipFab() {
         // Tucked: only a 12px sliver shows, inside the page's side margin, so it covers nothing.
         style={{ transform: tucked ? `translateX(calc(100% + ${margin}px - 12px))` : undefined }}
         className={`fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-xl border border-line bg-ink-3 p-3 text-sm font-medium text-fg shadow-[0_8px_24px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] transition-[transform,opacity,background-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:bg-[#232837] hover:!translate-x-0 active:scale-[0.97] sm:bottom-6 sm:right-6 sm:px-5 ${tucked ? "opacity-80" : ""}`}>
-        <CupIcon className="h-[18px] w-[18px] text-accent-ink" />
+        <CupIcon className="h-[18px] w-[18px] text-fg-2" />
         <span className="hidden text-sm sm:inline">Tip the dev</span>
       </button>
       <AnimatePresence>{open && <TipBox onClose={() => setOpen(false)} />}</AnimatePresence>
@@ -105,7 +105,7 @@ function TipBox({ onClose }: { onClose: () => void }) {
         role="dialog" aria-label="Tip the dev" className="w-full max-w-sm space-y-4 rounded-2xl border border-line bg-ink-2 p-5 text-fg shadow-[0_24px_64px_rgba(0,0,0,0.5)]">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 font-display text-xl font-medium"><CupIcon className="h-5 w-5 text-accent-ink" />Tip the dev</div>
+            <div className="flex items-center gap-2 font-display text-xl font-medium"><CupIcon className="h-5 w-5 text-fg-2" />Tip the dev</div>
             <p className="mt-1 text-sm text-fg-2">Wrapped Onchain is free. If it made you laugh (or cry), send any amount of SOL.</p>
           </div>
           <button onClick={onClose} aria-label="Close" className="grid h-8 w-8 place-items-center rounded-lg text-fg-3 transition-colors hover:bg-ink-3 hover:text-fg"><X className="h-4 w-4" strokeWidth={1.5} /></button>

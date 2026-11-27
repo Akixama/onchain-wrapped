@@ -7,7 +7,7 @@
   --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* Ink ramp: a trading terminal at 3am. The one accent is the logo purple (accent-ink for text on dark). */
+/* Ink ramp: a trading terminal at 3am. The logo purple is used sparingly: the main action and tiny live markers only. */
 @theme {
   --color-ink-0: #07080d;
   --color-ink-1: #0b0d14;
@@ -42,4 +42,4 @@ body { -webkit-tap-highlight-color: transparent; overscroll-behavior: none; }
 /* Big bold short-sentence headlines, Salvo-style. */
 .display { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.035em; line-height: 0.98; }
 .h2xl { font-family: var(--font-display); font-weight: 600; letter-spacing: -0.03em; line-height: 1.02; font-size: clamp(36px, 5.5vw, 64px); }
-.accent-glow { box-shadow: 0 0 0 1px rgb(201 162 245 / 0.25), 0 10px 40px -6px rgb(138 63 209 / 0.6), inset 0 1px 0 rgb(255 255 255 / 0.18); }
+.accent-glow { box-shadow: 0 8px 24px -8px rgb(138 63 209 / 0.45), inset 0 1px 0 rgb(255 255 255 / 0.16); }

@@ -77,9 +77,9 @@ export function RibbonField({ variant = "center", className = "" }: { variant?: 
       const { x, y, r } = knot;
       const glow = 0.35 + pulse * 0.5;
       const g = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
-      g.addColorStop(0, `rgba(138,63,209,${0.35 * glow})`);
-      g.addColorStop(0.45, `rgba(138,63,209,${0.12 * glow})`);
-      g.addColorStop(1, "rgba(138,63,209,0)");
+      g.addColorStop(0, `rgba(242,165,142,${0.12 * glow})`);
+      g.addColorStop(0.45, `rgba(242,165,142,${0.04 * glow})`);
+      g.addColorStop(1, "rgba(242,165,142,0)");
       ctx.fillStyle = g;
       ctx.beginPath(); ctx.arc(x, y, r * 3, 0, Math.PI * 2); ctx.fill();
       const rot = t * 0.08;
@@ -107,7 +107,7 @@ export function RibbonField({ variant = "center", className = "" }: { variant?: 
       // lanes
       ctx.lineWidth = 1;
       for (const l of lanes) {
-        ctx.strokeStyle = side ? "rgba(201,162,245,0.07)" : "rgba(201,162,245,0.09)";
+        ctx.strokeStyle = side ? "rgba(238,240,245,0.05)" : "rgba(238,240,245,0.07)";
         ctx.beginPath(); ctx.moveTo(l.x0, l.y0); ctx.quadraticCurveTo(l.cx, l.cy, knot.x, knot.y); ctx.stroke();
       }
       // ticks: trades travelling in
@@ -127,7 +127,7 @@ export function RibbonField({ variant = "center", className = "" }: { variant?: 
       // a real new wrap: a ring runs out of the knot
       if (pulse > 0.5) {
         const rr = knot.r * (1.2 + (1 - pulse) * 4);
-        ctx.strokeStyle = `rgba(201,162,245,${(pulse - 0.5) * 0.8})`; ctx.lineWidth = 1.5;
+        ctx.strokeStyle = `rgba(251,238,228,${(pulse - 0.5) * 0.6})`; ctx.lineWidth = 1.5;
         ctx.beginPath(); ctx.arc(knot.x, knot.y, rr, 0, Math.PI * 2); ctx.stroke();
       }
       pulse = Math.max(0, pulse - dt * 0.6);

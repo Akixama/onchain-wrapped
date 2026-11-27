@@ -100,7 +100,7 @@ export function RecentWraps({ limit = 6 }: { limit?: number }) {
 
 function WrapCard({ r, now, fresh }: { r: FeedItem; now: number; fresh: boolean }) {
   return (
-    <div className={`rise-in rounded-2xl border bg-ink-2 p-4 ${fresh ? "border-[rgb(201_162_245/0.35)]" : "border-line"}`}>
+    <div className={`rise-in rounded-2xl border bg-ink-2 p-4 ${fresh ? "border-[rgb(238_240_245/0.22)]" : "border-line"}`}>
       <div className="flex items-center justify-between text-xs text-fg-3">
         <span className="inline-flex items-center gap-1.5"><StatusBadge kind="done" />Wrapped · {TF[r.tf] ?? r.tf}</span>
         <span className="font-mono">{ago(r.t, now)}</span>

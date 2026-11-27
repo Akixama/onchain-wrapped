@@ -39,7 +39,7 @@ async function View({ params }: { params: Promise<{ id: string }> }) {
   const seg = (n: number) => (known ? `${(n / known) * 100}%` : "0%");
   return (
     <ExtraPage id={id} shareText={shareText(s, "pumpYear")} shareUrl={`${siteUrl()}/pump/${id}`}
-      title={<>{whoLabel(s)}&apos;s <span className="text-accent-ink">Pump.fun</span> Wrapped</>}
+      title={<>{whoLabel(s)}&apos;s Pump.fun Wrapped</>}
       sub={<>{num(p.coins)} pump.fun coins, {Math.round(p.share * 100)}% of everything traded.</>}>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Tile k="On pump.fun coins" v={usd(p.pnlUsd, { sign: true })} color={sign(p.pnlUsd)} />

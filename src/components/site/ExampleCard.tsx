@@ -19,10 +19,10 @@ export async function ExampleCard({ id, label, className = "" }: { id: string; l
   const segs = Math.min(14, s.cards.length);
   return (
     <Link href={`/w/${id}`} aria-label={`Open the ${label ?? s.archetype.title} Wrapped`}
-      className={`group block w-full rounded-[20px] border border-line bg-ink-2 p-5 shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-colors duration-150 hover:border-[rgb(201_162_245/0.3)] ${className}`}>
+      className={`group block w-full rounded-[20px] border border-line bg-ink-2 p-5 shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-colors duration-150 hover:border-[rgb(238_240_245/0.2)] ${className}`}>
       <div className="flex gap-1" aria-hidden>
         {Array.from({ length: segs }, (_, i) => (
-          <span key={i} className={`h-[3px] flex-1 rounded-full ${i === 0 ? "bg-accent-ink" : "bg-[rgb(238_240_245/0.14)]"}`} />
+          <span key={i} className={`h-[3px] flex-1 rounded-full ${i === 0 ? "bg-fg" : "bg-[rgb(238_240_245/0.14)]"}`} />
         ))}
       </div>
       <div className="mt-5 flex items-center justify-between font-mono text-xs text-fg-3">
@@ -46,7 +46,7 @@ export async function ExampleCard({ id, label, className = "" }: { id: string; l
       </dl>
       <div className="mt-5 flex items-center justify-between text-sm">
         <span className="text-fg-3">Checked against the chain</span>
-        <span className="inline-flex items-center gap-1 text-fg transition-colors group-hover:text-accent-ink">
+        <span className="inline-flex items-center gap-1 text-fg transition-colors group-hover:text-white">
           Open it <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" strokeWidth={1.5} />
         </span>
       </div>

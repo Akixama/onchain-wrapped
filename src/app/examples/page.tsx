@@ -18,7 +18,7 @@ export default function Examples() {
     <main className="min-h-[100dvh] bg-ink-1 text-fg">
       <SiteHeader />
       <PageHero title={<>Real wallets,<br />wrapped.</>} sub="Public Solana wallets run through the same lookup you'd get. Open one and swipe.">
-        <Link href="/#wrap" className="accent-glow inline-flex h-12 items-center rounded-xl bg-accent px-6 font-display font-medium text-white transition-colors hover:bg-accent-hover">Wrap your own</Link>
+        <Link href="/#wrap" className="inline-flex h-12 items-center rounded-xl bg-fg px-6 font-display font-medium text-ink-0 transition-colors hover:bg-white">Wrap your own</Link>
       </PageHero>
       <div className="mx-auto max-w-6xl space-y-10 px-4 py-16 sm:px-8 sm:py-24">
         <SectionTitle sub="Each one is a saved result, not a mock-up.">Pick one.</SectionTitle>
