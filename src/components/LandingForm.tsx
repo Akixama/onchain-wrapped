@@ -1,5 +1,5 @@
 "use client";
-import { motion } from "motion/react";
+import { X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import { EVM_ENABLED } from "@/lib/site";
@@ -85,27 +85,27 @@ export function LandingForm() {
     }
   };
 
+  const seg = (on: boolean) =>
+    `rounded-lg transition-colors duration-150 ${on ? "bg-ink-3 text-fg shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]" : "text-fg-2 hover:text-fg"}`;
   return (
     <form onSubmit={submit} className="space-y-3">
-      <div className="grid grid-cols-2 gap-1 rounded-2xl bg-white/10 p-1 text-sm font-semibold" role="radiogroup" aria-label="What to see">
+      <div className="grid grid-cols-2 gap-1 rounded-xl border border-line bg-ink-0 p-1 text-sm" role="radiogroup" aria-label="What to see">
         {([["all", "Full Wrapped", "Everything you traded"], ["pump", "Pump.fun Wrapped", "Just your pump.fun coins"]] as const).map(([v, label, hint]) => (
-          <button key={v} type="button" role="radio" aria-checked={view === v} onClick={() => setView(v)}
-            className={`rounded-xl px-3 py-2.5 text-left transition ${view === v ? (v === "pump" ? "bg-emerald-300 text-black" : "bg-white text-black") : "text-white/75 hover:bg-white/10"}`}>
-            <span className="block leading-tight">{label}</span>
-            <span className={`block text-xs font-normal leading-tight ${view === v ? "opacity-70" : "opacity-50"}`}>{hint}</span>
+          <button key={v} type="button" role="radio" aria-checked={view === v} onClick={() => setView(v)} className={`${seg(view === v)} px-3 py-2 text-left`}>
+            <span className="block font-medium leading-5">{label}</span>
+            <span className="block text-xs leading-4 text-fg-3">{hint}</span>
           </button>
         ))}
       </div>
-      <div className="rounded-3xl border border-white/15 bg-white/[0.06] p-2 backdrop-blur focus-within:border-white/40">
+      <div className="rounded-xl border border-line bg-ink-2 transition-colors duration-150 focus-within:border-[rgb(20_241_149/0.5)]">
         {wallets.length > 0 && (
-          <div className="flex flex-wrap gap-2 p-2">
+          <div className="flex flex-wrap gap-2 px-3 pt-3">
             {wallets.map((w) => (
-              <motion.span key={w} layout initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-                className="inline-flex max-w-full items-center gap-2 rounded-full bg-white/15 py-1 pl-3 pr-1 text-sm">
+              <span key={w} className="inline-flex max-w-full items-center gap-1 rounded-md bg-ink-3 py-1 pl-2 pr-1 font-mono text-xs">
                 <span className="truncate">{w.length > 16 ? `${w.slice(0, 6)}…${w.slice(-4)}` : w}</span>
                 <button type="button" aria-label={`Remove ${w}`} onClick={() => setWallets((x) => x.filter((y) => y !== w))}
-                  className="grid h-6 w-6 place-items-center rounded-full bg-white/15 text-xs hover:bg-white/30">✕</button>
-              </motion.span>
+                  className="grid h-5 w-5 place-items-center rounded text-fg-3 transition-colors hover:bg-ink-2 hover:text-fg"><X className="h-3.5 w-3.5" strokeWidth={1.5} /></button>
+              </span>
             ))}
           </div>
         )}
@@ -121,45 +121,46 @@ export function LandingForm() {
           placeholder={wallets.length ? "Add another wallet (optional)" : (EVM_ENABLED ? "Wallet address, vitalik.eth or toly.sol" : "Solana wallet address or toly.sol")}
           aria-label="Wallet address or name"
           autoComplete="off" autoCapitalize="off" spellCheck={false}
-          className="w-full bg-transparent px-4 py-3.5 text-base outline-none placeholder:text-white/40"
+          className="h-12 w-full bg-transparent px-4 text-base outline-none placeholder:text-fg-3"
         />
       </div>
       <div className="flex items-center justify-between gap-3">
-        <div className="flex flex-wrap rounded-full bg-white/10 p-1 text-sm font-semibold" role="radiogroup" aria-label="Timeframe">
+        <div className="flex flex-wrap gap-1 rounded-xl border border-line bg-ink-0 p-1 text-sm" role="radiogroup" aria-label="Timeframe">
           {([["1m", "1M"], ["3m", "3M"], ["6m", "6M"], ["12m", "1Y"]] as const).map(([v, l]) => (
             <button key={v} type="button" role="radio" aria-checked={timeframe === v} aria-label={TIMEFRAME_LABEL[v]} onClick={() => setTimeframe(v)}
-              className={`rounded-full px-3 py-2 transition sm:px-4 ${timeframe === v ? "bg-white text-black" : "text-white/70"}`}>{l}</button>
+              className={`${seg(timeframe === v)} h-8 px-3 font-mono text-xs sm:px-4`}>{l}</button>
           ))}
           <button type="button" role="radio" aria-checked={timeframe === "custom"} aria-label="Custom dates" onClick={pickCustom}
-            className={`rounded-full px-3 py-2 transition sm:px-4 ${timeframe === "custom" ? "bg-white text-black" : "text-white/70"}`}>Custom</button>
+            className={`${seg(timeframe === "custom")} h-8 px-3 text-xs sm:px-4`}>Custom</button>
         </div>
-        <span className="text-xs text-white/50">{wallets.length}/{MAX} wallets</span>
+        <span className="font-mono text-xs text-fg-3">{wallets.length}/{MAX} wallets</span>
       </div>
       {timeframe === "custom" && range && (
         <div className="grid grid-cols-2 gap-3 text-sm">
           {(["from", "to"] as const).map((k) => (
             <label key={k} className="space-y-1">
-              <span className="block text-xs text-white/60">{k === "from" ? "From" : "To"}</span>
+              <span className="block text-xs text-fg-2">{k === "from" ? "From" : "To"}</span>
               <input type="date" value={range[k]} min={range.min} max={range.max} required
                 onChange={(e) => setRange({ ...range, [k]: e.target.value })}
-                className="w-full rounded-xl border border-white/15 bg-white/[0.06] px-3 py-2.5 text-white [color-scheme:dark]" />
+                className="h-10 w-full rounded-lg border border-line bg-ink-2 px-3 font-mono text-fg [color-scheme:dark]" />
             </label>
           ))}
         </div>
       )}
-      {size?.key === sizeKey && size.checking && <p className="text-center text-xs text-white/50">Checking wallet size…</p>}
+      {size?.key === sizeKey && size.checking && <p className="text-center text-xs text-fg-3">Checking wallet size…</p>}
       {size?.key === sizeKey && !size.checking && size.fits === false && (
-        <p role="status" className="rounded-2xl bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+        <p role="status" className="rounded-xl border border-[rgb(229_180_84/0.2)] bg-[rgb(229_180_84/0.08)] px-4 py-3 text-sm text-[#e5c07b]">
           {size.capacity! < 1000
             ? <>This wallet is flooded with bot transactions and today&apos;s free data is used up. Try again tomorrow for a full result.</>
             : <>Big wallet: it has more transactions in this period than today&apos;s free data can read (about {Math.round(size.capacity! / 1000).toLocaleString()}k). Pick a shorter period to get it all now, or the result will be partial.</>}
         </p>
       )}
-      <button disabled={busy || navigating} className={`w-full rounded-2xl py-4 font-display text-lg font-bold text-black transition active:scale-[0.98] disabled:opacity-60 ${view === "pump" ? "bg-emerald-300" : "bg-white"}`}>
+      <button disabled={busy || navigating}
+        className="h-12 w-full rounded-xl bg-accent font-display text-[17px] font-medium text-ink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] transition-[transform,opacity,background-color] duration-150 hover:bg-[#3df5a9] active:scale-[0.98] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
         {busy || navigating ? "Starting…" : (view === "pump" ? "Wrap my pump.fun " : "Wrap my ") + (timeframe === "12m" ? "year" : timeframe === "custom" ? "dates" : TIMEFRAME_LABEL[timeframe].toLowerCase())}
       </button>
-      {error && <p role="alert" className="text-center text-sm text-rose-300">{error}</p>}
-      <p className="text-center text-xs text-white/50">Got more than one wallet? Add them all. Transfers between your own wallets don&apos;t count as trades.</p>
+      {error && <p role="alert" className="text-center text-sm text-neg">{error}</p>}
+      <p className="text-xs leading-5 text-fg-3">Got more than one wallet? Add them all. Transfers between your own wallets don&apos;t count as trades.</p>
     </form>
   );
 }

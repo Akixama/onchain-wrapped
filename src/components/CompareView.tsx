@@ -1,6 +1,7 @@
 "use client";
 // Two Wrapped results side by side. Waits for either lookup that's still running.
 import { motion } from "motion/react";
+import { Logo } from "@/components/Logo";
 import Link from "next/link";
 import { TipFab } from "./TipJar";
 import { useEffect, useState } from "react";
@@ -53,12 +54,12 @@ export function CompareView({ a: a0, b: b0, siteUrl }: { a: J; b: J; siteUrl: st
   const text = `${nameA} vs ${nameB} on Wrapped Onchain: ${score.a}–${score.b}. ${verdict}`;
 
   return (
-    <div className="min-h-[100dvh] bg-[#0B0820] px-4 pb-24 pt-8 text-white sm:px-6">
+    <div className="min-h-[100dvh] bg-[#0B0820] px-4 pb-24 pt-8 text-fg sm:px-6">
       <TipFab />
       <div className="mx-auto max-w-3xl space-y-6">
         <div className="flex items-center justify-between text-sm">
-          <Link href="/" className="font-display font-bold">Wrapped <span className="opacity-60">Onchain</span></Link>
-          <Link href={`/w/${a.id}`} className="rounded-full bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">← Back</Link>
+          <Logo />
+          <Link href={`/w/${a.id}`} className="rounded-lg border border-line bg-ink-2 px-3 py-2 font-medium transition-colors hover:bg-ink-3">← Back</Link>
         </div>
 
         <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 text-center">
@@ -73,7 +74,7 @@ export function CompareView({ a: a0, b: b0, siteUrl }: { a: J; b: J; siteUrl: st
             <motion.div key={r.label} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 + i * 0.05 }}
               className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-white/5 px-3 py-3 last:border-0 sm:px-5">
               <Cell v={r.a} on={r.winner === "a"} tone={r.toneA} align="right" />
-              <div className="w-24 text-center text-[11px] font-semibold uppercase tracking-wider opacity-60 sm:w-32">{r.label}</div>
+              <div className="w-24 text-center text-xs text-fg-3 sm:w-32">{r.label}</div>
               <Cell v={r.b} on={r.winner === "b"} tone={r.toneB} align="left" />
             </motion.div>
           ))}

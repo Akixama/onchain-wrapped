@@ -1,6 +1,7 @@
 "use client";
 // "Win or lose?" — a coin's chart up to the moment they first bought, the rest hidden. Guess, then see it all.
 import { AnimatePresence, motion } from "motion/react";
+import { Logo } from "@/components/Logo";
 import Link from "next/link";
 import { TipFab } from "./TipJar";
 import { useState } from "react";
@@ -28,12 +29,12 @@ export function ChartGame({ id, who, rounds, siteUrl }: { id: string; who: strin
 
   return (
     <ChartJobContext.Provider value={id}>
-      <div className="min-h-[100dvh] bg-[radial-gradient(ellipse_at_top,#0f3b46,#07141c_60%)] px-4 pb-24 pt-8 text-white sm:px-6">
+      <div className="min-h-[100dvh] bg-ink-1 px-4 pb-24 pt-8 text-fg sm:px-6">
       <TipFab />
         <div className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-2xl flex-col gap-6">
           <div className="flex items-center justify-between text-sm">
-            <Link href="/" className="font-display font-bold">Wrapped <span className="opacity-60">Onchain</span></Link>
-            <Link href={`/w/${id}`} className="rounded-full bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">See the Wrapped</Link>
+            <Logo />
+            <Link href={`/w/${id}`} className="rounded-lg border border-line bg-ink-2 px-3 py-2 font-medium transition-colors hover:bg-ink-3">See the Wrapped</Link>
           </div>
           {r && (
             <div className="flex gap-1.5">
@@ -46,7 +47,7 @@ export function ChartGame({ id, who, rounds, siteUrl }: { id: string; who: strin
               className="flex flex-1 flex-col justify-center gap-5">
               {i === -1 && (
                 <div className="space-y-6 text-center">
-                  <div className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">Chart game</div>
+                  <div className="text-sm text-fg-2">Chart game</div>
                   <h1 className="font-display text-4xl font-bold leading-tight sm:text-5xl">Win or lose?</h1>
                   <p className="opacity-75">{total} real trades by <b>{who}</b>. You see the chart up to their buy — the rest is hidden. Did they make money or lose it?</p>
                   <button onClick={() => setI(0)} className="w-full rounded-2xl bg-white py-4 font-display text-lg font-bold text-black active:scale-[0.98]">Start</button>
@@ -82,7 +83,7 @@ export function ChartGame({ id, who, rounds, siteUrl }: { id: string; who: strin
 
               {i === total && (
                 <div className="space-y-6 text-center">
-                  <div className="text-sm font-semibold uppercase tracking-[0.2em] text-cyan-300">Your score</div>
+                  <div className="text-sm text-fg-2">Your score</div>
                   <div className="font-display text-7xl font-bold tabular-nums">{score}<span className="opacity-40">/{total}</span></div>
                   <p className="font-display text-xl font-bold">{score === total ? "You read charts like they do. Worrying." : score >= total / 2 ? "Decent instincts." : "The charts fooled you. They fooled them too."}</p>
                   <div className="grid gap-2 sm:grid-cols-2">

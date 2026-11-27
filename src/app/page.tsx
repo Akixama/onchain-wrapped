@@ -1,8 +1,12 @@
 import Link from "next/link";
+import { Suspense } from "react";
+import { ArrowUpRight } from "lucide-react";
 import { LandingForm } from "@/components/LandingForm";
 import { TipFab } from "@/components/TipJar";
-import { CHAIN_COLOR, CHAIN_NAME } from "@/components/format";
+import { Logo } from "@/components/Logo";
+import { CHAIN_NAME, num, pct, usd } from "@/components/format";
 import { EVM_ENABLED } from "@/lib/site";
+import { getJob } from "@/lib/store";
 
 const ALL_DEMOS = [
   { id: "sol-sniper", label: "Solana sniper", sub: "461 memecoin trades" },
@@ -12,53 +16,107 @@ const ALL_DEMOS = [
 ];
 const DEMOS = ALL_DEMOS.filter((d) => EVM_ENABLED || !("evm" in d));
 const CHAINS = EVM_ENABLED ? ["solana", "ethereum", "base", "arbitrum", "bsc", "polygon", "optimism"] : ["solana"];
+const PREVIEW_ID = "sol-memes";
 
 export default function Home() {
   return (
-    <main className="relative min-h-[100dvh] overflow-hidden bg-[#0B0820]">
-      <div className="pointer-events-none absolute inset-0" aria-hidden>
-        <div className="absolute -left-40 -top-40 h-[520px] w-[520px] rounded-full bg-[#7C3AED] opacity-40 blur-3xl" />
-        <div className="absolute -bottom-48 -right-32 h-[520px] w-[520px] rounded-full bg-[#14F195] opacity-25 blur-3xl" />
-      </div>
-      <div className="relative mx-auto flex min-h-[100dvh] max-w-xl flex-col px-4 pb-24 pt-6 sm:px-6">
-        <header className="flex items-center justify-between">
-          <span className="font-display text-lg font-bold tracking-tight">Wrapped <span className="opacity-60">Onchain</span></span>
-          <span className="rounded-full border border-white/15 px-3 py-1 text-xs text-white/70">Free · no sign-up</span>
+    <main className="min-h-[100dvh] bg-ink-1 text-fg">
+      <div className="mx-auto flex min-h-[100dvh] max-w-6xl flex-col px-4 pb-24 pt-5 sm:px-8">
+        <header className="flex h-10 items-center justify-between">
+          <Logo />
+          <span className="text-sm text-fg-3">Free, no sign-up</span>
         </header>
 
-        <section className="my-auto space-y-8 py-10">
-          <div className="space-y-4">
-            <h1 className="font-display text-[44px] font-bold leading-[0.95] tracking-tight sm:text-6xl">
-              Your onchain year,<br /><span className="bg-gradient-to-r from-[#C4B5FD] via-[#F0ABFC] to-[#6EE7B7] bg-clip-text text-transparent">wrapped.</span>
-            </h1>
-            <p className="text-lg text-white/75">Best trade, worst trade, the round trip that hurt, the gas you burned. {EVM_ENABLED ? "Every chain, every wallet, one story." : "Every Solana wallet you own, one story."}</p>
-          </div>
-          <LandingForm />
-          <div className="space-y-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-white/50">Or peek at a real wallet</p>
-            <div className="grid grid-cols-2 gap-2">
-              {DEMOS.map((d) => (
-                <Link key={d.id} href={`/w/${d.id}`} className="last:odd:col-span-2 rounded-2xl border border-white/10 bg-white/[0.05] p-3 transition hover:border-white/30 hover:bg-white/10">
-                  <div className="truncate text-sm font-semibold">{d.label}</div>
-                  <div className="text-xs text-white/55">{d.sub}</div>
-                </Link>
-              ))}
+        <section className="grid flex-1 items-center gap-12 py-12 lg:grid-cols-[minmax(0,520px)_minmax(0,1fr)] lg:gap-16 lg:py-16">
+          <div className="rise-in space-y-8">
+            <div className="space-y-4">
+              <h1 className="font-display text-[40px] font-medium leading-[1.04] tracking-[-0.02em] sm:text-[60px] sm:tracking-[-0.03em]">
+                Your Solana trading year, wrapped
+              </h1>
+              <p className="max-w-[36rem] text-lg leading-7 text-fg-2">
+                Best trade, worst trade, the round trip that hurt, the fees you burned. {EVM_ENABLED ? "Every chain, every wallet, one story." : "Every wallet you own, one story, checked against the chain."}
+              </p>
             </div>
+            <LandingForm />
+          </div>
+
+          <Suspense fallback={<div className="hidden h-[520px] lg:block" />}>
+            <Preview />
+          </Suspense>
+        </section>
+
+        <section className="space-y-3 border-t border-line pt-8">
+          <h2 className="text-sm text-fg-2">Or open a real wallet</h2>
+          <div className="grid gap-2 sm:grid-cols-3">
+            {DEMOS.map((d) => (
+              <Link key={d.id} href={`/w/${d.id}`}
+                className="group flex items-center justify-between gap-3 rounded-xl border border-line bg-ink-2 px-4 py-3 transition-colors duration-150 hover:bg-ink-3">
+                <span className="min-w-0">
+                  <span className="block truncate text-sm font-medium">{d.label}</span>
+                  <span className="block font-mono text-xs text-fg-3">{d.sub}</span>
+                </span>
+                <ArrowUpRight className="h-4 w-4 shrink-0 text-fg-3 transition-colors group-hover:text-fg" strokeWidth={1.5} />
+              </Link>
+            ))}
           </div>
         </section>
 
-        <footer className="space-y-3 pb-2">
-          <div className="flex flex-wrap gap-2">
-            {CHAINS.map((c) => (
-              <span key={c} className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.06] px-2.5 py-1 text-xs text-white/70">
-                <span className="h-1.5 w-1.5 rounded-full" style={{ background: CHAIN_COLOR[c] }} />{CHAIN_NAME[c]}
-              </span>
-            ))}
-          </div>
-          <p className="pr-16 text-[11px] text-white/40 sm:pr-40">Read-only public data. Numbers are estimates, not financial or tax advice.</p>
+        <footer className="mt-8 flex flex-col gap-1 pr-16 text-xs text-fg-3 sm:flex-row sm:justify-between sm:pr-40">
+          <span>{CHAINS.map((c) => CHAIN_NAME[c]).join(" · ")} only. Read-only public data</span>
+          <span>Numbers are estimates, not financial or tax advice</span>
         </footer>
       </div>
       <TipFab />
     </main>
+  );
+}
+
+/** What you get: the summary of a real demo Wrapped, as story segments and a receipt. */
+async function Preview() {
+  const s = (await getJob(PREVIEW_ID))?.stats;
+  if (!s) return null;
+  const rows: [string, string, string?][] = [
+    ["Trades", num(s.overview.totalTrades)],
+    ["Coins traded", num(s.overview.tokensTraded)],
+    ["Win rate", pct(s.pnl.winRate)],
+    ...(s.bestTrade ? [["Best trade", `$${s.bestTrade.symbol}  ${usd(s.bestTrade.pnlUsd, { sign: true })}`, "pos"] as [string, string, string]] : []),
+    ...(s.worstTrade ? [["Worst trade", `$${s.worstTrade.symbol}  ${usd(s.worstTrade.pnlUsd, { sign: true })}`, "neg"] as [string, string, string]] : []),
+    ["Fees burned", usd(s.gas.totalUsd)],
+  ];
+  const total = s.pnl.totalUsd;
+  return (
+    <Link href={`/w/${PREVIEW_ID}`} aria-label="Open this example Wrapped"
+      className="rise-in group mx-auto block w-full max-w-[400px] rounded-[20px] border border-line bg-ink-2 p-5 shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-colors duration-150 [animation-delay:80ms] hover:border-[rgb(238_240_245/0.16)] lg:mr-0">
+      <div className="flex gap-1" aria-hidden>
+        {Array.from({ length: 12 }, (_, i) => (
+          <span key={i} className={`h-[3px] flex-1 rounded-full ${i === 0 ? "bg-accent" : "bg-[rgb(238_240_245/0.14)]"}`} />
+        ))}
+      </div>
+      <div className="mt-5 flex items-center justify-between font-mono text-xs text-fg-3">
+        <span>Example · last 12 months</span>
+        <span>1 / 12</span>
+      </div>
+      <div className="mt-8 space-y-1">
+        <div className="text-sm text-fg-2">{s.archetype.title}</div>
+        <div className={`font-mono text-[44px] font-medium leading-none tabular-nums tracking-[-0.02em] ${total >= 0 ? "text-pos" : "text-neg"}`}>
+          {usd(total, { sign: true })}
+        </div>
+        <div className="text-sm text-fg-3">from trading, on {usd(s.overview.volumeUsd)} volume</div>
+      </div>
+      <dl className="mt-8 divide-y divide-dashed divide-[rgb(238_240_245/0.1)] border-y border-dashed border-[rgb(238_240_245/0.1)]">
+        {rows.map(([k, v, tone]) => (
+          <div key={k} className="flex items-center justify-between gap-4 py-2.5 text-sm">
+            <dt className="text-fg-2">{k}</dt>
+            <dd className={`truncate whitespace-pre font-mono tabular-nums ${tone === "pos" ? "text-pos" : tone === "neg" ? "text-neg" : "text-fg"}`}>{v}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="mt-5 flex items-center justify-between text-sm">
+        <span className="text-fg-3">Checked against the chain</span>
+        <span className="inline-flex items-center gap-1 text-fg transition-colors group-hover:text-accent">
+          Open it <ArrowUpRight className="h-4 w-4" strokeWidth={1.5} />
+        </span>
+      </div>
+    </Link>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 // "Ask this wallet": a small chat about one finished Wrapped. Answers come from its real numbers.
 import { motion } from "motion/react";
+import { Logo } from "@/components/Logo";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
@@ -32,11 +33,11 @@ export function AskView({ id, who, suggested }: { id: string; who: string; sugge
   const asked = new Set(msgs.filter((m) => m.from === "you").map((m) => m.text));
 
   return (
-    <div className="min-h-[100dvh] bg-[radial-gradient(ellipse_at_top,#3b1d4a,#0d0a18_60%)] px-4 py-6 text-white sm:px-6">
+    <div className="min-h-[100dvh] bg-ink-1 px-4 py-6 text-fg sm:px-6">
       <div className="mx-auto flex min-h-[calc(100dvh-3rem)] max-w-2xl flex-col gap-4">
         <div className="flex items-center justify-between text-sm">
-          <Link href="/" className="font-display font-bold">Wrapped <span className="opacity-60">Onchain</span></Link>
-          <Link href={`/w/${id}`} className="rounded-full bg-white/10 px-3 py-1.5 font-semibold hover:bg-white/20">See the Wrapped</Link>
+          <Logo />
+          <Link href={`/w/${id}`} className="rounded-lg border border-line bg-ink-2 px-3 py-2 font-medium transition-colors hover:bg-ink-3">See the Wrapped</Link>
         </div>
         <h1 className="font-display text-3xl font-bold">Ask <span className="text-fuchsia-300">{who}</span></h1>
 
@@ -51,7 +52,7 @@ export function AskView({ id, who, suggested }: { id: string; who: string; sugge
           <div ref={end} />
         </div>
 
-        <div className="sticky bottom-0 space-y-3 bg-gradient-to-t from-[#0d0a18] via-[#0d0a18]/95 pb-2 pt-4">
+        <div className="sticky bottom-0 space-y-3 bg-gradient-to-t from-ink-1 via-ink-1/95 pb-2 pt-4">
           <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none]">
             {suggested.filter((q) => !asked.has(q)).map((q) => (
               <button key={q} onClick={() => ask(q)} disabled={busy}

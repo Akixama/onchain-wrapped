@@ -35,15 +35,15 @@ async function View({ params }: { params: Promise<{ id: string }> }) {
     ? `Rarity from ${rarity.total.toLocaleString("en-US")} wallets checked.`
     : `Rarity percentages appear once ${RARITY_MIN_WALLETS} wallets have been checked (${rarity.total.toLocaleString("en-US")} so far).`;
   return (
-    <ExtraPage id={id} bg="radial-gradient(ellipse at top, #422006, #0b0705 65%)" shareText={shareText(s, "achievements")} shareUrl={`${siteUrl()}/w/${id}/achievements`}
-      title={<>🏅 {whoLabel(s)}&apos;s achievements</>}
+    <ExtraPage id={id} shareText={shareText(s, "achievements")} shareUrl={`${siteUrl()}/w/${id}/achievements`}
+      title={<>{whoLabel(s)}&apos;s achievements</>}
       sub={<>{earned.length} of {ACHIEVEMENTS.length} unlocked. {note}</>}>
       {earned.length > 0 && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
           {earned.map((e, i) => <div key={e.id} className={i === 0 ? "col-span-2" : ""}><BadgeTile id={e.id} detail={e.detail} pct={rarity.pct} /></div>)}
         </div>
       )}
-      <h2 className="pt-4 font-display text-2xl font-bold opacity-80">Still locked</h2>
+      <h2 className="pt-4 font-display text-2xl font-medium text-fg-2">Still locked</h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {locked.map((e) => <BadgeTile key={e.id} id={e.id} locked />)}
       </div>
