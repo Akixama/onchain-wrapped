@@ -97,7 +97,7 @@ export function LandingForm() {
           </button>
         ))}
       </div>
-      <div className="rounded-xl border border-line bg-ink-2 transition-colors duration-150 focus-within:border-[rgb(20_241_149/0.5)]">
+      <div className="rounded-xl border border-line bg-ink-2 transition-colors duration-150 focus-within:border-[rgb(201_162_245/0.5)]">
         {wallets.length > 0 && (
           <div className="flex flex-wrap gap-2 px-3 pt-3">
             {wallets.map((w) => (
@@ -156,7 +156,7 @@ export function LandingForm() {
         </p>
       )}
       <button disabled={busy || navigating}
-        className="h-12 w-full rounded-xl bg-accent font-display text-[17px] font-medium text-ink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.3)] transition-[transform,opacity,background-color] duration-150 hover:bg-[#3df5a9] active:scale-[0.98] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+        className="h-12 w-full rounded-xl bg-accent font-display text-[17px] font-medium text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.18)] transition-[transform,opacity,background-color] duration-150 hover:bg-accent-hover active:scale-[0.98] disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-ink">
         {busy || navigating ? "Starting…" : (view === "pump" ? "Wrap my pump.fun " : "Wrap my ") + (timeframe === "12m" ? "year" : timeframe === "custom" ? "dates" : TIMEFRAME_LABEL[timeframe].toLowerCase())}
       </button>
       {error && <p role="alert" className="text-center text-sm text-neg">{error}</p>}

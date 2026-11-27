@@ -7,7 +7,7 @@
   --font-mono: var(--font-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
 }
 
-/* Ink ramp: a trading terminal at 3am. Solana green is the one accent. */
+/* Ink ramp: a trading terminal at 3am. The one accent is the logo purple (accent-ink for text on dark). */
 @theme {
   --color-ink-0: #07080d;
   --color-ink-1: #0b0d14;
@@ -17,7 +17,9 @@
   --color-fg-2: #a3a9b8;
   --color-fg-3: #7a8296;
   --color-line: rgb(238 240 245 / 0.08);
-  --color-accent: #14f195;
+  --color-accent: #8a3fd1;
+  --color-accent-hover: #7d35c4;
+  --color-accent-ink: #c9a2f5;
   --color-pos: #4cc38a;
   --color-neg: #e5484d;
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);

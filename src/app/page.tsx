@@ -89,7 +89,7 @@ async function Preview() {
       className="rise-in group mx-auto block w-full max-w-[400px] rounded-[20px] border border-line bg-ink-2 p-5 shadow-[0_24px_64px_rgba(0,0,0,0.45)] transition-colors duration-150 [animation-delay:80ms] hover:border-[rgb(238_240_245/0.16)] lg:mr-0">
       <div className="flex gap-1" aria-hidden>
         {Array.from({ length: 12 }, (_, i) => (
-          <span key={i} className={`h-[3px] flex-1 rounded-full ${i === 0 ? "bg-accent" : "bg-[rgb(238_240_245/0.14)]"}`} />
+          <span key={i} className={`h-[3px] flex-1 rounded-full ${i === 0 ? "bg-accent-ink" : "bg-[rgb(238_240_245/0.14)]"}`} />
         ))}
       </div>
       <div className="mt-5 flex items-center justify-between font-mono text-xs text-fg-3">
@@ -113,7 +113,7 @@ async function Preview() {
       </dl>
       <div className="mt-5 flex items-center justify-between text-sm">
         <span className="text-fg-3">Checked against the chain</span>
-        <span className="inline-flex items-center gap-1 text-fg transition-colors group-hover:text-accent">
+        <span className="inline-flex items-center gap-1 text-fg transition-colors group-hover:text-accent-ink">
           Open it <ArrowUpRight className="h-4 w-4" strokeWidth={1.5} />
         </span>
       </div>
